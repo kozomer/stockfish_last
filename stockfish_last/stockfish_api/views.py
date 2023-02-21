@@ -172,4 +172,19 @@ class Chart1View(View):
         print(output_value_list)
         response_data = {'date_list': date_list, 'output_value_list': output_value_list}
 
+class Chart2View(View):
+    def post(self, request, *args, **kwargs):
+        #start_date = request.POST.get('start_date')
+        #end_date = request.POST.get('end_date')
+        #product_code = request.POST.get('product_code')
+        #start_date = date(1400,4,1)
+        #end_date = date(1400,4,30)
+        data = Sales.objects.filter(group = "Boya").values('date', 'original_output_value')
+        print(data)
+        date_list = [obj['date'] for obj in data]
+        output_value_list = [obj['original_output_value'] for obj in data]
+        print(date_list)
+        print(output_value_list)
+        response_data = {'date_list': date_list, 'output_value_list': output_value_list}
+
         return JsonResponse(response_data, safe=False)
