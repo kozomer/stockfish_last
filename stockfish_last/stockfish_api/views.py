@@ -156,3 +156,9 @@ class ChartView(View):
         response_data = {'date_list': date_list, 'output_value_list': output_value_list}
 
         return JsonResponse(response_data, safe=False)
+
+class ItemListView(View):
+    def get(self, request, *args, **kwargs):
+        titles = Goods.objects.values_list('product_title', flat=True)
+        print(list(titles))
+        return JsonResponse(list(titles), safe=False)

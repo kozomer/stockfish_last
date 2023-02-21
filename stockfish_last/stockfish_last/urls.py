@@ -15,7 +15,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from stockfish_api.views import ViewCustomersView, AddCustomersView, AddGoodsView, ViewGoodsView,  AddSalesView, ViewSalesView, AddWarehouseView, ViewWarehouseView,  DeleteGoodView,  DeleteSaleView, DeleteCustomerView, ChartView
+from stockfish_api.views import (ViewCustomersView, AddCustomersView, AddGoodsView, ViewGoodsView,
+                                   AddSalesView, ViewSalesView, AddWarehouseView, ViewWarehouseView,  DeleteGoodView,  DeleteSaleView, DeleteCustomerView, ChartView, ItemListView)
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -33,4 +35,5 @@ urlpatterns = [
     path('delete_goods/',  DeleteGoodView.as_view(), name='delete_goods'),
     path('delete_sales/',  DeleteSaleView.as_view(), name='delete_sales'),
     path('delete_customers/',  DeleteCustomerView.as_view(), name='delete_customers'),
+    path('item_list/',  ItemListView.as_view(), name='item_list'),
 ]
