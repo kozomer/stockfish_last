@@ -14,7 +14,8 @@
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 */
-import React, {useEffect,useState} from "react";
+import { data } from "jquery";
+import React, {useEffect,useState, useRef} from "react";
 // react plugin used to create charts
 import { Line, Bar, Pie } from "react-chartjs-2";
 
@@ -43,6 +44,12 @@ import {
 
 function Charts() {
   const [dataTable, setDataTable] = useState([]);
+  const [items, setItems] = useState([]);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [result, setResult] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const dropdownRef = useRef(null);
+
   useEffect(() => {
     async function fetchData() {
       console.log('useEffect called');
@@ -60,8 +67,56 @@ function Charts() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    fetch('http://127.0.0.1:8000/item_list/')
+      .then(response => response.json())
+      .then(data => {
+        setItems(data);
+        console.log('item list:', data);
+      })
+      
+      
+      
+      
+  }, []);
 
+  useEffect(() => {
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, []);
+
+  const handleClickOutside = (event) => {
+    if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      setSearchTerm('');
+    }
+  }
+  const handleSelect = (event) => {
+    const selectedValue = event.target.value;
+    setSelectedItem(selectedValue);
+
+    // post the selected value to Django
+    fetch('/my-django-endpoint/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ selectedValue })
+    })
+    .then(response => response.json())
+    .then(data => setResult(data))
   
+  }
+  const handleSearch = (event) => {
+    const searchTerm = event.target.value;
+    setSearchTerm(searchTerm);
+  }
+  
+  const filteredItems = items.filter(item =>
+    item.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const charts = {
     data: {
       labels:  dataTable["date_list"],
@@ -120,6 +175,17 @@ function Charts() {
   console.log(charts)
   return (
     <>
+      <div ref={dropdownRef}>
+      <div style={{position:"absolute",top:"100px"}}>
+      <input type="text" value={searchTerm} onChange={handleSearch} placeholder="Search..." />
+      <select value={selectedItem} onChange={handleSelect} >
+        <option value="">Select an item</option>
+        {items.map((item, index) => (
+          <option key={index} value={item}>{item}</option>
+        ))}
+      </select>
+      </div>
+      </div>
       <div className="content">
         <p>
           Simple yet flexible React charting for designers &amp; developers.

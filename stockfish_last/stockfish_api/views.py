@@ -160,5 +160,5 @@ class ChartView(View):
 class ItemListView(View):
     def get(self, request, *args, **kwargs):
         titles = Goods.objects.values_list('product_title', flat=True)
-        print(list(titles))
+       # print(list(titles))
         return JsonResponse(list(titles), safe=False)
