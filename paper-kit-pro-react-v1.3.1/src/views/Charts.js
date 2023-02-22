@@ -101,13 +101,14 @@ function Charts() {
     label:item 
   }));
 
-  const charts = {
+  let charts = {};
+if (result && result.date_list && result.output_value_list && result.product_name) {
+  charts = {
     data: {
-      labels:  result["date_list"],
-      
+      labels: result.date_list,
       datasets: [
         {
-          label: result["product_name"],
+          label: result.product_name,
           borderColor: "#6bd098",
           pointRadius: 0,
           pointHoverRadius: 0,
@@ -115,7 +116,7 @@ function Charts() {
           borderWidth: 3,
           barPercentage: 1.6,
           tension: 0.4,
-          data: result["output_value_list"]
+          data: result.output_value_list
         }
       ]
     },
@@ -124,12 +125,10 @@ function Charts() {
         legend: {
           display: false
         },
-  
         tooltips: {
           enabled: false
         }
       },
-  
       scales: {
         y: {
           ticks: {
@@ -156,6 +155,8 @@ function Charts() {
       }
     }
   };
+}
+
   console.log(charts)
   return (
     <>
@@ -215,7 +216,9 @@ function Charts() {
                 /> 
               <CardHeader>
                 <CardTitle>SALES</CardTitle>
-                <p className="card-category">{result["product_name"]}</p>
+                {result["product_name"] && (
+                  <p className="card-category">{result["product_name"]}</p>
+                )}
               </CardHeader>
               <CardBody>
                 
