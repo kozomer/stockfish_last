@@ -2,12 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Button, Card, CardHeader, CardBody, CardTitle, Row, Col } from 'reactstrap';
 import ReactTable from 'components/ReactTable/ReactTable.js';
 import '../../assets/css/Table.css';
+import ReactBSAlert from "react-bootstrap-sweetalert";
+
 const DataTable = () => {
   const [dataTable, setDataTable] = useState([]);
   const [file, setFile] = useState(null);
   const [showUploadDiv, setShowUploadDiv] = useState(false);
   const [dataChanged, setDataChanged] = useState(false);
   const [timeoutId, setTimeoutId] = useState(null);
+  const [alert, setAlert] =useState(null);
+  const [deleteConfirm, setDeleteConfirm] =useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -62,6 +66,29 @@ const DataTable = () => {
 
   };
 
+  const warningWithConfirmAndCancelMessage = () => {
+    console.log("sadsada")
+    setAlert(
+      <ReactBSAlert
+        warning
+        style={{ display: "block", marginTop: "-100px" }}
+        title="Are you sure?"
+        onConfirm={() => setDeleteConfirm(true)}
+        onCancel={() => setDeleteConfirm(false)}
+        confirmBtnBsStyle="info"
+        cancelBtnBsStyle="danger"
+        confirmBtnText="Yes, delete it!"
+        cancelBtnText="Cancel"
+        showCancel
+        btnSize=""
+      >
+        You will not be able to recover this imaginary file!
+      </ReactBSAlert>
+    );
+  };
+  
+  
+  
 
   return (
     <>
@@ -165,11 +192,12 @@ const DataTable = () => {
                         </Button>{' '}
                         <Button
                           onClick={() => {
-                            if (window.confirm('Are you sure you want to delete this row?')) {
+                            warningWithConfirmAndCancelMessage();
+                            if (deleteConfirm) {
                               const updatedDataTable = dataTable.find((o) => o.id == row.id);
                               console.log(updatedDataTable[0]);
-                              const data = { no: updatedDataTable[0] ,good_code:updatedDataTable[10], original_output_value:updatedDataTable[14]};
-                              console.log(data)
+                              const data = { no: updatedDataTable[0], good_code: updatedDataTable[10], original_output_value: updatedDataTable[14] };
+                              console.log(data);
                               fetch(`http://127.0.0.1:8000/delete_sales/`, {
                                 method: 'POST',
                                 body: new URLSearchParams(data),
@@ -177,11 +205,9 @@ const DataTable = () => {
                                 console.log("row id:", row.id);
                                 console.log("dataTable:", dataTable);
                                 const filteredDataTable = dataTable.filter((o) => Number(o.id) !== Number(row.id));
-
                                 console.log(filteredDataTable);
                                 setDataTable(filteredDataTable);
                                 setDataChanged(!dataChanged);
-                               
                               });
                             }
                           }}
@@ -191,6 +217,8 @@ const DataTable = () => {
                         >
                           <i className='fa fa-times' />
                         </Button>
+
+
                       </div>
                     ),
                   }))}
