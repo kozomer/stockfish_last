@@ -3,6 +3,8 @@ import pandas as pd
 from .models import Customers, Goods, Sales, Warehouse
 from django.views import View
 from django.http import JsonResponse, HttpResponse
+import json
+
 class AddCustomersView(View):
     def post(self, request,*args, **kwargs):
         if request.method == 'POST':
@@ -165,17 +167,19 @@ class ItemListView(View):
     
     def post(self, request, *args, **kwargs):
         # Get the product_title from the POST data
-        product_code = request.POST.get('product_code')
-
+        print(request)
+        data = json.loads(request.body)
+        product_code = data.get('product_code')
+        print(product_code)
         # Filter Sales by the product_title
-        data = Goods.objects.filter(good_code=product_code).values('date', 'original_output_value')
+        data = Sales.objects.filter(good_code=product_code).values('date', 'original_output_value')
 
         # Get the original_output_value of each sale
         date_list = [obj['date'] for obj in data]
         output_value_list = [obj['original_output_value'] for obj in data]
-        product_name = Sales.objects.filter(product_code=product_code).values('product_title')
+        product_name = Goods.objects.filter(product_code=product_code).values('product_title')
 
         response_data = {'product_name':product_name ,'date_list': date_list, 'output_value_list': output_value_list}
-
+        print(response_data)
         # Return the list of output_values as a JSON response
         return JsonResponse(response_data, safe=False)

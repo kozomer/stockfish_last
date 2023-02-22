@@ -15,10 +15,10 @@
 
 */
 import { data } from "jquery";
-import React, {useEffect,useState, useRef} from "react";
+import React, {useEffect,useState} from "react";
 // react plugin used to create charts
 import { Line, Bar, Pie } from "react-chartjs-2";
-
+import Select from "react-select";
 
 // reactstrap components
 import {
@@ -48,8 +48,7 @@ function Charts() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [result, setResult] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const dropdownRef = useRef(null);
-
+  
   useEffect(() => {
     async function fetchData() {
       console.log('useEffect called');
@@ -80,42 +79,25 @@ function Charts() {
       
   }, []);
 
-  useEffect(() => {
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    }
-  }, []);
-
-  const handleClickOutside = (event) => {
-    if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-      setSearchTerm('');
-    }
-  }
-  const handleSelect = (event) => {
-    const selectedValue = event.target.value;
-    setSelectedItem(selectedValue);
-
-    // post the selected value to Django
-    fetch('/my-django-endpoint/', {
+  
+  const handleSelect = (selectedOption) => {
+    setSelectedItem(selectedOption);
+    console.log(selectedItem.value)
+    const selectData= { product_code: selectedItem.value};
+    // post the selected option to Django
+    fetch('http://127.0.0.1:8000/item_list_filter/', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ selectedValue })
+    
+      body: JSON.stringify(selectData)
     })
-    .then(response => response.json())
+   .then(response => response.json())
     .then(data => setResult(data))
+  } 
   
-  }
-  const handleSearch = (event) => {
-    const searchTerm = event.target.value;
-    setSearchTerm(searchTerm);
-  }
-  
-  const filteredItems = items.filter(item =>
-    item.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const options = items.map((item) => ({
+    value: item,
+    label:item 
+  }));
 
   const charts = {
     data: {
@@ -175,17 +157,22 @@ function Charts() {
   console.log(charts)
   return (
     <>
-      <div ref={dropdownRef}>
-      <div style={{position:"absolute",top:"100px"}}>
-      <input type="text" value={searchTerm} onChange={handleSearch} placeholder="Search..." />
-      <select value={selectedItem} onChange={handleSelect} >
-        <option value="">Select an item</option>
-        {items.map((item, index) => (
-          <option key={index} value={item}>{item}</option>
-        ))}
-      </select>
+      
+      <div style={{position:"absolute",top:"50px"}}>
+      <Select
+        className="react-select primary"
+        classNamePrefix="react-select"
+        name="singleSelect"
+        onChange={(value) => {
+          setSelectedItem(value);
+          handleSelect(value);
+        }}
+        options={options}
+        placeholder="Search for an item..."
+        isSearchable
+      /> 
       </div>
-      </div>
+      
       <div className="content">
         <p>
           Simple yet flexible React charting for designers &amp; developers.

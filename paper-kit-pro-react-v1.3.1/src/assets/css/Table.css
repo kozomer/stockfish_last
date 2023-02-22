@@ -50,6 +50,7 @@
   margin-right:30px;
   margin-left: 30px;
   min-width: 120px;
+  height:38px  !important;
 }
 @media screen and (min-width: 701px) and (max-width: 1200px) {
   /* Add styles for medium screens */
