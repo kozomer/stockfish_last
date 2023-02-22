@@ -36,12 +36,9 @@ class AddSalesView(View):
         if request.method == 'POST':
             data = pd.read_excel(request.FILES['file'])
             for i, row in data.iterrows():
-                print("omer")
                 no = row["No"]
                 if Sales.objects.filter(no=no).exists():
-                    print("omer1")
                     continue
-                print("omer2")
                 sale = Sales(no=no, bill_number=row["Bill Number"], date=row["Date"],
                             psr=row["PSR"], customer_code=row["Customer Code"], name=row["Name"], area=row["Area"], group=row["Group"],
                             good_code=row["Good Code"], goods=row["Goods"], unit=row["Unit"], original_value=row["The Original Value"],
@@ -55,7 +52,6 @@ class AddSalesView(View):
                             tot_monthly_sales=row["Tot Monthly Sales"], receipment=row["Receipment"], ct=row["CT"],
                             payment_type=row["Payment Type"], customer_size=row["Customer Size"], saler_factor=row["Saler Factor"],
                             prim_percentage=row["Prim Percantage"], bonus_factor=row["Bonus Factor"], bonus=row["Bonus"])
-                print(sale.original_output_value)
                 sale.save()
                 try:
                     warehouse_item = Warehouse.objects.get(product_code=sale.good_code)
@@ -116,9 +112,7 @@ class ViewWarehouseView(View):
 
 class DeleteGoodView(View):
     def post(self, request, *args, **kwargs):
-        print(request.POST)
         product_code = request.POST.get('product_code')
-        print(product_code)
         Goods.objects.filter(product_code=product_code).delete()
         return HttpResponse('OK')
 
@@ -133,7 +127,6 @@ class DeleteSaleView(View):
         product_code = request.POST.get('good_code', None)
         original_output_value = request.POST.get('original_output_value', None)
         Sales.objects.filter(no=no).delete()
-        print(product_code)
         try:
             warehouse_item = Warehouse.objects.get(product_code=product_code)
             warehouse_item.stock += float(original_output_value)
@@ -150,11 +143,8 @@ class ChartView(View):
         #start_date = date(1400,4,1)
         #end_date = date(1400,4,30)
         data = Sales.objects.filter(group = "Boya").values('date', 'original_output_value')
-        print(data)
         date_list = [obj['date'] for obj in data]
         output_value_list = [obj['original_output_value'] for obj in data]
-        print(date_list)
-        print(output_value_list)
         response_data = {'date_list': date_list, 'output_value_list': output_value_list}
 
         return JsonResponse(response_data, safe=False)
@@ -162,15 +152,14 @@ class ChartView(View):
 class ItemListView(View):
     def get(self, request, *args, **kwargs):
         product_codes = Goods.objects.values_list('product_code', flat=True)
-       # print(list(titles))
         return JsonResponse(list(product_codes), safe=False)
     
     def post(self, request, *args, **kwargs):
         # Get the product_title from the POST data
-        print(request)
+
         data = json.loads(request.body)
         product_code = data.get('product_code')
-        print(product_code)
+
         # Filter Sales by the product_title
         data = Sales.objects.filter(good_code=product_code).values('date', 'original_output_value')
         product_name = Goods.objects.filter(product_code=product_code).values('product_title')
@@ -180,6 +169,6 @@ class ItemListView(View):
         product_name = [obj["product_title"] for obj in product_name]
 
         response_data = {'product_name':product_name ,'date_list': date_list, 'output_value_list': output_value_list}
-        print(response_data)
+
         # Return the list of output_values as a JSON response
         return JsonResponse(response_data, safe=False)
