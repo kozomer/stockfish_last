@@ -162,3 +162,16 @@ class ItemListView(View):
         titles = Goods.objects.values_list('product_title', flat=True)
        # print(list(titles))
         return JsonResponse(list(titles), safe=False)
+    
+    def post(self, request, *args, **kwargs):
+        # Get the product_title from the POST data
+        product_title = request.POST.get('product_title')
+
+        # Filter Sales by the product_title
+        sales = Sales.objects.filter(goods__product_title=product_title)
+
+        # Get the original_output_value of each sale
+        output_values = [sale.original_output_value for sale in sales]
+
+        # Return the list of output_values as a JSON response
+        return JsonResponse(output_values, safe=False)
