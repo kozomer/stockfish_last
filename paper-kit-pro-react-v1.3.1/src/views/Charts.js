@@ -83,7 +83,7 @@ function Charts() {
   const handleSelect = (selectedOption) => {
     setSelectedItem(selectedOption);
     console.log(selectedItem.value)
-    const selectData= { product_code: selectedItem.value};
+    const selectData= { product_code: selectedOption.value};
     // post the selected option to Django
     fetch('http://127.0.0.1:8000/item_list_filter/', {
       method: 'POST',
@@ -91,7 +91,9 @@ function Charts() {
       body: JSON.stringify(selectData)
     })
    .then(response => response.json())
-    .then(data => setResult(data))
+    .then(data => {
+      setResult(data);})
+      console.log(result["output_value_list"])
   } 
   
   const options = items.map((item) => ({
@@ -101,11 +103,11 @@ function Charts() {
 
   const charts = {
     data: {
-      labels:  dataTable["date_list"],
+      labels:  result["date_list"],
       
       datasets: [
         {
-          label: "Active Users",
+          label: result["product_name"],
           borderColor: "#6bd098",
           pointRadius: 0,
           pointHoverRadius: 0,
@@ -113,7 +115,7 @@ function Charts() {
           borderWidth: 3,
           barPercentage: 1.6,
           tension: 0.4,
-          data: dataTable["output_value_list"]
+          data: result["output_value_list"]
         }
       ]
     },
@@ -157,21 +159,7 @@ function Charts() {
   console.log(charts)
   return (
     <>
-      
-      <div style={{position:"absolute",top:"50px"}}>
-      <Select
-        className="react-select primary"
-        classNamePrefix="react-select"
-        name="singleSelect"
-        onChange={(value) => {
-          setSelectedItem(value);
-          handleSelect(value);
-        }}
-        options={options}
-        placeholder="Search for an item..."
-        isSearchable
-      /> 
-      </div>
+    
       
       <div className="content">
         <p>
@@ -213,9 +201,21 @@ function Charts() {
         <Row>
           <Col md="6">
             <Card className="card-chart">
+            <Select
+                  
+                  
+                  name="singleSelect"
+                  onChange={(value) => {
+                    setSelectedItem(value);
+                    handleSelect(value);
+                  }}
+                  options={options}
+                  placeholder="Search for an item..."
+                  isSearchable
+                /> 
               <CardHeader>
-                <CardTitle>24 Hours Performance</CardTitle>
-                <p className="card-category">Line Chart</p>
+                <CardTitle>SALES</CardTitle>
+                <p className="card-category">{result["product_name"]}</p>
               </CardHeader>
               <CardBody>
                 

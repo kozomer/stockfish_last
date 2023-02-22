@@ -173,11 +173,11 @@ class ItemListView(View):
         print(product_code)
         # Filter Sales by the product_title
         data = Sales.objects.filter(good_code=product_code).values('date', 'original_output_value')
-
+        product_name = Goods.objects.filter(product_code=product_code).values('product_title')
         # Get the original_output_value of each sale
         date_list = [obj['date'] for obj in data]
         output_value_list = [obj['original_output_value'] for obj in data]
-        product_name = Goods.objects.filter(product_code=product_code).values('product_title')
+        product_name = [obj["product_title"] for obj in product_name]
 
         response_data = {'product_name':product_name ,'date_list': date_list, 'output_value_list': output_value_list}
         print(response_data)
