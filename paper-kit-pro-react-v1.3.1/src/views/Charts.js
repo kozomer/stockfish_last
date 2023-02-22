@@ -91,7 +91,9 @@ function Charts() {
       body: JSON.stringify(selectData)
     })
    .then(response => response.json())
-    .then(data => setResult(data))
+    .then(data => {
+      setResult(data);})
+      console.log(result["output_value_list"])
   } 
   
   const options = items.map((item) => ({
@@ -101,11 +103,11 @@ function Charts() {
 
   const charts = {
     data: {
-      labels:  dataTable["date_list"],
+      labels:  result["date_list"],
       
       datasets: [
         {
-          label: "Active Users",
+          label: result["product_name"],
           borderColor: "#6bd098",
           pointRadius: 0,
           pointHoverRadius: 0,
@@ -113,7 +115,7 @@ function Charts() {
           borderWidth: 3,
           barPercentage: 1.6,
           tension: 0.4,
-          data: dataTable["output_value_list"]
+          data: result["output_value_list"]
         }
       ]
     },
@@ -214,8 +216,8 @@ function Charts() {
           <Col md="6">
             <Card className="card-chart">
               <CardHeader>
-                <CardTitle>24 Hours Performance</CardTitle>
-                <p className="card-category">Line Chart</p>
+                <CardTitle>SALES</CardTitle>
+                <p className="card-category">{result["product_name"]}</p>
               </CardHeader>
               <CardBody>
                 
