@@ -1,40 +1,13 @@
 from django.shortcuts import render
 import pandas as pd
-from .models import Customers, Goods, Sales, Warehouse, PriceList
+from .models import Customers, Products, Sales, Warehouse, ROP
 from django.views import View
 from django.http import JsonResponse, HttpResponse
 import json
-
-# region Goods
-class AddGoodsView(View):
-    def post(self, request, *args, **kwargs):
-        if request.method == 'POST':
-            data = pd.read_excel(request.FILES['file'])
-            for i, row in data.iterrows():
-                product_code = row["Product Code"]
-                if Goods.objects.filter(product_code=product_code).exists():
-                    continue
-                good = Goods(product_code=product_code, group=row["Group"], product_title=row["Product Title"],
-                                    unit_title=row["Unit Title"], unit=row["Unit"], currency=row["Currency"], f=row["F"])
-                good.save()
-            return render(request, 'success.html', {})
-        return render(request, 'upload.html', {})
-
-class ViewGoodsView(View):
-    def get(self, request, *args, **kwargs):
-        goods = Goods.objects.values().all()
-        goods_list = [[good['product_code'], good['group'], good['product_title'], good['unit_title'],
-                       good['unit'], good['currency'], good['f']] for good in goods]
-        return JsonResponse(goods_list, safe=False)
-
-class DeleteGoodView(View):
-    def post(self, request, *args, **kwargs):
-        product_code = request.POST.get('product_code')
-        Goods.objects.filter(product_code=product_code).delete()
-        return HttpResponse('OK')
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
 
 
-# endregion
 
 # region Customers
 
@@ -165,27 +138,29 @@ class DeleteWarehouseView(View):
 
 # endregion
 
-# region PriceList
+# region Products
 
-class AddPriceListView(View):
+class AddProductsView(View):
     def post(self, request, *args, **kwargs):
         if request.method == 'POST':
             data = pd.read_excel(request.FILES['file'])
             for i, row in data.iterrows():
-                product_number_ir = row["Product Number IR"]
-                if PriceList.objects.filter(product_number_ir=product_number_ir).exists():
+                product_code_ir = row["Product Number IR"]
+                if Products.objects.filter(product_code_ir=product_code_ir).exists():
                     continue
-                product = PriceList(
+                product = Products(
                     group=row["Group"],
                     subgroup=row["Subgroup"],
                     feature=row["Feature"],
-                    product_number_ir=product_number_ir,
-                    product_number_tr=row["Product Number TR"],
+                    product_code_ir=product_code_ir,
+                    product_code_tr=row["Product Number TR"],
                     description_tr=row["Description TR"],
                     description_ir=row["Description IR"],
                     unit=row["Unit"],
                     unit_secondary=row["Unit Secondary"],
-                    dollar=row["Dollar"]
+                    weight = row["Weight"],
+                    currency = row["Currency"],
+                    price= row["Price"]
                 )
                 product.save()
             return render(request, 'success.html', {})
@@ -193,15 +168,15 @@ class AddPriceListView(View):
 
 class ViewPriceListView(View):
     def get(self, request, *args, **kwargs):
-        products = PriceList.objects.values().all()
-        product_list = [[p['group'], p['subgroup'], p['feature'], p['product_number_ir'], p['product_number_tr'],
-                         p['description_tr'], p['description_ir'], p['unit'], p['unit_secondary'], p['dollar']] for p in products]
+        products = Products.objects.values().all()
+        product_list = [[p['group'], p['subgroup'], p['feature'], p['product_code_ir'], p['product_code_tr'],
+                         p['description_tr'], p['description_ir'], p['unit'], p['unit_secondary'],p['weight'],p['currency'], p['price']] for p in products]
         return JsonResponse(product_list, safe=False)
 
 class DeletePriceListView(View):
     def post(self, request, *args, **kwargs):
-        product_number_ir = request.POST.get('product_number_ir')
-        PriceList.objects.filter(product_number_ir=product_number_ir).delete()
+        product_code_ir = request.POST.get('product_code_ir')
+        Products.objects.filter(product_code_ir=product_code_ir).delete()
         return HttpResponse('OK')
 
 # endregion
@@ -224,7 +199,7 @@ class ChartView(View):
 
 class ItemListView(View):
     def get(self, request, *args, **kwargs):
-        product_codes = Goods.objects.values_list('product_code', flat=True)
+        product_codes = Products.objects.values_list('product_code_ir', flat=True)
         return JsonResponse(list(product_codes), safe=False)
     
     def post(self, request, *args, **kwargs):
@@ -235,7 +210,7 @@ class ItemListView(View):
 
         # Filter Sales by the product_title
         data = Sales.objects.filter(good_code=product_code).values('date', 'original_output_value')
-        product_name = Goods.objects.filter(product_code=product_code).values('product_title')
+        product_name = Products.objects.filter(product_code_ir=product_code).values('description_ir')
         # Get the original_output_value of each sale
         date_list = [obj['date'] for obj in data]
         output_value_list = [obj['original_output_value'] for obj in data]
@@ -248,7 +223,65 @@ class ItemListView(View):
 
 # endregion 
 
-
+# region ROP
+@receiver(post_save, sender=Warehouse)
+def create_rop_for_warehouse(sender, instance, created, **kwargs):
+    if created:
+        sales = Sales.objects.filter(good_code=instance.good_code)
+        product = Products.objects.filter(product_code_ir = instance.product_code)
+        rop = ROP(
+            group = product.group,
+            subgroup = product.subgroup,
+            feature = product.feature,
+            new_or_old_product = None,
+            related = None,
+            origin = None,
+            product_code_ir = instance.product_code,
+            product_code_tr = product.product_code_tr,
+            dont_order_again = None,
+            description_tr = product.description_tr,
+            description_ir = product.description_ir,
+            unit = product.unit,
+            weight = product.weight,
+            unit_secondary = product.unit_secondary,
+            price = product.price,
+            #color_making_room_1400 = None,
+            avarage_previous_year = None,
+            month_1 = None,
+            month_2 = None,
+            month_3 = None,
+            month_4 = None,
+            month_5 = None,
+            month_6 = None,
+            month_7 = None,
+            month_8 = None,
+            month_9 = None,
+            month_10 = None,
+            month_11 = None,
+            month_12 = None,
+            total_sale = None,
+            warehouse = None,
+            goods_on_the_road = None,
+            total_stock_all = None,
+            total_month_stock = None,
+            standart_deviation = None,
+            lead_time = None,
+            product_coverage_percentage = None,
+            demand_status = None,
+            safety_stock = None,
+            rop = None,
+            monthly_mean = None,
+            new_party = None,
+            cycle_service_level = None,
+            total_stock = None,
+            need_prodcuts = None,
+            over_stock = None,
+            calculated_need = None,
+            calculated_max_stock = None,
+            calculated_min_stock = None,
+            )
+        rop.save()
+# endregion
 
 
 
