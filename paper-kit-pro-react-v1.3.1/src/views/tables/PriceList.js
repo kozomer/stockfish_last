@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Card, CardHeader, CardBody, CardTitle, Row, Col } from 'reactstrap';
+import { Button, Card, CardHeader, CardBody, CardTitle, Row, Col, Input,Form, FormGroup, Label,CardFooter} from 'reactstrap';
 import ReactTable from 'components/ReactTable/ReactTable.js';
 import '../../assets/css/Table.css';
 import ReactBSAlert from "react-bootstrap-sweetalert";
+import Popup from 'components/ReactTable/Popup.js';
 
 const DataTable = () => {
   const [dataTable, setDataTable] = useState([]);
@@ -13,6 +14,21 @@ const DataTable = () => {
   const [alert, setAlert] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleteData, setDeleteData] = useState(null);
+  const [showPopup, setShowPopup] = useState(false);
+  const [editData, setEditData] = useState(null);
+
+
+  //Edit Variables
+  const [group, setGroup] = useState(null);
+  const [subgroup, setSubgroup] = useState(null);
+  const [feature, setFeature] = useState(null);
+  const [productIR, setProductIR] = useState(null);
+  const [productTR, setProductTR] = useState(null);
+  const [descriptionTR, setDescriptionTR] = useState(null);
+  const [descriptionIR, setDescriptionIR] = useState(null);
+  const [unit, setUnit] = useState(null);
+  const [secondaryUnit, setSecondaryUnit] = useState(null);
+  const [dollar, setDollar] = useState(null);
 
   React.useEffect(() => {
     return function cleanup() {
@@ -24,7 +40,7 @@ const DataTable = () => {
   }, []);
   useEffect(() => {
     async function fetchData() {
-      const response = await fetch('http://127.0.0.1:8000/sales/');
+      const response = await fetch('http://127.0.0.1:8000/pricelists/');
       const data = await response.json();
       setDataTable(data);
       setDataChanged(false);
@@ -51,7 +67,7 @@ const DataTable = () => {
     const formData = new FormData();
     formData.append('file', file);
     console.log(file)
-    fetch('http://127.0.0.1:8000/add_sales/', {
+    fetch('http://127.0.0.1:8000/add_pricelists/', {
       method: 'POST',
       body: formData,
       credentials: 'include'
@@ -60,7 +76,7 @@ const DataTable = () => {
 
         console.log(response);
         alert('File uploaded successfully');
-        fetch('http://127.0.0.1:8000/sales/')
+        fetch('http://127.0.0.1:8000/pricelists/')
           .then((response) => response.json())
           .then((data) => setDataTable(data));
           clearTimeout(timeoutId); // Clear any existing timeout
@@ -146,7 +162,7 @@ const DataTable = () => {
       if (deleteConfirm) {
        
         
-        fetch(`http://127.0.0.1:8000/delete_sales/`, {
+        fetch(`http://127.0.0.1:8000/delete_pricelists/`, {
           method: "POST",
           body: new URLSearchParams(deleteData),
         })
@@ -155,12 +171,150 @@ const DataTable = () => {
         setDeleteConfirm(false);
       }
     }, [deleteConfirm]);
-  
+
+    const handleClick = () => {
+      console.log("sda")
+      setShowPopup(!showPopup);
+    };
+
+
+    const handleSubmit = (e) => {
+      console.log("e")
+      
+      const updatedData = {
+        group,
+        subgroup,
+        feature,
+        productIR,
+        productTR,
+        descriptionTR,
+        descriptionIR,
+        unit,
+        secondaryUnit,
+        dollar,
+      };
+      console.log(updatedData)
+      // Call your Django API to send the updated values here
+    };
 
   return (
     <>
       <div className='content'>
       {alert}
+
+    {/* Pop Up */}
+      {showPopup &&
+       <div className="popup">
+      <Card>
+            <CardHeader>
+              <CardTitle tag="h4">Edit Product</CardTitle>
+            </CardHeader>
+            <CardBody>
+              <Form onSubmit={handleSubmit}>
+                <label>Group</label>
+                <FormGroup>
+                  <Input
+                    name="group"
+                    type="text"
+                    defaultValue={group}
+                    onChange={(e) => setGroup(e.target.value)}
+                  />
+                </FormGroup>
+
+                <label>Subgroup</label>
+                <FormGroup>
+                  <Input
+                    type="text"
+                    defaultValue={subgroup}
+                    onChange={(e) => setSubgroup(e.target.value)}
+                  />
+                </FormGroup>
+
+                <label>Feature</label>
+                <FormGroup>
+                  <Input
+                    type="text"
+                    defaultValue={editData[2]}
+                    onChange={(e) => setFeature(e.target.value)}
+                  />
+                </FormGroup>
+
+                <label>Product Number(IR)</label>
+                <FormGroup>
+                  <Input
+                    type="text"
+                    defaultValue={editData[3]}
+                    onChange={(e) => setProductIR(e.target.value)}
+                  />
+                </FormGroup>
+
+                <label>Product Number(TR)</label>
+                <FormGroup>
+                  <Input
+                    type="text"
+                    defaultValue={editData[4]}
+                    onChange={(e) => setProductTR(e.target.value)}
+                  />
+                </FormGroup>
+
+                <label>Description(TR)</label>
+                <FormGroup>
+                  <Input
+                    type="text"
+                    defaultValue={editData[5]}
+                    onChange={(e) => setDescriptionTR(e.target.value)}
+                  />
+                </FormGroup>
+
+                <label>Description(IR)</label>
+                <FormGroup>
+                  <Input
+                    type="text"
+                    defaultValue={editData[6]}
+                    onChange={(e) => setDescriptionIR(e.target.value)}
+                  />
+                </FormGroup>
+
+                <label>Unit</label>
+                <FormGroup>
+                  <Input
+                    type="text"
+                    defaultValue={editData[7]}
+                    onChange={(e) => setUnit(e.target.value)}
+                  />
+                </FormGroup>
+
+                <label>Secondary Unit</label>
+                <FormGroup>
+                  <Input
+                    type="text"
+                    defaultValue={editData[8]}
+                    onChange={(e) => setSecondaryUnit(e.target.value)}
+                  />
+                </FormGroup>
+
+                <label>Dollar</label>
+                <FormGroup>
+                  <Input
+                    type="text"
+                    defaultValue={editData[9]}
+                    onChange={(e) => setDollar(e.target.value)}
+                  />
+                  
+                </FormGroup>
+              </Form>
+            </CardBody>
+              <CardFooter>
+                <Button className="btn-round" color="info" type="submit" onClick={handleSubmit}>
+                  Submit
+                </Button>
+                <Button className="btn-round" color="info" type="submit">
+                  Cancel
+                </Button>
+              </CardFooter>
+            </Card>
+            </div>
+}
 
         <Row>
           <Col
@@ -187,58 +341,41 @@ const DataTable = () => {
                 <ReactTable
                   data={dataTable.map((row,index) => ({
                     id: row.id,
-                    no: row[0],
-                    bill_number: row[1],
-                    date: row[2],
-                    psr: row[3],
-                    customer_code: row[4],
-                    name: row[5],
-                    area: row[6],
-                    group: row[7],
-                    good_code: row[8],
-                    goods: row[9],
-                    unit: row[10],
-                    original_value: row[11],
-                    original_output_value: row[12],
-                    secondary_output_value: row[13],
-                    price: row[14],
-                    original_price: row[15],
-                    discount_percentage: row[16],
-                    amount_sale: row[17],
-                    discount: row[18],
-                    additional_sales: row[19],
-                    net_sales: row[20],
-                    discount_percentage_2: row[21],
-                    real_discount_percentage: row[22],
-                    payment_cash: row[23],
-                    payment_check: row[24],
-                    balance: row[25],
-                    saler: row[26],
-                    currency: row[27],
-                    dollar: row[28],
-                    manager_rating: row[29],
-                    senior_saler: row[30],
-                    tot_monthly_sales: row[31],
-                    receipment: row[32],
-                    ct: row[33],
-                    payment_type: row[34],
-                    costumer_size: row[35],
-                    saler_factor: row[35],
-                    prim_percentage: row[36],
-                    bonus_factor: row[37],
-                    bonus: row[38],
-                    
+                    group: row[0],
+                    subgroup: row[1],
+                    feature: row[2],
+                    product_number_ir: row[3],
+                    product_number_tr: row[4],
+                    description_tr: row[5],
+                    description_ir: row[6],
+                    unit: row[7],
+                    unit_secondary: row[8],
+                    dollar: row[9],
 
                     actions: (
                       <div className='actions-left'>
                        
                         <Button
                           onClick={() => {
-                            let obj = dataTable.find((o) => o.id === key);
-                            alert(
-                              `You've clicked EDIT button on \n{ \nName: ${obj.customer_code}, \nDescription: ${obj.description}, \nQuantity: ${obj.quantity}, \nArea Code: ${obj.area_code}, \nCode: ${obj.code}, \nCity: ${obj.city}, \nArea: ${obj.area} \n}.`
-                            );
+                            // Enable edit mode
+                            
+                           {handleClick()}
+                           const oldData = dataTable.find((o) => o.id == row.id);
+                           setEditData(oldData)
+
+                           setGroup(editData[0])
+                           setSubgroup(editData[1])
+                           setFeature(editData[2])
+                           setProductIR(editData[3])
+                           setProductTR(editData[4])
+                           setDescriptionTR(editData[5])
+                           setDescriptionIR(editData[6])
+                           setUnit(editData[7])
+                           setSecondaryUnit(editData[8])
+                           setDollar(editData[9])
+                         
                           }}
+                          
                           color='warning'
                           size='sm'
                           className='btn-icon btn-link edit'
@@ -256,9 +393,8 @@ const DataTable = () => {
                                warningWithConfirmAndCancelMessage() 
                                const updatedDataTable = dataTable.find((o) => o.id == row.id);
                                const data = {
-                                no: updatedDataTable[0],
-                                good_code: updatedDataTable[10],
-                                original_output_value: updatedDataTable[14],
+                                product_number_ir: updatedDataTable[3],
+
                               };
                               setDeleteData(data);
                               console.log(deleteConfirm)
@@ -307,168 +443,49 @@ const DataTable = () => {
                   }))}
                   columns={[
                     {
-                      Header: 'No',
-                      accessor: 'no',
+                      Header: 'Group',
+                      accessor: 'group',
 
 
                     },
                     {
-                      Header: 'Bill Number',
-                      accessor: 'bill_number'
+                      Header: 'Subgroup',
+                      accessor:  'subgroup'
                     },
                     {
-                      Header: 'Date',
-                      accessor: 'date'
+                      Header: 'Feature',
+                      accessor: 'feature'
                     },
                   
                     {
-                      Header: 'PSR',
-                      accessor: 'psr'
+                      Header: 'Product Number(IR)',
+                      accessor: 'product_number_ir'
                     },
                     {
-                      Header: 'Customer Code',
-                      accessor: 'customer_code'
+                      Header: 'Product Number(TR)',
+                      accessor: 'product_number_tr'
                     },
                     {
-                      Header: 'Name',
-                      accessor: 'name'
+                      Header: 'Description(TR)',
+                      accessor: 'description_tr'
                     },
                     {
-                      Header: 'Area',
-                      accessor: 'area'
-                    },
-                    {
-                      Header: 'Group',
-                      accessor: 'group'
-                    },
-                    {
-                      Header: 'Good Code',
-                      accessor: 'good_code'
-                    },
-                    {
-                      Header: 'Goods',
-                      accessor: 'goods'
+                      Header: 'Description(IR)',
+                      accessor: 'description_ir'
                     },
                     {
                       Header: 'Unit',
                       accessor: 'unit'
                     },
                     {
-                      Header: 'Original Value',
-                      accessor: 'original_value'
-                    },
-                    {
-                      Header: 'Original Output Value',
-                      accessor: 'original_output_value'
-                    },
-                    {
-                      Header: 'Secondary Output Value',
-                      accessor: 'secondary_output_value'
-                    },
-                    {
-                      Header: 'Price',
-                      accessor: 'price'
-                    },
-                    {
-                      Header: 'Original Price',
-                      accessor: 'original_price'
-                    },
-                    {
-                      Header: 'Discount Percentage',
-                      accessor: 'discount_percentage'
-                    },
-                    {
-                      Header: 'Amount Sale',
-                      accessor: 'amount_sale'
-                    },
-                    {
-                      Header: 'Discount',
-                      accessor: 'discount'
-                    },
-                    {
-                      Header: 'Additional Sales',
-                      accessor: 'additional_sales'
-                    },
-                    {
-                      Header: 'Net Sales',
-                      accessor: 'net_sales'
-                    },
-                    {
-                      Header: 'Discount Percentage (2)',
-                      accessor: 'discount_percentage_2'
-                    },
-                    {
-                      Header: 'Real Discount Percentage',
-                      accessor: 'real_discount_percentage'
-                    },
-                    {
-                      Header: 'Payment Cash',
-                      accessor: 'payment_cash'
-                    },
-                    {
-                      Header: 'Payment Check',
-                      accessor: 'payment_check'
-                    },
-                    {
-                      Header: 'Balance',
-                      accessor: 'balance'
-                    },
-                    {
-                      Header: 'Saler',
-                      accessor: 'saler'
-                    },
-                    {
-                      Header: 'Currency',
-                      accessor: 'currency'
+                      Header: 'Secondary Unit',
+                      accessor: 'unit_secondary'
                     },
                     {
                       Header: 'Dollar',
                       accessor: 'dollar'
                     },
-                    {
-                      Header: 'Manager Rating',
-                      accessor: 'manager_rating'
-                    },
-                    {
-                      Header: 'Senior Saler',
-                      accessor: 'senior_saler'
-                    },
-                    {
-                      Header: 'Tot Monthly Sales',
-                      accessor: 'tot_monthly_sales'
-                    },
-                    {
-                      Header: 'Receipment',
-                      accessor: 'receipment'
-                    },
-                    {
-                      Header: 'CT',
-                      accessor: 'ct'
-                    },
-                    {
-                      Header: 'Payment Type',
-                      accessor: 'payment_type'
-                    },
-                    {
-                      Header: 'Costumer Size',
-                      accessor: 'costumer_size'
-                    },
-                    {
-                      Header: 'Saler Factor',
-                      accessor: 'saler_factor'
-                    },
-                    {
-                      Header: 'Prim Percentage',
-                      accessor: 'prim_percentage'
-                    },
-                    {
-                      Header: 'Bonus Factor',
-                      accessor: 'bonus_factor'
-                    },
-                    {
-                      Header: 'Bonus',
-                      accessor: 'bonus'
-                    },
+                    
                     {
                       Header: 'Actions',
                       accessor: 'actions',

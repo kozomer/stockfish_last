@@ -16,7 +16,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from stockfish_api.views import (ViewCustomersView, AddCustomersView, AddGoodsView, ViewGoodsView,
-                                   AddSalesView, ViewSalesView, AddWarehouseView, ViewWarehouseView,  DeleteGoodView,  DeleteSaleView, DeleteCustomerView, ChartView, ItemListView)
+                                   AddSalesView, AddPriceListView, ViewSalesView, AddWarehouseView, ViewWarehouseView,  DeleteGoodView,  DeleteSaleView, DeleteCustomerView, DeletePriceListView, ChartView, ItemListView, ViewPriceListView)
 
 
 urlpatterns = [
@@ -25,16 +25,20 @@ urlpatterns = [
     path('add_goods/', AddGoodsView.as_view(), name='add_goods'),
     path('add_warehouse/', AddWarehouseView.as_view(), name='add_warehouse'),
     path('add_sales/', AddSalesView.as_view(), name='add_sales'),
+    path('add_pricelists/',AddPriceListView.as_view(), name='add_pricelists'),
 
     path('customers/', ViewCustomersView.as_view(), name='view_customers'),
     path('goods/', ViewGoodsView.as_view(), name='view_goods'),
     path('sales/', ViewSalesView.as_view(), name='view_sales'),
     path('warehouse/', ViewWarehouseView.as_view(), name='view_warehouse'),
     path('charts/', ChartView.as_view(), name='view_charts'),
+    path('pricelists/', ViewPriceListView.as_view(), name='view_pricelists'),
 
     path('delete_goods/',  DeleteGoodView.as_view(), name='delete_goods'),
     path('delete_sales/',  DeleteSaleView.as_view(), name='delete_sales'),
     path('delete_customers/',  DeleteCustomerView.as_view(), name='delete_customers'),
+    path('delete_pricelists/', DeletePriceListView.as_view(), name='delete_goods'),
+    
     path('item_list/',  ItemListView.as_view(), name='item_list'),
     path('item_list_filter/', ItemListView.as_view(), name='item_list_filter'),
 ]
