@@ -65,20 +65,12 @@ class Products(models.Model):
     group = models.CharField(max_length=255)
     subgroup = models.CharField(max_length=255)
     feature = models.CharField(max_length=255)
-<<<<<<< HEAD
-    product_number_ir = models.IntegerField(unique= True)
-    product_number_tr = models.CharField(max_length=255)
-=======
     product_code_ir = models.IntegerField(unique= True)
-    product_code_tr = models.FloatField(null= True)
->>>>>>> 9a0a2d3e8f46c1c0244268d0cfedea8ceeba6d4c
+    product_code_tr = models.CharField(max_length=255)
     description_tr = models.CharField(max_length=400)
     description_ir = models.CharField(max_length=400)
     unit = models.CharField(max_length=255)
     unit_secondary = models.CharField(max_length=255)
-<<<<<<< HEAD
-    dollar = models.FloatField(null= True)
-=======
     weight = models.FloatField(null= True)
     currency = models.CharField(max_length=255)
     price = models.FloatField(null= True)
@@ -135,4 +127,3 @@ class ROP(models.Model):
 
     def __str__(self):
         return self.product_code_ir
->>>>>>> 9a0a2d3e8f46c1c0244268d0cfedea8ceeba6d4c

@@ -28,7 +28,10 @@ const DataTable = () => {
   const [descriptionIR, setDescriptionIR] = useState(null);
   const [unit, setUnit] = useState(null);
   const [secondaryUnit, setSecondaryUnit] = useState(null);
-  const [dollar, setDollar] = useState(null);
+  const [weight, setWeight] = useState(null);
+  const [currency, setCurrency] = useState(null);
+  const [price, setPrice] = useState(null);
+
 
   React.useEffect(() => {
     return function cleanup() {
@@ -40,7 +43,7 @@ const DataTable = () => {
   }, []);
   useEffect(() => {
     async function fetchData() {
-      const response = await fetch('http://127.0.0.1:8000/pricelists/');
+      const response = await fetch('http://127.0.0.1:8000/products/');
       const data = await response.json();
       setDataTable(data);
       setDataChanged(false);
@@ -67,7 +70,7 @@ const DataTable = () => {
     const formData = new FormData();
     formData.append('file', file);
     console.log(file)
-    fetch('http://127.0.0.1:8000/add_pricelists/', {
+    fetch('http://127.0.0.1:8000/add_products/', {
       method: 'POST',
       body: formData,
       credentials: 'include'
@@ -76,9 +79,10 @@ const DataTable = () => {
 
         console.log(response);
         alert('File uploaded successfully');
-        fetch('http://127.0.0.1:8000/pricelists/')
+        fetch('http://127.0.0.1:8000/products/')
           .then((response) => response.json())
-          .then((data) => setDataTable(data));
+          .then((data) => {setDataTable(data)
+          console.log(data)});
           clearTimeout(timeoutId); // Clear any existing timeout
           setTimeoutId(setTimeout(() => setShowUploadDiv(false), 500));
    
@@ -162,7 +166,7 @@ const DataTable = () => {
       if (deleteConfirm) {
        
         
-        fetch(`http://127.0.0.1:8000/delete_pricelists/`, {
+        fetch(`http://127.0.0.1:8000/delete_products/`, {
           method: "POST",
           body: new URLSearchParams(deleteData),
         })
@@ -191,9 +195,16 @@ const DataTable = () => {
         descriptionIR,
         unit,
         secondaryUnit,
-        dollar,
+        weight,
+        currency,
+        price,
       };
       console.log(updatedData)
+      fetch('http://127.0.0.1:8000/edit_products/', {
+      method: 'POST',
+      body: updatedData,
+      credentials: 'include'
+    })
       // Call your Django API to send the updated values here
     };
 
@@ -234,7 +245,7 @@ const DataTable = () => {
                 <FormGroup>
                   <Input
                     type="text"
-                    defaultValue={editData[2]}
+                    defaultValue={feature}
                     onChange={(e) => setFeature(e.target.value)}
                   />
                 </FormGroup>
@@ -243,7 +254,7 @@ const DataTable = () => {
                 <FormGroup>
                   <Input
                     type="text"
-                    defaultValue={editData[3]}
+                    defaultValue={productIR}
                     onChange={(e) => setProductIR(e.target.value)}
                   />
                 </FormGroup>
@@ -252,7 +263,7 @@ const DataTable = () => {
                 <FormGroup>
                   <Input
                     type="text"
-                    defaultValue={editData[4]}
+                    defaultValue={productTR}
                     onChange={(e) => setProductTR(e.target.value)}
                   />
                 </FormGroup>
@@ -261,7 +272,7 @@ const DataTable = () => {
                 <FormGroup>
                   <Input
                     type="text"
-                    defaultValue={editData[5]}
+                    defaultValue={descriptionTR}
                     onChange={(e) => setDescriptionTR(e.target.value)}
                   />
                 </FormGroup>
@@ -270,7 +281,7 @@ const DataTable = () => {
                 <FormGroup>
                   <Input
                     type="text"
-                    defaultValue={editData[6]}
+                    defaultValue={descriptionIR}
                     onChange={(e) => setDescriptionIR(e.target.value)}
                   />
                 </FormGroup>
@@ -279,7 +290,7 @@ const DataTable = () => {
                 <FormGroup>
                   <Input
                     type="text"
-                    defaultValue={editData[7]}
+                    defaultValue={unit}
                     onChange={(e) => setUnit(e.target.value)}
                   />
                 </FormGroup>
@@ -288,20 +299,41 @@ const DataTable = () => {
                 <FormGroup>
                   <Input
                     type="text"
-                    defaultValue={editData[8]}
+                    defaultValue={secondaryUnit}
                     onChange={(e) => setSecondaryUnit(e.target.value)}
                   />
                 </FormGroup>
 
-                <label>Dollar</label>
+                <label>Weight</label>
                 <FormGroup>
                   <Input
                     type="text"
-                    defaultValue={editData[9]}
-                    onChange={(e) => setDollar(e.target.value)}
+                    defaultValue={weight}
+                    onChange={(e) => setWeight(e.target.value)}
                   />
                   
                 </FormGroup>
+
+                <label>Currency</label>
+                <FormGroup>
+                  <Input
+                    type="text"
+                    defaultValue={currency}
+                    onChange={(e) => setCurrency(e.target.value)}
+                  />
+                  
+                </FormGroup>
+
+                <label>Price</label>
+                <FormGroup>
+                  <Input
+                    type="text"
+                    defaultValue={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                  />
+                  
+                </FormGroup>
+
               </Form>
             </CardBody>
               <CardFooter>
@@ -344,13 +376,15 @@ const DataTable = () => {
                     group: row[0],
                     subgroup: row[1],
                     feature: row[2],
-                    product_number_ir: row[3],
-                    product_number_tr: row[4],
+                    product_code_ir: row[3],
+                    product_code_tr: row[4],
                     description_tr: row[5],
                     description_ir: row[6],
                     unit: row[7],
                     unit_secondary: row[8],
-                    dollar: row[9],
+                    weight: row[9],
+                    currency: row[10],
+                    price:row[11],
 
                     actions: (
                       <div className='actions-left'>
@@ -372,7 +406,9 @@ const DataTable = () => {
                            setDescriptionIR(editData[6])
                            setUnit(editData[7])
                            setSecondaryUnit(editData[8])
-                           setDollar(editData[9])
+                           setWeight(editData[9])
+                           setCurrency(editData[10])
+                           setPrice(editData[11])
                          
                           }}
                           
@@ -393,7 +429,7 @@ const DataTable = () => {
                                warningWithConfirmAndCancelMessage() 
                                const updatedDataTable = dataTable.find((o) => o.id == row.id);
                                const data = {
-                                product_number_ir: updatedDataTable[3],
+                                product_code_ir: updatedDataTable[3],
 
                               };
                               setDeleteData(data);
@@ -459,11 +495,11 @@ const DataTable = () => {
                   
                     {
                       Header: 'Product Number(IR)',
-                      accessor: 'product_number_ir'
+                      accessor: 'product_code_ir'
                     },
                     {
                       Header: 'Product Number(TR)',
-                      accessor: 'product_number_tr'
+                      accessor: 'product_code_tr'
                     },
                     {
                       Header: 'Description(TR)',
@@ -482,10 +518,18 @@ const DataTable = () => {
                       accessor: 'unit_secondary'
                     },
                     {
-                      Header: 'Dollar',
-                      accessor: 'dollar'
+                      Header: 'Weight',
+                      accessor: 'weight'
                     },
                     
+                    {
+                      Header: 'Currency',
+                      accessor: 'currency'
+                    },
+                    {
+                      Header: 'Price',
+                      accessor: 'price'
+                    },
                     {
                       Header: 'Actions',
                       accessor: 'actions',
