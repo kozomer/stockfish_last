@@ -166,14 +166,14 @@ class AddProductsView(View):
             return render(request, 'success.html', {})
         return render(request, 'upload.html', {})
 
-class ViewPriceListView(View):
+class ViewProductsView(View):
     def get(self, request, *args, **kwargs):
         products = Products.objects.values().all()
         product_list = [[p['group'], p['subgroup'], p['feature'], p['product_code_ir'], p['product_code_tr'],
                          p['description_tr'], p['description_ir'], p['unit'], p['unit_secondary'],p['weight'],p['currency'], p['price']] for p in products]
         return JsonResponse(product_list, safe=False)
 
-class DeletePriceListView(View):
+class DeleteProductView(View):
     def post(self, request, *args, **kwargs):
         product_code_ir = request.POST.get('product_code_ir')
         Products.objects.filter(product_code_ir=product_code_ir).delete()
