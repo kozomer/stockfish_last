@@ -179,6 +179,30 @@ class DeleteProductView(View):
         Products.objects.filter(product_code_ir=product_code_ir).delete()
         return HttpResponse('OK')
 
+class EditProductView(View):
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body)
+        print(data)
+        product_code_ir = data.get('product_code_ir')
+        print(product_code_ir)
+        product = Products.objects.get(product_code_ir=product_code_ir)
+
+        product.group = request.POST.get('group')
+        product.subgroup = request.POST.get('subgroup')
+        product.feature = request.POST.get('feature')
+        #product_code_ir için exception
+        product.product_code_tr = request.POST.get('product_code_tr')
+        product.description_tr = request.POST.get('description_tr')
+        product.description_ir = request.POST.get('description_ir')
+        product.unit = request.POST.get('unit')
+        product.unit_secondary = request.POST.get('unit_secondary')
+        product.weight = request.POST.get('weight')
+        product.currency = request.POST.get('currency')
+        product.price = request.POST.get('price')
+        product.save()
+        return HttpResponse('OK')
+
+
 # endregion
 
 # region Charts
