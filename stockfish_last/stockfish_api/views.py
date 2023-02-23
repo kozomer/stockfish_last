@@ -1,9 +1,42 @@
 from django.shortcuts import render
 import pandas as pd
-from .models import Customers, Goods, Sales, Warehouse
+from .models import Customers, Goods, Sales, Warehouse, PriceList
 from django.views import View
 from django.http import JsonResponse, HttpResponse
 import json
+
+# region Goods
+class AddGoodsView(View):
+    def post(self, request, *args, **kwargs):
+        if request.method == 'POST':
+            data = pd.read_excel(request.FILES['file'])
+            for i, row in data.iterrows():
+                product_code = row["Product Code"]
+                if Goods.objects.filter(product_code=product_code).exists():
+                    continue
+                good = Goods(product_code=product_code, group=row["Group"], product_title=row["Product Title"],
+                                    unit_title=row["Unit Title"], unit=row["Unit"], currency=row["Currency"], f=row["F"])
+                good.save()
+            return render(request, 'success.html', {})
+        return render(request, 'upload.html', {})
+
+class ViewGoodsView(View):
+    def get(self, request, *args, **kwargs):
+        goods = Goods.objects.values().all()
+        goods_list = [[good['product_code'], good['group'], good['product_title'], good['unit_title'],
+                       good['unit'], good['currency'], good['f']] for good in goods]
+        return JsonResponse(goods_list, safe=False)
+
+class DeleteGoodView(View):
+    def post(self, request, *args, **kwargs):
+        product_code = request.POST.get('product_code')
+        Goods.objects.filter(product_code=product_code).delete()
+        return HttpResponse('OK')
+
+
+# endregion
+
+# region Customers
 
 class AddCustomersView(View):
     def post(self, request,*args, **kwargs):
@@ -18,19 +51,26 @@ class AddCustomersView(View):
                 customer.save()
             return render(request, 'success.html', {})
         return render(request, 'upload.html', {})
-class AddGoodsView(View):
+
+class ViewCustomersView(View):
+    def get(self,request,*args, **kwargs):
+         customers = Customers.objects.values().all()
+         customer_list = [[customer['customer_code'], customer['description'], customer['quantity'],
+                      customer['area_code'], customer['code'], customer['city'], customer['area']]
+                     for customer in customers]
+         return JsonResponse(customer_list,safe=False)
+
+class DeleteCustomerView(View):
     def post(self, request, *args, **kwargs):
-        if request.method == 'POST':
-            data = pd.read_excel(request.FILES['file'])
-            for i, row in data.iterrows():
-                product_code = row["Product Code"]
-                if Goods.objects.filter(product_code=product_code).exists():
-                    continue
-                good = Goods(product_code=product_code, group=row["Group"], product_title=row["Product Title"],
-                                    unit_title=row["Unit Title"], unit=row["Unit"], currency=row["Currency"], f=row["F"])
-                good.save()
-            return render(request, 'success.html', {})
-        return render(request, 'upload.html', {})
+        customer_code = request.POST.get('customer_code')
+        Customers.objects.filter(customer_code=customer_code).delete()
+        return HttpResponse('OK')
+
+
+# endregion
+
+# region Sales
+
 class AddSalesView(View):
     def post(self, request, *args, **kwargs):
         if request.method == 'POST':
@@ -62,21 +102,7 @@ class AddSalesView(View):
 
             return render(request, 'success.html', {})
         return render(request, 'upload.html', {})
-    
 
-class ViewCustomersView(View):
-    def get(self,request,*args, **kwargs):
-         customers = Customers.objects.values().all()
-         customer_list = [[customer['customer_code'], customer['description'], customer['quantity'],
-                      customer['area_code'], customer['code'], customer['city'], customer['area']]
-                     for customer in customers]
-         return JsonResponse(customer_list,safe=False)
-class ViewGoodsView(View):
-    def get(self, request, *args, **kwargs):
-        goods = Goods.objects.values().all()
-        goods_list = [[good['product_code'], good['group'], good['product_title'], good['unit_title'],
-                       good['unit'], good['currency'], good['f']] for good in goods]
-        return JsonResponse(goods_list, safe=False)
 class ViewSalesView(View):
     def get(self, request, *args, **kwargs):
         sales = Sales.objects.values().all()
@@ -91,6 +117,25 @@ class ViewSalesView(View):
                       sale['saler_factor'], sale['prim_percentage'], sale['bonus_factor'], sale['bonus']]
                      for sale in sales]
         return JsonResponse(sale_list, safe=False)
+
+class DeleteSaleView(View):
+    def post(self, request, *args, **kwargs):
+        no = request.POST.get('no', None)
+        product_code = request.POST.get('good_code', None)
+        original_output_value = request.POST.get('original_output_value', None)
+        Sales.objects.filter(no=no).delete()
+        try:
+            warehouse_item = Warehouse.objects.get(product_code=product_code)
+            warehouse_item.stock += float(original_output_value)
+            warehouse_item.save()
+        except Warehouse.DoesNotExist:
+            warehouse_item = None
+        return HttpResponse('OK')
+
+# endregion
+
+# region Warehouse
+
 class AddWarehouseView(View):
     def post(self, request, *args, **kwargs):
         if request.method == 'POST':
@@ -110,30 +155,58 @@ class ViewWarehouseView(View):
         warehouse_list = [[item['product_code'], item['title'], item['unit'], item['stock']] for item in warehouse_items]
         return JsonResponse(warehouse_list, safe=False)
 
-class DeleteGoodView(View):
+class DeleteWarehouseView(View):
     def post(self, request, *args, **kwargs):
         product_code = request.POST.get('product_code')
-        Goods.objects.filter(product_code=product_code).delete()
+        Warehouse.objects.filter(product_code=product_code).delete()
         return HttpResponse('OK')
 
-class DeleteCustomerView(View):
+
+
+# endregion
+
+# region PriceList
+
+class AddPriceListView(View):
     def post(self, request, *args, **kwargs):
-        customer_code = request.POST.get('customer_code')
-        Customers.objects.filter(customer_code=customer_code).delete()
-        return HttpResponse('OK')
-class DeleteSaleView(View):
+        if request.method == 'POST':
+            data = pd.read_excel(request.FILES['file'])
+            for i, row in data.iterrows():
+                product_number_ir = row["Product Number IR"]
+                if PriceList.objects.filter(product_number_ir=product_number_ir).exists():
+                    continue
+                product = PriceList(
+                    group=row["Group"],
+                    subgroup=row["Subgroup"],
+                    feature=row["Feature"],
+                    product_number_ir=product_number_ir,
+                    product_number_tr=row["Product Number TR"],
+                    description_tr=row["Description TR"],
+                    description_ir=row["Description IR"],
+                    unit=row["Unit"],
+                    unit_secondary=row["Unit Secondary"],
+                    dollar=row["Dollar"]
+                )
+                product.save()
+            return render(request, 'success.html', {})
+        return render(request, 'upload.html', {})
+
+class ViewPriceListView(View):
+    def get(self, request, *args, **kwargs):
+        products = PriceList.objects.values().all()
+        product_list = [[p['group'], p['subgroup'], p['feature'], p['product_number_ir'], p['product_number_tr'],
+                         p['description_tr'], p['description_ir'], p['unit'], p['unit_secondary'], p['dollar']] for p in products]
+        return JsonResponse(product_list, safe=False)
+
+class DeletePriceListView(View):
     def post(self, request, *args, **kwargs):
-        no = request.POST.get('no', None)
-        product_code = request.POST.get('good_code', None)
-        original_output_value = request.POST.get('original_output_value', None)
-        Sales.objects.filter(no=no).delete()
-        try:
-            warehouse_item = Warehouse.objects.get(product_code=product_code)
-            warehouse_item.stock += float(original_output_value)
-            warehouse_item.save()
-        except Warehouse.DoesNotExist:
-            warehouse_item = None
+        product_number_ir = request.POST.get('product_number_ir')
+        PriceList.objects.filter(product_number_ir=product_number_ir).delete()
         return HttpResponse('OK')
+
+# endregion
+
+# region Charts
 
 class ChartView(View):
     def post(self, request, *args, **kwargs):
@@ -172,3 +245,20 @@ class ItemListView(View):
 
         # Return the list of output_values as a JSON response
         return JsonResponse(response_data, safe=False)
+
+# endregion 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

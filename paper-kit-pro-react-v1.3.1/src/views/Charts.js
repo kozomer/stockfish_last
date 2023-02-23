@@ -216,9 +216,6 @@ if (result && result.date_list && result.output_value_list && result.product_nam
                 /> 
               <CardHeader>
                 <CardTitle>SALES</CardTitle>
-                {result["product_name"] && (
-                  <p className="card-category">{result["product_name"]}</p>
-                )}
               </CardHeader>
               <CardBody>
                 

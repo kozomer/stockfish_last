@@ -68,3 +68,15 @@ class Warehouse(models.Model):
     title = models.CharField(max_length=200)
     unit = models.CharField(max_length=50)
     stock = models.FloatField(null=True, blank=True)
+
+class PriceList(models.Model):
+    group = models.CharField(max_length=255)
+    subgroup = models.CharField(max_length=255)
+    feature = models.CharField(max_length=255)
+    product_number_ir = models.IntegerField(unique= True)
+    product_number_tr = models.FloatField()
+    description_tr = models.CharField(max_length=400)
+    description_ir = models.CharField(max_length=400)
+    unit = models.CharField(max_length=255)
+    unit_secondary = models.CharField(max_length=255)
+    dollar = models.FloatField()
