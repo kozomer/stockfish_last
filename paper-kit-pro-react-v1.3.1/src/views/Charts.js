@@ -216,14 +216,11 @@ if (result && result.date_list && result.output_value_list && result.product_nam
                 /> 
               <CardHeader>
                 <CardTitle>SALES</CardTitle>
-<<<<<<< HEAD
                 {/* {result["product_name"] && (
                   <p className="card-category">{result["product_name"]}</p>
                 )}
                  */}
                
-=======
->>>>>>> 739dccb287b0a99e14e80e12f3ce7b200e0d8ed4
               </CardHeader>
               <CardBody>
                 
