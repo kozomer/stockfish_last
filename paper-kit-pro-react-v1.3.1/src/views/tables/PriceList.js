@@ -167,7 +167,7 @@ const DataTable = () => {
           >
             <Card >
               <CardHeader>
-                <CardTitle tag='h4'>SALES</CardTitle>
+                <CardTitle tag='h4'>PRICE LIST</CardTitle>
               </CardHeader>
               <CardBody >
 
