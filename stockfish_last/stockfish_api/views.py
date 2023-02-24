@@ -42,12 +42,12 @@ class DeleteCustomerView(View):
 class EditCustomerView(View):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
-        customer_code = data.get('customer_code')
-        customer = Customers.objects.get(customer_code=customer_code)
+        old_customer_code = data.get('old_customer_code')
+        customer = Customers.objects.get(customer_code=old_customer_code)
 
         # Check if new customer_code value is unique
         new_customer_code = data.get('new_customer_code')
-        if new_customer_code and new_customer_code != customer_code:
+        if new_customer_code and new_customer_code != old_customer_code:
             if Customers.objects.filter(customer_code=new_customer_code).exists():
                 error_message = f"The customer code '{new_customer_code}' already exists in the database."
                 return HttpResponseBadRequest(error_message)
@@ -135,14 +135,14 @@ class DeleteSaleView(View):
 class EditSaleView(View):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
-        no = data.get('no')
-        sale = Sales.objects.get(no=no)
+        old_no = data.get('old_no')
+        sale = Sales.objects.get(no=old_no)
 
         # Check if new customer_code value is unique
         new_no = data.get('new_no')
         new_original_output_value = data.get('new_original_output_value')
-        original_output_value = data.get('original_output_value')
-        if new_no and new_no != no:
+        old_original_output_value = data.get('old_original_output_value')
+        if new_no and new_no != old_no:
             if Sales.objects.filter(no=new_no).exists():
                 error_message = f"The sale no '{new_no}' already exists in the database."
                 return HttpResponseBadRequest(error_message)
@@ -193,7 +193,7 @@ class EditSaleView(View):
         sale.save()
         try:
             warehouse_item = Warehouse.objects.get(product_code=sale.good_code)
-            output_change = original_output_value-new_original_output_value
+            output_change = old_original_output_value-new_original_output_value
             warehouse_item.stock += float(output_change)
             warehouse_item.save()
         except Warehouse.DoesNotExist:
@@ -234,12 +234,12 @@ class DeleteWarehouseView(View):
 class EditWarehouseView(View):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
-        product_code = data.get('product_code')
-        warehouse_item = Warehouse.objects.get(product_code=product_code)
+        old_product_code = data.get('old_product_code')
+        warehouse_item = Warehouse.objects.get(product_code=old_product_code)
 
         # Check if new product_code value is unique
         new_product_code = data.get('new_product_code')
-        if new_product_code and new_product_code != product_code:
+        if new_product_code and new_product_code != old_product_code:
             if Warehouse.objects.filter(product_code=new_product_code).exists():
                 error_message = f"The product code '{new_product_code}' already exists in the warehouse."
                 return HttpResponseBadRequest(error_message)
@@ -302,12 +302,12 @@ class DeleteProductView(View):
 class EditProductView(View):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
-        product_code_ir = data.get('product_code_ir')
-        product = Products.objects.get(product_code_ir=product_code_ir)
+        old_product_code_ir = data.get('old_product_code_ir')
+        product = Products.objects.get(product_code_ir=old_product_code_ir)
 
         # Check if new product_code_ir value is unique
         new_product_code_ir = data.get('new_product_code_ir')
-        if new_product_code_ir and new_product_code_ir != product_code_ir:
+        if new_product_code_ir and new_product_code_ir != old_product_code_ir:
             if Products.objects.filter(product_code_ir=new_product_code_ir).exists():
                 error_message = f"The product code '{new_product_code_ir}' already exists in the database."
                 return HttpResponseBadRequest(error_message)
