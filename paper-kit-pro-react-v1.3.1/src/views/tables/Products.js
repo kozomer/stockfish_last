@@ -215,6 +215,7 @@ const DataTable = () => {
   setCurrency(row.currency);
   setPrice(row.price);
       setShowPopup(!showPopup);
+      console.log(row)
     };
 
 
@@ -265,6 +266,7 @@ const DataTable = () => {
 
     const handleCancel = () => {
       setShowPopup(false);
+      setEditData(null)
     };
 
     useEffect(() => {
@@ -470,7 +472,8 @@ const DataTable = () => {
                     actions: (
                       <div className='actions-left'>
                        
-                        <Button
+                         <Button
+                          disabled={showPopup}
                           onClick={() => {
                             // Enable edit mode
                             
@@ -490,7 +493,7 @@ const DataTable = () => {
     
     
                           <Button
-
+                            
                             onClick={() => {
                               
                                warningWithConfirmAndCancelMessage() 
