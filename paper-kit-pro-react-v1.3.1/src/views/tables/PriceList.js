@@ -186,18 +186,18 @@ const DataTable = () => {
       console.log("e")
       
       const updatedData = {
-        group,
-        subgroup,
-        feature,
-        productIR,
-        productTR,
-        descriptionTR,
-        descriptionIR,
-        unit,
-        secondaryUnit,
-        weight,
-        currency,
-        price,
+        group:group,
+        subgroup:subgroup,
+        feature:feature,
+        product_code_ir:productIR,
+        product_code_tr:productTR,
+        description_tr:descriptionTR,
+        description_ir:descriptionIR,
+        unit:unit,
+        unit_secondary:secondaryUnit,
+        weight:weight,
+        currency:currency,
+        price:price,
       };
       console.log(updatedData)
       fetch('http://127.0.0.1:8000/edit_products/', {
@@ -272,6 +272,15 @@ const DataTable = () => {
               onChange={(e) => setProductTR(e.target.value)}
             />
           </FormGroup>
+
+          <label>Currency</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={currency}
+              onChange={(e) => setCurrency(e.target.value)}
+            />
+          </FormGroup>
         </div>
 
         <div className="form-group-col">
@@ -320,14 +329,7 @@ const DataTable = () => {
             />
           </FormGroup>
 
-          <label>Currency</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-            />
-          </FormGroup>
+          
 
           <label>Price</label>
           <FormGroup>
