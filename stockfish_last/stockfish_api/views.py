@@ -181,6 +181,7 @@ class DeleteProductView(View):
 
 class EditProductView(View):
     def post(self, request, *args, **kwargs):
+        print(request.body)
         data = json.loads(request.body)
         print(data)
         product_code_ir = data.get('product_code_ir')
