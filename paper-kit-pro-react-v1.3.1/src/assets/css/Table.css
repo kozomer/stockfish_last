@@ -76,6 +76,7 @@
   }
 }
 
+/* PopUp */
 .popup {
   width:500px;
   position: fixed;
@@ -89,4 +90,19 @@
   width: 45%; /* adjust as needed */
   margin-right: 5%; /* adjust as needed */
   vertical-align: top;
+}
+
+
+.popup .card-footer {
+  display: flex;
+  justify-content: space-between;
+}
+
+.popup .card-footer button {
+  margin-right: 10px;
+}
+
+.popup .card-footer button:last-child {
+  margin-right: 0;
+  margin-left: auto;
 }
