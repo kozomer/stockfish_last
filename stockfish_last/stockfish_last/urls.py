@@ -15,11 +15,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from stockfish_api.views import (ViewCustomersView, AddCustomersView, 
-                                   AddSalesView, AddProductsView, ViewSalesView, AddWarehouseView, ViewWarehouseView, ViewProductsView,
-                                       DeleteSaleView, DeleteCustomerView, DeleteProductView, ChartView, ItemListView,
-                                       EditProductView
-                                    )
+from stockfish_api.views import (ViewCustomersView, AddCustomersView, AddSalesView, AddProductsView, AddWarehouseView,
+                                 ViewSalesView,  ViewWarehouseView, ViewProductsView, ChartView, ItemListView,
+                                 DeleteSaleView, DeleteCustomerView, DeleteProductView, 
+                                 EditProductView
+                                 )
 
 
 urlpatterns = [
