@@ -32,6 +32,7 @@ const DataTable = () => {
   const [currency, setCurrency] = useState(null);
   const [price, setPrice] = useState(null);
 
+  const [oldData, setOldData] = useState(null);
 
   React.useEffect(() => {
     return function cleanup() {
@@ -199,6 +200,9 @@ const DataTable = () => {
     const handleClick = (row) => {
       console.log(row)
       setEditData(row);
+      setOldData(row);
+      console.log("old data:",oldData[0])
+
       setGroup(row.group);
   setSubgroup(row.subgroup);
   setFeature(row.feature);
@@ -217,7 +221,7 @@ const DataTable = () => {
 
     const handleSubmit = (e) => {
       console.log("e")
-      
+      console.log(oldData)
       const updatedData = {
         new_group:group,
         new_subgroup:subgroup,
@@ -231,6 +235,19 @@ const DataTable = () => {
         new_weight:weight,
         new_currency:currency,
         new_price:price,
+
+        old_group:oldData[0],
+        old_subgroup:oldData[1],
+        old_feature:oldData[2],
+        old_product_code_ir:oldData[3],
+        old_product_code_tr:oldData[4],
+        old_description_tr:oldData[5],
+        old_description_ir:oldData[6],
+        old_unit:oldData[7],
+        old_unit_secondary:oldData[8],
+        old_weight:oldData[9],
+        old_currency:oldData[10],
+        old_price:oldData[11],
       };
       console.log(updatedData)
       fetch('http://127.0.0.1:8000/edit_products/', {
@@ -459,8 +476,7 @@ const DataTable = () => {
                             // Enable edit mode
                             
                            {handleClick(row)}
-                           const oldData = {...row};
-                           console.log(oldData)
+                           
                           
                           }}
                           
