@@ -18,7 +18,7 @@ from django.urls import path
 from stockfish_api.views import (ViewCustomersView, AddCustomersView, AddSalesView, AddProductsView, AddWarehouseView,
                                  ViewSalesView,  ViewWarehouseView, ViewProductsView, ChartView, ItemListView,
                                  DeleteSaleView, DeleteCustomerView, DeleteProductView, 
-                                 EditProductView
+                                 EditProductView, EditCustomerView, EditSaleView, EditWarehouseView
                                  )
 
 
@@ -46,4 +46,7 @@ urlpatterns = [
     path('item_list_filter/', ItemListView.as_view(), name='item_list_filter'),
 
     path('edit_products/', EditProductView.as_view(), name='edit_product'),
+    path('edit_customers/', EditCustomerView.as_view(), name='edit_customer'),
+    path('edit_sales/', EditSaleView.as_view(), name='edit_sale'),
+    path('edit_warehouse/', EditWarehouseView.as_view(), name='edit_warehouse'),
 ]
