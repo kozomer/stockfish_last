@@ -2,7 +2,7 @@ from django.shortcuts import render
 import pandas as pd
 from .models import Customers, Products, Sales, Warehouse, ROP
 from django.views import View
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
 import json
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
@@ -37,6 +37,33 @@ class DeleteCustomerView(View):
     def post(self, request, *args, **kwargs):
         customer_code = request.POST.get('customer_code')
         Customers.objects.filter(customer_code=customer_code).delete()
+        return HttpResponse('OK')
+
+class EditCustomerView(View):
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body)
+        customer_code = data.get('customer_code')
+        customer = Customers.objects.get(customer_code=customer_code)
+
+        # Check if new customer_code value is unique
+        new_customer_code = data.get('new_customer_code')
+        if new_customer_code and new_customer_code != customer_code:
+            if Customers.objects.filter(customer_code=new_customer_code).exists():
+                error_message = f"The customer code '{new_customer_code}' already exists in the database."
+                return HttpResponseBadRequest(error_message)
+            else:
+                customer.customer_code = new_customer_code
+
+        # Update other customer fields
+        customer.description = data.get('new_description')
+        customer.quantity = data.get('new_quantity')
+        customer.area_code = data.get('new_area_code')
+        customer.code = data.get('new_code')
+        customer.city = data.get('new_city')
+        customer.area = data.get('new_area')
+
+        customer.save()
+        
         return HttpResponse('OK')
 
 
@@ -105,6 +132,76 @@ class DeleteSaleView(View):
             warehouse_item = None
         return HttpResponse('OK')
 
+class EditSaleView(View):
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body)
+        no = data.get('no')
+        sale = Sales.objects.get(no=no)
+
+        # Check if new customer_code value is unique
+        new_no = data.get('new_no')
+        new_original_output_value = data.get('new_original_output_value')
+        original_output_value = data.get('original_output_value')
+        if new_no and new_no != no:
+            if Sales.objects.filter(no=new_no).exists():
+                error_message = f"The sale no '{new_no}' already exists in the database."
+                return HttpResponseBadRequest(error_message)
+            else:
+                sale.no = new_no
+
+        # Update other sale fields
+        sale.bill_number = data.get('new_bill_number')
+        sale.date = data.get('new_date')
+        sale.psr = data.get('new_psr')
+        sale.customer_code = data.get('new_customer_code')
+        sale.name = data.get('new_name')
+        sale.area = data.get('new_area')
+        sale.group = data.get('new_group')
+        sale.good_code = data.get('new_good_code')
+        sale.goods = data.get('new_goods')
+        sale.unit = data.get('new_unit')
+        sale.original_value = data.get('new_original_value')
+        sale.original_output_value = data.get('new_original_output_value')
+        sale.secondary_output_value = data.get('new_secondary_output_value')
+        sale.price = data.get('new_price')
+        sale.original_price = data.get('new_original_price')
+        sale.discount_percentage = data.get('new_discount_percentage')
+        sale.amount_sale = data.get('new_amount_sale')
+        sale.discount = data.get('new_discount')
+        sale.additional_sales = data.get('new_additional_sales')
+        sale.net_sales = data.get('new_net_sales')
+        sale.discount_percentage_2 = data.get('new_discount_percentage_2')
+        sale.real_discount_percentage = data.get('new_real_discount_percentage')
+        sale.payment_cash = data.get('new_payment_cash')
+        sale.payment_check = data.get('new_payment_check')
+        sale.balance = data.get('new_balance')
+        sale.saler = data.get('new_saler')
+        sale.currency = data.get('new_currency')
+        sale.dollar = data.get('new_dollar')
+        sale.manager_rating = data.get('new_manager_rating')
+        sale.senior_saler = data.get('new_senior_saler')
+        sale.tot_monthly_sales = data.get('new_tot_monthly_sales')
+        sale.receipment = data.get('new_receipment')
+        sale.ct = data.get('new_ct')
+        sale.payment_type = data.get('new_payment_type')
+        sale.customer_size = data.get('new_customer_size')
+        sale.saler_factor = data.get('new_saler_factor')
+        sale.prim_percentage = data.get('new_prim_percentage')
+        sale.bonus_factor = data.get('new_bonus_factor')
+        sale.bonus = data.get('new_bonus')
+
+        sale.save()
+        try:
+            warehouse_item = Warehouse.objects.get(product_code=sale.good_code)
+            output_change = original_output_value-new_original_output_value
+            warehouse_item.stock += float(output_change)
+            warehouse_item.save()
+        except Warehouse.DoesNotExist:
+            warehouse_item = None
+
+        
+        return HttpResponse('OK')
+
 # endregion
 
 # region Warehouse
@@ -132,6 +229,29 @@ class DeleteWarehouseView(View):
     def post(self, request, *args, **kwargs):
         product_code = request.POST.get('product_code')
         Warehouse.objects.filter(product_code=product_code).delete()
+        return HttpResponse('OK')
+
+class EditWarehouseView(View):
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body)
+        product_code = data.get('product_code')
+        warehouse_item = Warehouse.objects.get(product_code=product_code)
+
+        # Check if new product_code value is unique
+        new_product_code = data.get('new_product_code')
+        if new_product_code and new_product_code != product_code:
+            if Warehouse.objects.filter(product_code=new_product_code).exists():
+                error_message = f"The product code '{new_product_code}' already exists in the warehouse."
+                return HttpResponseBadRequest(error_message)
+            else:
+                warehouse_item.product_code = new_product_code
+
+        # Update other warehouse_item fields
+        warehouse_item.title = data.get('title')
+        warehouse_item.unit = data.get('unit')
+        warehouse_item.stock = data.get('stock')
+
+        warehouse_item.save()
         return HttpResponse('OK')
 
 
@@ -181,25 +301,31 @@ class DeleteProductView(View):
 
 class EditProductView(View):
     def post(self, request, *args, **kwargs):
-        print(request.body)
         data = json.loads(request.body)
-        print(data)
         product_code_ir = data.get('product_code_ir')
-        print(product_code_ir)
         product = Products.objects.get(product_code_ir=product_code_ir)
 
-        product.group = request.POST.get('group')
-        product.subgroup = request.POST.get('subgroup')
-        product.feature = request.POST.get('feature')
-        #product_code_ir için exception
-        product.product_code_tr = request.POST.get('product_code_tr')
-        product.description_tr = request.POST.get('description_tr')
-        product.description_ir = request.POST.get('description_ir')
-        product.unit = request.POST.get('unit')
-        product.unit_secondary = request.POST.get('unit_secondary')
-        product.weight = request.POST.get('weight')
-        product.currency = request.POST.get('currency')
-        product.price = request.POST.get('price')
+        # Check if new product_code_ir value is unique
+        new_product_code_ir = data.get('new_product_code_ir')
+        if new_product_code_ir and new_product_code_ir != product_code_ir:
+            if Products.objects.filter(product_code_ir=new_product_code_ir).exists():
+                error_message = f"The product code '{new_product_code_ir}' already exists in the database."
+                return HttpResponseBadRequest(error_message)
+            else:
+                product.product_code_ir = new_product_code_ir
+
+        # Update other product fields
+        product.group = data.get('new_group')
+        product.subgroup = data.get('new_subgroup')
+        product.feature = data.get('new_feature')
+        product.product_code_tr = data.get('new_product_code_tr')
+        product.description_tr = data.get('new_description_tr')
+        product.description_ir = data.get('new_description_ir')
+        product.unit = data.get('new_unit')
+        product.unit_secondary = data.get('new_unit_secondary')
+        product.weight = data.get('new_weight')
+        product.currency = data.get('new_currency')
+        product.price = data.get('new_price')
         product.save()
         return HttpResponse('OK')
 
