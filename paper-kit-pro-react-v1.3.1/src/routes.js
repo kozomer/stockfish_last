@@ -30,7 +30,7 @@ import Notifications from "views/components/Notifications.js";
 import Panels from "views/components/Panels.js";
 import ReactTables from "views/tables/ReactTables.js";
 import CustomerTables from "views/tables/Customers.js";
-import Goods from "views/tables/Goods.js";
+import Bonus from "views/tables/Bonus.js";
 import Sales from "views/tables/Sales.js";
 import Warehouse from "views/tables/Warehouse.js";
 import Products from "views/tables/Products.js";
@@ -226,10 +226,10 @@ const routes = [
         layout: "/admin"
       },
       {
-        path: "/goods-tables",
-        name: "Goods Table",
-        mini: "GT",
-        component: Goods,
+        path: "/bonus-tables",
+        name: "Bonus",
+        mini: "B",
+        component:Bonus,
         layout: "/admin"
       },
       {

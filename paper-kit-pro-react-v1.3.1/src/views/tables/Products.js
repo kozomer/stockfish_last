@@ -198,11 +198,10 @@ const DataTable = () => {
 
 
     const handleClick = (row) => {
-      console.log(row)
+     
       setEditData(row);
       setOldData(row);
-      console.log("old data:",oldData[0])
-
+      
       setGroup(row.group);
   setSubgroup(row.subgroup);
   setFeature(row.feature);
