@@ -1,6 +1,6 @@
 from django.shortcuts import render
 import pandas as pd
-from .models import Customers, Products, Sales, Warehouse, ROP
+from .models import Customers, Products, Sales, Warehouse, ROP, Salers
 from django.views import View
 from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
 import json
@@ -433,6 +433,45 @@ def create_rop_for_warehouse(sender, instance, created, **kwargs):
             )
         rop.save()
 # endregion
+
+# region Saler
+class AddSalerView(View):
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body)
+        saler = Salers(
+                    name = data.get("name"),
+                    job_start_date = data.get("job_start_date"),
+                    manager_performance_rating = data.get("manager_performance_rating"),
+                    experience_rating = data.get("experience_rating"),#will be calculated!!!!!!!!!!!!!!!!!!!!!!
+                    monthly_total_sales_rating = data.get("monthly_total_sales_rating"),#will be calculated!!!!!!!!!!!!!!!!!!!!!!
+                    receipment_rating = data.get("receipment_rating"),#will be calculated!!!!!!!!!!!!!!!!!!!!!!
+                    is_active = data.get("is_active")
+                )
+        saler.save()
+
+class CollapsedSalerView(View):
+    def get(self, request, *args, **kwargs):
+        salers = Salers.objects.values().all()
+        salers_list = [[saler['id'], saler['name']] for saler in salers]
+        return JsonResponse(salers_list, safe=False)
+
+    
+    
+class SalerView(View):
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body)
+        id = data.get('id')
+        saler = Salers.objects.filter(id=id)
+        response_data = {'id': id , 'name': saler.name, 'job_start_date': saler.job_start_date, 'manager_performance_rating': saler.manager_performance_rating,
+                          'experience_rating': saler.experience_rating, 'monthly_total_sales_rating': saler.monthly_total_sales_rating, 'receipment_rating':saler.receipment_rating,
+                          'is_active': saler.is_active}
+        # Return the list of output_values as a JSON response
+        return JsonResponse(response_data, safe=False)
+
+
+
+# endregion
+
 
 
 

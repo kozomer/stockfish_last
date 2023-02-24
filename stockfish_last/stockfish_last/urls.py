@@ -15,8 +15,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from stockfish_api.views import (ViewCustomersView, AddCustomersView, AddSalesView, AddProductsView, AddWarehouseView,
-                                 ViewSalesView,  ViewWarehouseView, ViewProductsView, ChartView, ItemListView,
+from stockfish_api.views import ( AddCustomersView, AddSalesView, AddProductsView, AddWarehouseView, AddSalerView,
+                                 ViewSalesView,  ViewWarehouseView, ViewProductsView, ChartView, ItemListView, ViewCustomersView, CollapsedSalerView, SalerView,
                                  DeleteSaleView, DeleteCustomerView, DeleteProductView, 
                                  EditProductView, EditCustomerView, EditSaleView, EditWarehouseView
                                  )
@@ -29,6 +29,7 @@ urlpatterns = [
     path('add_warehouse/', AddWarehouseView.as_view(), name='add_warehouse'),
     path('add_sales/', AddSalesView.as_view(), name='add_sales'),
     path('add_products/',AddProductsView.as_view(), name='add_pricelists'),
+    path('add_salers/',AddSalerView.as_view(), name='add_salers'),
 
     path('customers/', ViewCustomersView.as_view(), name='view_customers'),
     #path('goods/', ViewGoodsView.as_view(), name='view_goods'),
@@ -36,6 +37,8 @@ urlpatterns = [
     path('warehouse/', ViewWarehouseView.as_view(), name='view_warehouse'),
     path('charts/', ChartView.as_view(), name='view_charts'),
     path('products/', ViewProductsView.as_view(), name='view_pricelists'),
+    path('salers/', SalerView.as_view(), name='view_saler'),
+    path('collapsed_salers/', CollapsedSalerView.as_view(), name='view_saler_collapsed'),
 
     #path('delete_goods/',  DeleteGoodView.as_view(), name='delete_goods'),
     path('delete_sales/',  DeleteSaleView.as_view(), name='delete_sales'),
@@ -49,4 +52,5 @@ urlpatterns = [
     path('edit_customers/', EditCustomerView.as_view(), name='edit_customer'),
     path('edit_sales/', EditSaleView.as_view(), name='edit_sale'),
     path('edit_warehouse/', EditWarehouseView.as_view(), name='edit_warehouse'),
+
 ]

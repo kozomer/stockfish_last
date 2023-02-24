@@ -127,3 +127,13 @@ class ROP(models.Model):
 
     def __str__(self):
         return self.product_code_ir
+
+class Salers(models.Model):
+    #saler_code = models.IntegerField(unique= True)
+    name = models.CharField(max_length=200)
+    job_start_date = models.DateField(null=True)
+    manager_performance_rating = models.FloatField(null=True)
+    experience_rating = models.FloatField(null=True)
+    monthly_total_sales_rating = models.FloatField(null=True)
+    receipment_rating = models.FloatField(null=True)
+    is_active = models.BooleanField(default=True)
