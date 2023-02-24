@@ -33,7 +33,7 @@ import CustomerTables from "views/tables/Customers.js";
 import Goods from "views/tables/Goods.js";
 import Sales from "views/tables/Sales.js";
 import Warehouse from "views/tables/Warehouse.js";
-import Pricelist from "views/tables/PriceList.js";
+import Products from "views/tables/Products.js";
 
 import Register from "views/pages/Register.js";
 import RegularForms from "views/forms/RegularForms.js";
@@ -247,10 +247,10 @@ const routes = [
         layout: "/admin"
       },
       {
-        path: "/pricelist-tables",
-        name: "Price List Table",
-        mini: "PLT",
-        component: Pricelist,
+        path: "/products-tables",
+        name: "Products Table",
+        mini: "PT",
+        component: Products,
         layout: "/admin"
       },
     ]

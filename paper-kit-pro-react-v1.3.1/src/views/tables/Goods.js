@@ -116,7 +116,7 @@ const DataTable = () => {
                           onClick={() => {
                             if (window.confirm('Are you sure you want to delete this row?')) {
                               const updatedDataTable = dataTable.find((o) => o.id == row.id);
-                              console.log(updatedDataTable[0]);
+                              console.log(updatedDataTable);
                               const data = { product_code: updatedDataTable[0] };
                               fetch(`http://127.0.0.1:8000/delete_goods/`, {
                                 method: 'POST',

@@ -16,7 +16,7 @@ const DataTable = () => {
   const [deleteData, setDeleteData] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
   const [editData, setEditData] = useState(null);
-
+  const [isUpdated, setIsUpdated] = useState(false);
 
   //Edit Variables
   const [group, setGroup] = useState(null);
@@ -141,6 +141,25 @@ const DataTable = () => {
       </ReactBSAlert>
     );
   };
+  const successEdit = () => {
+    setAlert(
+      <ReactBSAlert
+        success
+        style={{ display: "block", marginTop: "-100px" }}
+        title="Saved!"
+        onConfirm={() => {
+          hideAlert()
+          setShowPopup(false)}
+        }
+        onCancel={() => hideAlert()}
+        confirmBtnBsStyle="info"
+        btnSize=""
+      >
+        Your edit has been successfully saved.
+      </ReactBSAlert>
+    );
+  };
+
   const cancelDelete = () => {
     setAlert(
       <ReactBSAlert
@@ -176,8 +195,22 @@ const DataTable = () => {
       }
     }, [deleteConfirm]);
 
-    const handleClick = () => {
-      console.log("sda")
+
+    const handleClick = (row) => {
+      console.log(row)
+      setEditData(row);
+      setGroup(row.group);
+  setSubgroup(row.subgroup);
+  setFeature(row.feature);
+  setProductIR(row.product_code_ir);
+  setProductTR(row.product_code_tr);
+  setDescriptionTR(row.description_tr);
+  setDescriptionIR(row.description_ir);
+  setUnit(row.unit);
+  setSecondaryUnit(row.unit_secondary);
+  setWeight(row.weight);
+  setCurrency(row.currency);
+  setPrice(row.price);
       setShowPopup(!showPopup);
     };
 
@@ -186,18 +219,18 @@ const DataTable = () => {
       console.log("e")
       
       const updatedData = {
-        group:group,
-        subgroup:subgroup,
-        feature:feature,
-        product_code_ir:productIR,
-        product_code_tr:productTR,
-        description_tr:descriptionTR,
-        description_ir:descriptionIR,
-        unit:unit,
-        unit_secondary:secondaryUnit,
-        weight:weight,
-        currency:currency,
-        price:price,
+        new_group:group,
+        new_subgroup:subgroup,
+        new_feature:feature,
+        new_product_code_ir:productIR,
+        new_product_code_tr:productTR,
+        new_description_tr:descriptionTR,
+        new_description_ir:descriptionIR,
+        new_unit:unit,
+        new_unit_secondary:secondaryUnit,
+        new_weight:weight,
+        new_currency:currency,
+        new_price:price,
       };
       console.log(updatedData)
       fetch('http://127.0.0.1:8000/edit_products/', {
@@ -208,16 +241,43 @@ const DataTable = () => {
       },
       credentials: 'include'
     })
+    setEditData(updatedData);
+    successEdit()
+
       // Call your Django API to send the updated values here
     };
 
+    const handleCancel = () => {
+      setShowPopup(false);
+    };
+
+    useEffect(() => {
+      console.log("useEffect called")
+      if(editData){
+        
+          setGroup(editData[0]);
+          setSubgroup(editData[1]);
+          setFeature(editData[2]);
+          setProductIR(editData[3]);
+          setProductTR(editData[4]);
+          setDescriptionTR(editData[5]);
+          setDescriptionIR(editData[6]);
+          setUnit(editData[7]);
+          setSecondaryUnit(editData[8]);
+          setWeight(editData[9]);
+          setCurrency(editData[10]);
+          setPrice(editData[11]);
+          setIsUpdated(true)
+      }
+    }, [editData])
+    
   return (
     <>
       <div className='content'>
       {alert}
 
     {/* Pop Up */}
-      {showPopup &&
+      {showPopup && isUpdated &&(
        <div className="popup">
       <Card>
             <CardHeader>
@@ -329,8 +389,6 @@ const DataTable = () => {
             />
           </FormGroup>
 
-          
-
           <label>Price</label>
           <FormGroup>
             <Input
@@ -347,20 +405,20 @@ const DataTable = () => {
                 <Button className="btn-round" color="info" type="submit" onClick={handleSubmit}>
                   Submit
                 </Button>
-                <Button className="btn-round" color="info" type="submit">
+                <Button className="btn-round" color="warning" type="submit"  onClick={handleCancel}>
                   Cancel
                 </Button>
               </CardFooter>
             </Card>
             </div>
-}
+)}
 
         <Row>
           <Col
           >
             <Card >
               <CardHeader>
-                <CardTitle tag='h4'>PRICE LIST</CardTitle>
+                <CardTitle tag='h4'>PRODUCTS</CardTitle>
               </CardHeader>
               <CardBody >
 
@@ -400,23 +458,10 @@ const DataTable = () => {
                           onClick={() => {
                             // Enable edit mode
                             
-                           {handleClick()}
-                           const oldData = dataTable.find((o) => o.id == row.id);
-                           setEditData(oldData)
-
-                           setGroup(editData[0])
-                           setSubgroup(editData[1])
-                           setFeature(editData[2])
-                           setProductIR(editData[3])
-                           setProductTR(editData[4])
-                           setDescriptionTR(editData[5])
-                           setDescriptionIR(editData[6])
-                           setUnit(editData[7])
-                           setSecondaryUnit(editData[8])
-                           setWeight(editData[9])
-                           setCurrency(editData[10])
-                           setPrice(editData[11])
-                         
+                           {handleClick(row)}
+                           const oldData = {...row};
+                           console.log(oldData)
+                          
                           }}
                           
                           color='warning'
@@ -434,9 +479,9 @@ const DataTable = () => {
                             onClick={() => {
                               
                                warningWithConfirmAndCancelMessage() 
-                               const updatedDataTable = dataTable.find((o) => o.id == row.id);
+                               const rowToDelete = {...row};
                                const data = {
-                                product_code_ir: updatedDataTable[3],
+                                product_code_ir: rowToDelete[3],
 
                               };
                               setDeleteData(data);

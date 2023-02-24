@@ -129,9 +129,10 @@ const DataTable = () => {
                         <Button
                           onClick={() => {
                             if (window.confirm('Are you sure you want to delete this row?')) {
-                              const updatedDataTable = dataTable.find((o) => o.id === row.id);
-                              console.log(updatedDataTable);
-                              const data = { customer_code: updatedDataTable[0] };
+                              const rowToDelete = {...row};
+                             
+                              console.log(rowToDelete);
+                              const data = { customer_code: rowToDelete[0] };
                               fetch(`http://127.0.0.1:8000/delete_customers/`, {
                                 method: 'POST',
                                 body: new URLSearchParams(data),
