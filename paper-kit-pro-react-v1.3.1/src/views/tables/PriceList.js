@@ -202,7 +202,10 @@ const DataTable = () => {
       console.log(updatedData)
       fetch('http://127.0.0.1:8000/edit_products/', {
       method: 'POST',
-      body: updatedData,
+      body: JSON.stringify(updatedData),
+      headers: {
+        'Content-Type': 'application/json'
+      },
       credentials: 'include'
     })
       // Call your Django API to send the updated values here
@@ -222,118 +225,120 @@ const DataTable = () => {
             </CardHeader>
             <CardBody>
               <Form onSubmit={handleSubmit}>
-                <label>Group</label>
-                <FormGroup>
-                  <Input
-                    name="group"
-                    type="text"
-                    defaultValue={group}
-                    onChange={(e) => setGroup(e.target.value)}
-                  />
-                </FormGroup>
+              <div>
+        <div className="form-group-col">
+          <label>Group</label>
+          <FormGroup>
+            <Input
+              name="group"
+              type="text"
+              defaultValue={group}
+              onChange={(e) => setGroup(e.target.value)}
+            />
+          </FormGroup>
 
-                <label>Subgroup</label>
-                <FormGroup>
-                  <Input
-                    type="text"
-                    defaultValue={subgroup}
-                    onChange={(e) => setSubgroup(e.target.value)}
-                  />
-                </FormGroup>
+          <label>Subgroup</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={subgroup}
+              onChange={(e) => setSubgroup(e.target.value)}
+            />
+          </FormGroup>
 
-                <label>Feature</label>
-                <FormGroup>
-                  <Input
-                    type="text"
-                    defaultValue={feature}
-                    onChange={(e) => setFeature(e.target.value)}
-                  />
-                </FormGroup>
+          <label>Feature</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={feature}
+              onChange={(e) => setFeature(e.target.value)}
+            />
+          </FormGroup>
 
-                <label>Product Number(IR)</label>
-                <FormGroup>
-                  <Input
-                    type="text"
-                    defaultValue={productIR}
-                    onChange={(e) => setProductIR(e.target.value)}
-                  />
-                </FormGroup>
+          <label>Product Number(IR)</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={productIR}
+              onChange={(e) => setProductIR(e.target.value)}
+            />
+          </FormGroup>
 
-                <label>Product Number(TR)</label>
-                <FormGroup>
-                  <Input
-                    type="text"
-                    defaultValue={productTR}
-                    onChange={(e) => setProductTR(e.target.value)}
-                  />
-                </FormGroup>
+          <label>Product Number(TR)</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={productTR}
+              onChange={(e) => setProductTR(e.target.value)}
+            />
+          </FormGroup>
+        </div>
 
-                <label>Description(TR)</label>
-                <FormGroup>
-                  <Input
-                    type="text"
-                    defaultValue={descriptionTR}
-                    onChange={(e) => setDescriptionTR(e.target.value)}
-                  />
-                </FormGroup>
+        <div className="form-group-col">
+          <label>Description(TR)</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={descriptionTR}
+              onChange={(e) => setDescriptionTR(e.target.value)}
+            />
+          </FormGroup>
 
-                <label>Description(IR)</label>
-                <FormGroup>
-                  <Input
-                    type="text"
-                    defaultValue={descriptionIR}
-                    onChange={(e) => setDescriptionIR(e.target.value)}
-                  />
-                </FormGroup>
+          <label>Description(IR)</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={descriptionIR}
+              onChange={(e) => setDescriptionIR(e.target.value)}
+            />
+          </FormGroup>
 
-                <label>Unit</label>
-                <FormGroup>
-                  <Input
-                    type="text"
-                    defaultValue={unit}
-                    onChange={(e) => setUnit(e.target.value)}
-                  />
-                </FormGroup>
+          <label>Unit</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={unit}
+              onChange={(e) => setUnit(e.target.value)}
+            />
+          </FormGroup>
 
-                <label>Secondary Unit</label>
-                <FormGroup>
-                  <Input
-                    type="text"
-                    defaultValue={secondaryUnit}
-                    onChange={(e) => setSecondaryUnit(e.target.value)}
-                  />
-                </FormGroup>
+          <label>Secondary Unit</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={secondaryUnit}
+              onChange={(e) => setSecondaryUnit(e.target.value)}
+            />
+          </FormGroup>
 
-                <label>Weight</label>
-                <FormGroup>
-                  <Input
-                    type="text"
-                    defaultValue={weight}
-                    onChange={(e) => setWeight(e.target.value)}
-                  />
-                  
-                </FormGroup>
+          <label>Weight</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={weight}
+              onChange={(e) => setWeight(e.target.value)}
+            />
+          </FormGroup>
 
-                <label>Currency</label>
-                <FormGroup>
-                  <Input
-                    type="text"
-                    defaultValue={currency}
-                    onChange={(e) => setCurrency(e.target.value)}
-                  />
-                  
-                </FormGroup>
+          <label>Currency</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={currency}
+              onChange={(e) => setCurrency(e.target.value)}
+            />
+          </FormGroup>
 
-                <label>Price</label>
-                <FormGroup>
-                  <Input
-                    type="text"
-                    defaultValue={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                  />
-                  
-                </FormGroup>
-
+          <label>Price</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={price}
+              onChange={(e) => setPrice(e.target.value)}
+            />
+          </FormGroup>
+        </div>
+        </div>
               </Form>
             </CardBody>
               <CardFooter>
