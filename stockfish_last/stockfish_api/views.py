@@ -6,6 +6,7 @@ from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
 import json
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
+from .definitions import jalali_to_greg, greg_to_jalali
 
 
 
@@ -77,9 +78,10 @@ class AddSalesView(View):
             data = pd.read_excel(request.FILES['file'])
             for i, row in data.iterrows():
                 no = row["No"]
+                greg_date = jalali_to_greg(day=row["Day"],month=row["Month"] , year=row["Year"])
                 if Sales.objects.filter(no=no).exists():
                     continue
-                sale = Sales(no=no, bill_number=row["Bill Number"], date=row["Date"],
+                sale = Sales(no=no, bill_number=row["Bill Number"], date=greg_date,
                             psr=row["PSR"], customer_code=row["Customer Code"], name=row["Name"], area=row["Area"], group=row["Group"],
                             good_code=row["Good Code"], goods=row["Goods"], unit=row["Unit"], original_value=row["The Original Value"],
                             original_output_value=row["Original Output Value"], secondary_output_value=row["Secondary Output Value"],
@@ -106,7 +108,7 @@ class AddSalesView(View):
 class ViewSalesView(View):
     def get(self, request, *args, **kwargs):
         sales = Sales.objects.values().all()
-        sale_list = [[sale['no'], sale['bill_number'], sale['date'], sale['psr'], sale['customer_code'],
+        sale_list = [[sale['no'], sale['bill_number'], greg_to_jalali(day=sale['date'].day , month=sale['date'].month , year= sale['date'].year).strftime('%Y-%m-%d'), sale['psr'], sale['customer_code'],
                       sale['name'], sale['area'], sale['group'], sale['good_code'], sale['goods'], sale['unit'],
                       sale['original_value'], sale['original_output_value'], sale['secondary_output_value'],
                       sale['price'], sale['original_price'], sale['discount_percentage'], sale['amount_sale'],
@@ -142,6 +144,7 @@ class EditSaleView(View):
         new_no = data.get('new_no')
         new_original_output_value = data.get('new_original_output_value')
         old_original_output_value = data.get('old_original_output_value')
+        new_date = data.get('new_date').split("-")
         if new_no and new_no != old_no:
             if Sales.objects.filter(no=new_no).exists():
                 error_message = f"The sale no '{new_no}' already exists in the database."
@@ -151,7 +154,7 @@ class EditSaleView(View):
 
         # Update other sale fields
         sale.bill_number = data.get('new_bill_number')
-        sale.date = data.get('new_date')
+        sale.date = jalali_to_greg(day=new_date[2] , month=new_date[1], year=new_date[0])
         sale.psr = data.get('new_psr')
         sale.customer_code = data.get('new_customer_code')
         sale.name = data.get('new_name')
@@ -440,7 +443,7 @@ class AddSalerView(View):
         data = json.loads(request.body)
         saler = Salers(
                     name = data.get("name"),
-                    job_start_date = data.get("job_start_date"),
+                    job_start_date = data.get("job_start_date"),#will be converted from jalali to gregorian
                     manager_performance_rating = data.get("manager_performance_rating"),
                     experience_rating = data.get("experience_rating"),#will be calculated!!!!!!!!!!!!!!!!!!!!!!
                     monthly_total_sales_rating = data.get("monthly_total_sales_rating"),#will be calculated!!!!!!!!!!!!!!!!!!!!!!
