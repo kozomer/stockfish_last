@@ -71,6 +71,7 @@ const [bonus, setBonus] = useState(null);
     };
   }, []);
   useEffect(() => {
+   
     async function fetchData() {
       const response = await fetch('http://127.0.0.1:8000/sales/');
       const data = await response.json();
@@ -99,7 +100,7 @@ const [bonus, setBonus] = useState(null);
   const handleUploadClick = () => {
     const formData = new FormData();
     formData.append('file', file);
-    console.log(file)
+    
     fetch('http://127.0.0.1:8000/add_sales/', {
       method: 'POST',
       body: formData,
@@ -107,7 +108,7 @@ const [bonus, setBonus] = useState(null);
     })
       .then((response) => {
 
-        console.log(response);
+        
         alert('File uploaded successfully');
         fetch('http://127.0.0.1:8000/sales/')
           .then((response) => response.json())
@@ -117,7 +118,7 @@ const [bonus, setBonus] = useState(null);
    
       })
       .catch((error) => {
-        console.error(error);
+        
         alert('Error uploading file');
 
       });
@@ -125,7 +126,7 @@ const [bonus, setBonus] = useState(null);
   };
 
   const warningWithConfirmAndCancelMessage = () => {
-    console.log("sadsads"),
+    
     setAlert(
       
       <ReactBSAlert
@@ -152,7 +153,7 @@ const [bonus, setBonus] = useState(null);
     
   };
   useEffect(() => {
-    console.log(deleteConfirm)
+    
   },[deleteConfirm]);
 
   const successDelete = () => {
@@ -252,12 +253,11 @@ const [bonus, setBonus] = useState(null);
       setBonusFactor(row.bonus_factor);
       setBonus(row.bonus);
       setShowPopup(!showPopup);
-      console.log(row)
+      
     };
 
     const handleSubmit = (e) => {
-      console.log("e")
-      console.log(oldData)
+      
       const updatedData = {
         new_no: no,
         new_bill_number: billNumber,
@@ -341,7 +341,7 @@ const [bonus, setBonus] = useState(null);
         old_bonus_factor: oldData[38],
         old_bonus: oldData[39],
       };
-      console.log(updatedData)
+      
       fetch('http://127.0.0.1:8000/edit_sales/', {
       method: 'POST',
       body: JSON.stringify(updatedData),
@@ -362,7 +362,7 @@ const [bonus, setBonus] = useState(null);
     };
 
     useEffect(() => {
-      console.log("useEffect called")
+      
       if(editData){
         
         setNo(editData[0]);
@@ -905,11 +905,11 @@ const [bonus, setBonus] = useState(null);
                                const updatedDataTable = dataTable.find((o) => o.id == row.id);
                                const data = {
                                 no: updatedDataTable[0],
-                                good_code: updatedDataTable[10],
-                                original_output_value: updatedDataTable[14],
+                                good_code: updatedDataTable[8],
+                                original_output_value: updatedDataTable[12],
                               };
                               setDeleteData(data);
-                              console.log(deleteConfirm)
+                              
                               /*
                               if (deleteConfirm) {
                                 const updatedDataTable = dataTable.find((o) => o.id == row.id);

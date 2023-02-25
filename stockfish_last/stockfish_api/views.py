@@ -6,7 +6,7 @@ from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
 import json
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
-from .definitions import jalali_to_greg, greg_to_jalali
+from .definitions import jalali_to_greg, greg_to_jalali, calculate_experience_rating
 
 
 
@@ -154,7 +154,7 @@ class EditSaleView(View):
 
         # Update other sale fields
         sale.bill_number = data.get('new_bill_number')
-        sale.date = jalali_to_greg(day=new_date[2] , month=new_date[1], year=new_date[0])
+        sale.date = jalali_to_greg(day=int(new_date[2]) , month=int(new_date[1]), year=int(new_date[0]))
         sale.psr = data.get('new_psr')
         sale.customer_code = data.get('new_customer_code')
         sale.name = data.get('new_name')
@@ -441,11 +441,13 @@ def create_rop_for_warehouse(sender, instance, created, **kwargs):
 class AddSalerView(View):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
+        jalali_date = data.get("job_start_date").split("-")
+        greg_date = jalali_to_greg(day=int(jalali_date[2]) , month=int(jalali_date[1]), year=int(jalali_date[0]))
         saler = Salers(
                     name = data.get("name"),
-                    job_start_date = data.get("job_start_date"),#will be converted from jalali to gregorian
+                    job_start_date = greg_date,
                     manager_performance_rating = data.get("manager_performance_rating"),
-                    experience_rating = data.get("experience_rating"),#will be calculated!!!!!!!!!!!!!!!!!!!!!!
+                    experience_rating = calculate_experience_rating(greg_date),
                     monthly_total_sales_rating = data.get("monthly_total_sales_rating"),#will be calculated!!!!!!!!!!!!!!!!!!!!!!
                     receipment_rating = data.get("receipment_rating"),#will be calculated!!!!!!!!!!!!!!!!!!!!!!
                     is_active = data.get("is_active")
@@ -465,7 +467,8 @@ class SalerView(View):
         data = json.loads(request.body)
         id = data.get('id')
         saler = Salers.objects.filter(id=id)
-        response_data = {'id': id , 'name': saler.name, 'job_start_date': saler.job_start_date, 'manager_performance_rating': saler.manager_performance_rating,
+        jalali_date = greg_to_jalali(day=saler.job_start_date.day , month=saler.job_start_date.month , year= saler.job_start_date.year).strftime('%Y-%m-%d')
+        response_data = {'id': id , 'name': saler.name, 'job_start_date': jalali_date, 'manager_performance_rating': saler.manager_performance_rating,
                           'experience_rating': saler.experience_rating, 'monthly_total_sales_rating': saler.monthly_total_sales_rating, 'receipment_rating':saler.receipment_rating,
                           'is_active': saler.is_active}
         # Return the list of output_values as a JSON response
