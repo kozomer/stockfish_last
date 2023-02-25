@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Card, CardHeader, CardBody, CardTitle, Row, Col } from 'reactstrap';
+import { Button, Card, CardHeader, CardBody, CardTitle, Row, Col,Form, FormGroup, Label,CardFooter, Input} from 'reactstrap';
 import ReactTable from 'components/ReactTable/ReactTable.js';
 import '../../assets/css/Table.css';
 import ReactBSAlert from "react-bootstrap-sweetalert";
@@ -13,6 +13,54 @@ const DataTable = () => {
   const [alert, setAlert] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleteData, setDeleteData] = useState(null);
+  const [showPopup, setShowPopup] = useState(false);
+  const [editData, setEditData] = useState(null);
+  const [isUpdated, setIsUpdated] = useState(false);
+  const [renderEdit, setRenderEdit] = useState(false);
+  const [oldData, setOldData] = useState(null);
+
+//Variable Set
+const [no, setNo] = useState(null);
+const [billNumber, setBillNumber] = useState(null);
+const [date, setDate] = useState(null);
+const [psr, setPsr] = useState(null);
+const [customerCode, setCustomerCode] = useState(null);
+const [name, setName] = useState(null);
+const [area, setArea] = useState(null);
+const [group, setGroup] = useState(null);
+const [goodCode, setGoodCode] = useState(null);
+const [goods, setGoods] = useState(null);
+const [unit, setUnit] = useState(null);
+const [originalValue, setOriginalValue] = useState(null);
+const [originalOutputValue, setOriginalOutputValue] = useState(null);
+const [secondaryOutputValue, setSecondaryOutputValue] = useState(null);
+const [price, setPrice] = useState(null);
+const [originalPrice, setOriginalPrice] = useState(null);
+const [discountPercentage, setDiscountPercentage] = useState(null);
+const [amountSale, setAmountSale] = useState(null);
+const [discount, setDiscount] = useState(null);
+const [additionalSales, setAdditionalSales] = useState(null);
+const [netSales, setNetSales] = useState(null);
+const [discountPercentage2, setDiscountPercentage2] = useState(null);
+const [realDiscountPercentage, setRealDiscountPercentage] = useState(null);
+const [paymentCash, setPaymentCash] = useState(null);
+const [paymentCheck, setPaymentCheck] = useState(null);
+const [balance, setBalance] = useState(null);
+const [saler, setSaler] = useState(null);
+const [currency, setCurrency] = useState(null);
+const [dollar, setDollar] = useState(null);
+const [managerRating, setManagerRating] = useState(null);
+const [seniorSaler, setSeniorSaler] = useState(null);
+const [totMonthlySales, setTotMonthlySales] = useState(null);
+const [receipment, setReceipment] = useState(null);
+const [ct, setCt] = useState(null);
+const [paymentType, setPaymentType] = useState(null);
+const [costumerSize, setCostumerSize] = useState(null);
+const [salerFactor, setSalerFactor] = useState(null);
+const [primPercentage, setPrimPercentage] = useState(null);
+const [bonusFactor, setBonusFactor] = useState(null);
+const [bonus, setBonus] = useState(null);
+
 
   React.useEffect(() => {
     return function cleanup() {
@@ -28,9 +76,10 @@ const DataTable = () => {
       const data = await response.json();
       setDataTable(data);
       setDataChanged(false);
+      setRenderEdit(false)
     }
     fetchData();
-  }, [dataChanged]);
+  }, [dataChanged,renderEdit]);
 
   /*
   useEffect(() => {
@@ -157,6 +206,229 @@ const DataTable = () => {
     }, [deleteConfirm]);
   
 
+    const handleClick = (row) => {
+     
+      setEditData(row);
+      setOldData(row);
+
+      setNo(row.no);
+      setBillNumber(row.bill_number);
+      setDate(row.date);
+      setPsr(row.psr);
+      setCustomerCode(row.customer_code);
+      setName(row.name);
+      setArea(row.area);
+      setGroup(row.group);
+      setGoodCode(row.good_code);
+      setGoods(row.goods);
+      setUnit(row.unit);
+      setOriginalValue(row.original_value);
+      setOriginalOutputValue(row.original_output_value);
+      setSecondaryOutputValue(row.secondary_output_value);
+      setPrice(row.price);
+      setOriginalPrice(row.original_price);
+      setDiscountPercentage(row.discount_percentage);
+      setAmountSale(row.amount_sale);
+      setDiscount(row.discount);
+      setAdditionalSales(row.additional_sales);
+      setNetSales(row.net_sales);
+      setDiscountPercentage2(row.discount_percentage_2);
+      setRealDiscountPercentage(row.real_discount_percentage);
+      setPaymentCash(row.payment_cash);
+      setPaymentCheck(row.payment_check);
+      setBalance(row.balance);
+      setSaler(row.saler);
+      setCurrency(row.currency);
+      setDollar(row.dollar);
+      setManagerRating(row.manager_rating);
+      setSeniorSaler(row.senior_saler);
+      setTotMonthlySales(row.tot_monthly_sales);
+      setReceipment(row.receipment);
+      setCt(row.ct);
+      setPaymentType(row.payment_type);
+      setCostumerSize(row.costumer_size);
+      setSalerFactor(row.saler_factor);
+      setPrimPercentage(row.prim_percentage);
+      setBonusFactor(row.bonus_factor);
+      setBonus(row.bonus);
+      setShowPopup(!showPopup);
+      console.log(row)
+    };
+
+    const handleSubmit = (e) => {
+      console.log("e")
+      console.log(oldData)
+      const updatedData = {
+        new_no: no,
+        new_bill_number: billNumber,
+        new_date: date,
+        new_psr: psr,
+        new_customer_code: customerCode,
+        new_name: name,
+        new_area: area,
+        new_group: group,
+        new_good_code: goodCode,
+        new_goods: goods,
+        new_unit: unit,
+        new_original_value: originalValue,
+        new_original_output_value: originalOutputValue,
+        new_secondary_output_value: secondaryOutputValue,
+        new_price: price,
+        new_original_price: originalPrice,
+        new_discount_percentage: discountPercentage,
+        new_amount_sale: amountSale,
+        new_discount: discount,
+        new_additional_sales: additionalSales,
+        new_net_sales: netSales,
+        new_discount_percentage_2: discountPercentage2,
+        new_real_discount_percentage: realDiscountPercentage,
+        new_payment_cash: paymentCash,
+        new_payment_check: paymentCheck,
+        new_balance: balance,
+        new_saler: saler,
+        new_currency: currency,
+        new_dollar: dollar,
+        new_manager_rating: managerRating,
+        new_senior_saler: seniorSaler,
+        new_tot_monthly_sales: totMonthlySales,
+        new_receipment: receipment,
+        new_ct: ct,
+        new_payment_type: paymentType,
+        new_costumer_size: costumerSize,
+        new_saler_factor: salerFactor,
+        new_prim_percentage: primPercentage,
+        new_bonus_factor: bonusFactor,
+        new_bonus: bonus,
+
+        old_no: oldData[0],
+        old_bill_number: oldData[1],
+        old_date: oldData[2],
+        old_psr: oldData[3],
+        old_customer_code: oldData[4],
+        old_name: oldData[5],
+        old_area: oldData[6],
+        old_group: oldData[7],
+        old_good_code: oldData[8],
+        old_goods: oldData[9],
+        old_unit: oldData[10],
+        old_original_value: oldData[11],
+        old_original_output_value: oldData[12],
+        old_secondary_output_value: oldData[13],
+        old_price: oldData[14],
+        old_original_price: oldData[15],
+        old_discount_percentage: oldData[16],
+        old_amount_sale: oldData[17],
+        old_discount: oldData[18],
+        old_additional_sales: oldData[19],
+        old_net_sales: oldData[20],
+        old_discount_percentage_2: oldData[21],
+        old_real_discount_percentage: oldData[22],
+        old_payment_cash: oldData[23],
+        old_payment_check: oldData[24],
+        old_balance: oldData[25],
+        old_saler: oldData[26],
+        old_currency: oldData[27],
+        old_dollar: oldData[28],
+        old_manager_rating: oldData[29],
+        old_senior_saler: oldData[30],
+        old_tot_monthly_sales: oldData[31],
+        old_receipment: oldData[32],
+        old_ct: oldData[33],
+        old_payment_type: oldData[34],
+        old_costumer_size: oldData[35],
+        old_saler_factor: oldData[36],
+        old_prim_percentage: oldData[37],
+        old_bonus_factor: oldData[38],
+        old_bonus: oldData[39],
+      };
+      console.log(updatedData)
+      fetch('http://127.0.0.1:8000/edit_sales/', {
+      method: 'POST',
+      body: JSON.stringify(updatedData),
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include'
+    })
+    setEditData(updatedData);
+    successEdit()
+
+      // Call your Django API to send the updated values here
+    };
+
+    const handleCancel = () => {
+      setShowPopup(false);
+      setEditData(null)
+    };
+
+    useEffect(() => {
+      console.log("useEffect called")
+      if(editData){
+        
+        setNo(editData[0]);
+        setBillNumber(editData[1]);
+        setDate(editData[2]);
+        setPsr(editData[3]);
+        setCustomerCode(editData[4]);
+        setName(editData[5]);
+        setArea(editData[6]);
+        setGroup(editData[7]);
+        setGoodCode(editData[8]);
+        setGoods(editData[9]);
+        setUnit(editData[10]);
+        setOriginalValue(editData[11]);
+        setOriginalOutputValue(editData[12]);
+        setSecondaryOutputValue(editData[13]);
+        setPrice(editData[14]);
+        setOriginalPrice(editData[15]);
+        setDiscountPercentage(editData[16]);
+        setAmountSale(editData[17]);
+        setDiscount(editData[18]);
+        setAdditionalSales(editData[19]);
+        setNetSales(editData[20]);
+        setDiscountPercentage2(editData[21]);
+        setRealDiscountPercentage(editData[22]);
+        setPaymentCash(editData[23]);
+        setPaymentCheck(editData[24]);
+        setBalance(editData[25]);
+        setSaler(editData[26]);
+        setCurrency(editData[27]);
+        setDollar(editData[28]);
+        setManagerRating(editData[29]);
+        setSeniorSaler(editData[30]);
+        setTotMonthlySales(editData[31]);
+        setReceipment(editData[32]);
+        setCt(editData[33]);
+        setPaymentType(editData[34]);
+        setCostumerSize(editData[35]);
+        setSalerFactor(editData[36]);
+        setPrimPercentage(editData[37]);
+        setBonusFactor(editData[38]);
+        setBonus(editData[39]);
+          setIsUpdated(true)
+      }
+    }, [editData])
+    
+
+    const successEdit = () => {
+      setAlert(
+        <ReactBSAlert
+          success
+          style={{ display: "block", marginTop: "-100px" }}
+          title="Saved!"
+          onConfirm={() => {
+            hideAlert()
+            setShowPopup(false)}
+          }
+          onCancel={() => hideAlert()}
+          confirmBtnBsStyle="info"
+          btnSize=""
+        >
+          Your edit has been successfully saved.
+        </ReactBSAlert>
+      );
+      setRenderEdit(true)
+    };
   return (
     <>
       <div className='content'>
@@ -165,6 +437,379 @@ const DataTable = () => {
         <Row>
           <Col
           >
+            {/* Pop Up */}
+      {showPopup && isUpdated &&(
+       <div className="popup-sales">
+      <Card>
+            <CardHeader>
+              <CardTitle tag="h4">Edit Sales</CardTitle>
+            </CardHeader>
+            <CardBody>
+              <Form onSubmit={handleSubmit}>
+              <div>
+        <div className="form-group-col-sales">
+
+          <label>No</label>
+          <FormGroup>
+            <Input
+              name="no"
+              type="text"
+              defaultValue={no}
+              onChange={(e) => setNo(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Bill Number</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={billNumber}
+              onChange={(e) => setBillNumber(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Date</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={date}
+              onChange={(e) => setDate(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>PSR</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={psr}
+              onChange={(e) => setPsr(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Customer Code</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={customerCode}
+              onChange={(e) => setCustomerCode(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Name</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </FormGroup>
+        
+
+        
+          <label>Area</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={area}
+              onChange={(e) => setArea(e.target.value)}
+            />
+          </FormGroup>
+          </div>
+          <div className="form-group-col-sales">
+          <label>Group</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={group}
+              onChange={(e) => setGroup(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Good Code</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={goodCode}
+              onChange={(e) => setGoodCode(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Goods</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={unit}
+              onChange={(e) => setUnit(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Original Output Value</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={originalOutputValue}
+              onChange={(e) => setOriginalOutputValue(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Secondary Output Value</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={secondaryOutputValue}
+              onChange={(e) => setSecondaryOutputValue(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Price</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={price}
+              onChange={(e) => setPrice(e.target.value)}
+            />
+          </FormGroup>
+
+
+          <label>Original Price</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={originalPrice}
+              onChange={(e) => setOriginalPrice(e.target.value)}
+            />
+          </FormGroup>
+          </div>
+
+          <div className="form-group-col-sales">
+          <label>Amount Sale</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={amountSale}
+              onChange={(e) => setAmountSale(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Discount</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={discount}
+              onChange={(e) =>  setDiscount(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Additional Sales</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={additionalSales}
+              onChange={(e) =>  setAdditionalSales(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Net Sales</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={netSales}
+              onChange={(e) =>   setNetSales(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Discount Percentage(2)</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={discountPercentage2}
+              onChange={(e) => setDiscountPercentage2(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Real Discount Percentage</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={realDiscountPercentage}
+              onChange={(e) =>  setRealDiscountPercentage(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Payment Cash</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={paymentCash}
+              onChange={(e) =>  setPaymentCash(e.target.value)}
+            />
+          </FormGroup>
+          
+          <label>Payment Check</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={paymentCheck}
+              onChange={(e) =>   setPaymentCheck(e.target.value)}
+            />
+          </FormGroup>
+          </div>
+
+          <div className="form-group-col-sales">
+          <label>Balance</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={balance}
+              onChange={(e) =>   setBalance(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Set Saler</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={saler}
+              onChange={(e) =>   setSaler(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Currency</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={currency}
+              onChange={(e) =>   setCurrency(e.target.value)}
+            />
+          </FormGroup>,
+
+          <label>Dollar</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={dollar}
+              onChange={(e) =>   setDollar(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Manager Rating</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={managerRating}
+              onChange={(e) =>   setManagerRating(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Senior Saler</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={seniorSaler}
+              onChange={(e) =>   setSeniorSaler(e.target.value)}
+            />
+          </FormGroup>
+          
+          <label>Total Monthly Sales</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={totMonthlySales}
+              onChange={(e) =>   setTotMonthlySales(e.target.value)}
+            />
+          </FormGroup>
+          </div>
+
+          <div className="form-group-col-sales">
+          <label>Receipment</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={receipment}
+              onChange={(e) =>   setReceipment(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>CT</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={ct}
+              onChange={(e) =>   setCt(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Payment Type</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={paymentType}
+              onChange={(e) =>   setPaymentType(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Customer Size</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={costumerSize}
+              onChange={(e) => setCostumerSize(e.target.value)}
+            />
+          </FormGroup>
+          </div>
+
+          <div className="form-group-col-sales">
+          <label>Saler Factor</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={salerFactor}
+              onChange={(e) =>setSalerFactor(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Prim Percentage</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={primPercentage}
+              onChange={(e) =>setPrimPercentage(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Bonus Factor</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={bonusFactor}
+              onChange={(e) =>setBonusFactor(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Bonus</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={bonus}
+              onChange={(e) =>setBonus(e.target.value)}
+            />
+          </FormGroup>
+          </div>
+        </div>
+        
+              </Form>
+            </CardBody>
+              <CardFooter>
+                <Button className="btn-round" color="success" type="submit" onClick={handleSubmit}>
+                  Submit
+                </Button>
+                <Button className="btn-round" color="danger" type="submit"  onClick={handleCancel}>
+                  Cancel
+                </Button>
+              </CardFooter>
+            </Card>
+            </div>
+)}
             <Card >
               <CardHeader>
                 <CardTitle tag='h4'>SALES</CardTitle>
@@ -232,13 +877,16 @@ const DataTable = () => {
                     actions: (
                       <div className='actions-left'>
                        
-                        <Button
+                       <Button
+                          disabled={showPopup}
                           onClick={() => {
-                            let obj = dataTable.find((o) => o.id === key);
-                            alert(
-                              `You've clicked EDIT button on \n{ \nName: ${obj.customer_code}, \nDescription: ${obj.description}, \nQuantity: ${obj.quantity}, \nArea Code: ${obj.area_code}, \nCode: ${obj.code}, \nCity: ${obj.city}, \nArea: ${obj.area} \n}.`
-                            );
+                            // Enable edit mode
+                            
+                           {handleClick(row)}
+                           
+                          
                           }}
+                          
                           color='warning'
                           size='sm'
                           className='btn-icon btn-link edit'
@@ -250,7 +898,7 @@ const DataTable = () => {
     
     
                           <Button
-
+                              disabled={showPopup}
                             onClick={() => {
                               
                                warningWithConfirmAndCancelMessage() 

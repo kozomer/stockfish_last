@@ -14,7 +14,7 @@
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 */
-import React from "react";
+import React, {useState} from "react";
 
 // reactstrap components
 import {
@@ -28,117 +28,91 @@ import {
   Form,
   Input,
   Row,
-  Col
+  Col,
+  Label,
+  
 } from "reactstrap";
 
 function UserProfile() {
+    const [selectedMember, setSelectedMember] = useState(null);
+
+    const handleSelectMember = (member) => {
+      if (member === selectedMember) {
+        setSelectedMember(null);
+      } else {
+        setSelectedMember(member);
+      }
+    };
+  
+    const teamMembers = [
+      {
+        id: 1,
+        name: "DJ Khaled",
+        status: "Offline",
+        image: require("assets/img/faces/ayo-ogunseinde-2.jpg").default,
+      },
+      {
+        id: 2,
+        name: "Creative Tim",
+        status: "Available",
+        image: require("assets/img/faces/joe-gardner-2.jpg").default,
+      },
+      {
+        id: 3,
+        name: "Flume",
+        status: "Busy",
+        image: require("assets/img/faces/clem-onojeghuo-2.jpg").default,
+      },
+    ];
   return (
     <>
       <div className="content">
         <Row>
           <Col md="4">
-            <Card className="card-user">
-              
-              
-              
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle tag="h4">Team Members</CardTitle>
-              </CardHeader>
-              <CardBody>
-                <ul className="list-unstyled team-members">
-                  <li>
-                    <Row>
-                      <Col md="2" xs="2">
-                        <div className="avatar">
-                          <img
-                            alt="..."
-                            className="img-circle img-no-padding img-responsive"
-                            src={require("assets/img/faces/ayo-ogunseinde-2.jpg")}
-                          />
-                        </div>
-                      </Col>
-                      <Col md="7" xs="7">
-                        DJ Khaled <br />
-                        <span className="text-muted">
-                          <small>Offline</small>
-                        </span>
-                      </Col>
-                      <Col className="text-right" md="3" xs="3">
-                        <Button
-                          className="btn-round btn-icon"
-                          color="success"
-                          outline
-                          size="sm"
-                        >
-                          <i className="fa fa-envelope" />
-                        </Button>
-                      </Col>
-                    </Row>
-                  </li>
-                  <li>
-                    <Row>
-                      <Col md="2" xs="2">
-                        <div className="avatar">
-                          <img
-                            alt="..."
-                            className="img-circle img-no-padding img-responsive"
-                            src={require("assets/img/faces/joe-gardner-2.jpg")}
-                          />
-                        </div>
-                      </Col>
-                      <Col md="7" xs="7">
-                        Creative Tim <br />
-                        <span className="text-success">
-                          <small>Available</small>
-                        </span>
-                      </Col>
-                      <Col className="text-right" md="3" xs="3">
-                        <Button
-                          className="btn-round btn-icon"
-                          color="success"
-                          outline
-                          size="sm"
-                        >
-                          <i className="fa fa-envelope" />
-                        </Button>
-                      </Col>
-                    </Row>
-                  </li>
-                  <li>
-                    <Row>
-                      <Col md="2" xs="2">
-                        <div className="avatar">
-                          <img
-                            alt="..."
-                            className="img-circle img-no-padding img-responsive"
-                            src={require("assets/img/faces/clem-onojeghuo-2.jpg")}
-                          />
-                        </div>
-                      </Col>
-                      <Col className="col-ms-7" xs="7">
-                        Flume <br />
-                        <span className="text-danger">
-                          <small>Busy</small>
-                        </span>
-                      </Col>
-                      <Col className="text-right" md="3" xs="3">
-                        <Button
-                          className="btn-round btn-icon"
-                          color="success"
-                          outline
-                          size="sm"
-                        >
-                          <i className="fa fa-envelope" />
-                        </Button>
-                      </Col>
-                    </Row>
-                  </li>
-                </ul>
-              </CardBody>
-            </Card>
-          </Col>
+            
+          <Card>
+      <CardHeader>
+        <CardTitle tag="h4">Team Members</CardTitle>
+      </CardHeader>
+      <CardBody>
+        <ul className="list-unstyled team-members">
+          {teamMembers.map((member) => (
+            <li key={member.id}>
+              <Row>
+                <Col md="2" xs="2">
+                  <div className="avatar">
+                    <img
+                      alt="..."
+                      className="img-circle img-no-padding img-responsive"
+                      src={member.image}
+                    />
+                  </div>
+                </Col>
+                <Col md="7" xs="7">
+                  {member.name} <br />
+                  <span className="text-muted">
+                    <small>{member.status}</small>
+                  </span>
+                </Col>
+                <Col className="text-right" md="3" xs="3">
+                  <FormGroup check>
+                    <Label check>
+                      <Input
+                        type="checkbox"
+                        checked={selectedMember === member.id}
+                        onChange={() => handleSelectMember(member.id)}
+                      />
+                      <span className="form-check-sign" />
+                    </Label>
+                  </FormGroup>
+                </Col>
+              </Row>
+            </li>
+          ))}
+        </ul>
+      </CardBody>
+    </Card>
+  </Col>
           <Col md="8">
             <Card>
               <CardHeader>

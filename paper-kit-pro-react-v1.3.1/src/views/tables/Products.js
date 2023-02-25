@@ -17,6 +17,7 @@ const DataTable = () => {
   const [showPopup, setShowPopup] = useState(false);
   const [editData, setEditData] = useState(null);
   const [isUpdated, setIsUpdated] = useState(false);
+  const [renderEdit, setRenderEdit] = useState(false);
 
   //Edit Variables
   const [group, setGroup] = useState(null);
@@ -48,9 +49,10 @@ const DataTable = () => {
       const data = await response.json();
       setDataTable(data);
       setDataChanged(false);
+      setRenderEdit(false)
     }
     fetchData();
-  }, [dataChanged]);
+  }, [dataChanged,renderEdit]);
 
   /*
   useEffect(() => {
@@ -159,6 +161,7 @@ const DataTable = () => {
         Your edit has been successfully saved.
       </ReactBSAlert>
     );
+    setRenderEdit(true)
   };
 
   const cancelDelete = () => {
@@ -420,10 +423,10 @@ const DataTable = () => {
               </Form>
             </CardBody>
               <CardFooter>
-                <Button className="btn-round" color="info" type="submit" onClick={handleSubmit}>
+                <Button className="btn-round" color="success" type="submit" onClick={handleSubmit}>
                   Submit
                 </Button>
-                <Button className="btn-round" color="warning" type="submit"  onClick={handleCancel}>
+                <Button className="btn-round" color="danger" type="submit"  onClick={handleCancel}>
                   Cancel
                 </Button>
               </CardFooter>
@@ -493,7 +496,7 @@ const DataTable = () => {
     
     
                           <Button
-                            
+                            disabled={showPopup}
                             onClick={() => {
                               
                                warningWithConfirmAndCancelMessage() 

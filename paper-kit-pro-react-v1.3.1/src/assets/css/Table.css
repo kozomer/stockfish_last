@@ -92,6 +92,36 @@
   vertical-align: top;
 }
 
+/* Sales */
+.popup-sales {
+  width:1250px;
+  position: fixed;
+  top: 50%;
+  left: 60%;
+  transform: translate(-50%, -50%);
+  z-index: 100;
+}
+.form-group-col-sales{
+  display: inline-block;
+  width: 10%; /* adjust as needed */
+  margin-right: 5%; /* adjust as needed */
+  vertical-align: top;
+}
+.popup-sales .card-footer {
+  display: flex;
+  justify-content: space-between;
+}
+
+.popup-sales .card-footer button {
+  margin-right: 10px;
+}
+
+.popup-sales .card-footer button:last-child {
+  margin-right: 0;
+  margin-left: auto;
+}
+
+/* */
 
 .popup .card-footer {
   display: flex;
@@ -106,3 +136,5 @@
   margin-right: 0;
   margin-left: auto;
 }
+
+
