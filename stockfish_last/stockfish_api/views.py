@@ -201,6 +201,8 @@ class EditSaleView(View):
             warehouse_item.save()
         except Warehouse.DoesNotExist:
             warehouse_item = None
+        
+        
 
         
         return HttpResponse('OK')
@@ -461,7 +463,7 @@ class CollapsedSalerView(View):
         return JsonResponse(salers_list, safe=False)
 
     
-    
+ # Everyday experience rating must be automatically updated !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   
 class SalerView(View):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
@@ -473,6 +475,8 @@ class SalerView(View):
                           'is_active': saler.is_active}
         # Return the list of output_values as a JSON response
         return JsonResponse(response_data, safe=False)
+
+
 
 
 
