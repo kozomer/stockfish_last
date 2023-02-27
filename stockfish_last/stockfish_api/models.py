@@ -137,3 +137,15 @@ class Salers(models.Model):
     monthly_total_sales_rating = models.FloatField(null=True)
     receipment_rating = models.FloatField(null=True)
     is_active = models.BooleanField(default=True)
+
+class SalerPerformance(models.Model):
+    name = models.CharField(max_length=100)
+    year = models.IntegerField()
+    month = models.IntegerField()
+    sale = models.FloatField(default=0, null=True)
+
+class SaleSummary(models.Model):
+    year = models.IntegerField()
+    month = models.IntegerField()
+    day = models.IntegerField()
+    sale = models.FloatField(default=0, null=True)

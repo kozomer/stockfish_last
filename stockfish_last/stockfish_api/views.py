@@ -1,6 +1,6 @@
 from django.shortcuts import render
 import pandas as pd
-from .models import Customers, Products, Sales, Warehouse, ROP, Salers
+from .models import Customers, Products, Sales, Warehouse, ROP, Salers, SalerPerformance, SaleSummary
 from django.views import View
 from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
 import json
@@ -476,12 +476,72 @@ class SalerView(View):
         # Return the list of output_values as a JSON response
         return JsonResponse(response_data, safe=False)
 
+@receiver(post_save, sender=Sales)
+def update_saler_performance_with_add_sale(sender, instance, created, **kwargs):
+    if created:
+        # Get or create the SalerPerformance object
+        saler_performance, created = SalerPerformance.objects.get_or_create(
+            print(instance.saler),
+            name=instance.saler,
+            year=instance.date.year,
+            month=instance.date.month,
+        )
+
+        # Update the sale value for the SalerPerformance object
+        saler_performance.sale += instance.net_sales
+        saler_performance.save()
+
+@receiver(post_delete, sender=Sales)
+def update_saler_performance_with_delete_sale(sender, instance, **kwargs):
+    # Get the corresponding SalerPerformance object for the sale
+    performance, created = SalerPerformance.objects.get_or_create(
+        name=instance.saler, 
+        year=instance.date.year, 
+        month=instance.date.month,
+        )
+
+    # Subtract the net sale amount from the sale field
+    performance.sale -= instance.net_sales
+    performance.save()
+
 
 
 
 
 # endregion
 
+# region SaleSummary
+
+@receiver(post_save, sender=Sales)
+def update_sale_summary_with_add_sale(sender, instance, created, **kwargs):
+    if created:
+        # Get or create the SalerPerformance object
+        sale_summary, created = SaleSummary.objects.get_or_create(
+            year=instance.date.year,
+            month=instance.date.month,
+            day=instance.date.day
+        )
+
+        # Update the sale value for the SalerPerformance object
+        sale_summary.sale += instance.net_sales
+        sale_summary.save()
+
+@receiver(post_delete, sender=Sales)
+def update_sale_summary_with_delete_sale(sender, instance, created, **kwargs):
+    if created:
+        # Get or create the SalerPerformance object
+        sale_summary, created = SaleSummary.objects.get_or_create(
+            year=instance.date.year,
+            month=instance.date.month,
+            day=instance.date.day
+        )
+
+        # Update the sale value for the SalerPerformance object
+        sale_summary.sale -= instance.net_sales
+        sale_summary.save()
+
+
+# endregion
 
 
 
