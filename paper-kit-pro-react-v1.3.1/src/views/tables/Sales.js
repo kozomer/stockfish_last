@@ -75,6 +75,7 @@ const [bonus, setBonus] = useState(null);
       const response = await fetch('http://127.0.0.1:8000/sales/');
       const data = await response.json();
       setDataTable(data);
+      
       setDataChanged(false);
       setRenderEdit(false)
     }
@@ -252,12 +253,14 @@ const [bonus, setBonus] = useState(null);
       setBonusFactor(row.bonus_factor);
       setBonus(row.bonus);
       setShowPopup(!showPopup);
+      setIsUpdated(true)
       console.log(row)
     };
 
     const handleSubmit = (e) => {
       console.log("e")
       console.log(oldData)
+     
       const updatedData = {
         new_no: no,
         new_bill_number: billNumber,
@@ -902,11 +905,11 @@ const [bonus, setBonus] = useState(null);
                             onClick={() => {
                               
                                warningWithConfirmAndCancelMessage() 
-                               const updatedDataTable = dataTable.find((o) => o.id == row.id);
+                               const rowToDelete = {...row};
                                const data = {
-                                no: updatedDataTable[0],
-                                good_code: updatedDataTable[10],
-                                original_output_value: updatedDataTable[14],
+                                no: rowToDelete[0],
+                                good_code: rowToDelete[10],
+                                original_output_value: rowToDelete[14],
                               };
                               setDeleteData(data);
                               console.log(deleteConfirm)

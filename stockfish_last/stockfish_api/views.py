@@ -464,7 +464,9 @@ class SalerView(View):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
         id = data.get('id')
-        saler = Salers.objects.filter(id=id)
+        print(id)
+        saler = Salers.objects.get(id=id)
+        print(saler.job_start_date)
         response_data = {'id': id , 'name': saler.name, 'job_start_date': saler.job_start_date, 'manager_performance_rating': saler.manager_performance_rating,
                           'experience_rating': saler.experience_rating, 'monthly_total_sales_rating': saler.monthly_total_sales_rating, 'receipment_rating':saler.receipment_rating,
                           'is_active': saler.is_active}
