@@ -31,8 +31,9 @@ import {
   Col,
   Label,
 
-} from "reactstrap";
 
+} from "reactstrap";
+import Switch from "react-bootstrap-switch";
 import '../../assets/css/Table.css';
 
 function UserProfile() {
@@ -43,6 +44,16 @@ function UserProfile() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newSalerName, setNewSalerName] = useState("");
   const [newSalerStatus, setNewSalerStatus] = useState("");
+
+  const [jobStartDate, setJobStartDate] = useState(salersWholeData["job_start_date"]);
+  const [isActive, setIsActive] = useState(salersWholeData["is_active"]);
+  const [experienceRating, setExperienceRating] = useState(salersWholeData["experience_rating"]);
+  const [monthlyTotalSalesRating, setMonthlyTotalSalesRating] = useState(salersWholeData["monthly_total_sales_rating"]);
+  const [receipmentRating, setReceipmentRating] = useState(salersWholeData["receipment_rating"]);
+  const [managerPerformanceRating, setManagerPerformanceRating] = useState(salersWholeData["manager_performance_rating"]);
+
+  const [formData, setFormData] = useState({});
+  const [originalData, setOriginalData] = useState({});
 
   const handleSelectMember = (member) => {
 
@@ -72,8 +83,9 @@ function UserProfile() {
   const handleAddSaler = () => {
     const newSaler = {
       name: newSalerName,
-      status: newSalerStatus,
+      job_start_date: newSalerStatus,
     };
+    console.log(newSaler)
     fetch("http://127.0.0.1:8000/add_salers/", {
       method: "POST",
       body: JSON.stringify(newSaler),
@@ -92,14 +104,31 @@ function UserProfile() {
       .then(response => response.json())
       .then(data => {
         setSalers(data);
-        console.log(salers)
+        console.log(salers[3])
       })
       .catch(error => console.log(error));
 
 
   }, []);
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    // Update the form data with the new value
+    setFormData((prevFormData) => ({ ...prevFormData, [name]: value }));
+  };
 
+
+  const handleSave = () => {
+    // Create an object with the new data
+   
+
+    // Do something with the new data, e.g. send it to the server
+    // ...
+    const newData = { ...originalData, ...formData };
+    console.log(newData);
+    console.log('Old data:', salersWholeData);
+    
+  };
 
   /*
   const saler_id = {
@@ -118,6 +147,13 @@ function UserProfile() {
  
     })
     */
+
+
+    useEffect(() => {
+      // Create a copy of the original data to use as default values
+      setOriginalData(salersWholeData);
+      setFormData(salersWholeData);
+    }, [salersWholeData]);
   return (
     <>
       <div className="content">
@@ -126,18 +162,26 @@ function UserProfile() {
 
             <Card>
               <CardHeader>
-                <CardTitle tag="h4">Team Members</CardTitle>
+                <CardTitle tag="h4">Salers</CardTitle>
               </CardHeader>
               <CardBody>
+
                 <ul className="list-unstyled team-members">
                   {salers.map((saler) => (
                     <li key={saler[0]}>
                       <div className="mb-3">
                         <Row className="align-items-center" style={{ marginBottom: "10px" }}>
+                          <Col md="1" xs="1" className="d-flex justify-content-center">
+                            <div style={{ backgroundColor: saler[2] ? "green" : "red", width: "10px", height: "10px", borderRadius: "50%" }} />
+                          </Col>
                           <Col md="7" xs="7" className="text-right d-flex justify-content-center" style={{ marginRight: "10px" }}>
                             {saler[1]} <br />
                             <span className="text-muted">
-                              <small>{saler.status}</small>
+                              {saler[2] ? (
+                                <small style={{ marginLeft: "15px" }}>active</small>
+                              ) : (
+                                <small style={{ marginLeft: "15px" }}>inactive</small>
+                              )}
                             </span>
                           </Col>
                           <Col className="text-left d-flex justify-content-center" md="3" xs="3" style={{ marginBottom: "20px" }}>
@@ -159,18 +203,18 @@ function UserProfile() {
                     </li>
                   ))}
                   <li>
-                    <Row className="text-left d-flex justify-content-center" style={{ marginTop: "20px", paddingTop: "10px" }}>
+                    <Row className="text-left align-items-center" >
                       <Col md="2" xs="2">
-                        <div className="avatar">
+                        
                           <Button
-                            className="my-button-class"
-                            color="primary"
+                            className="btn-round"
+                            color="success"
                             onClick={() => setShowAddForm(true)}
-                            style={{ display: "flex", alignItems: "center", paddingTop: "30px" }} // added style here
+                            outline
                           >
                             <i className="nc-icon nc-simple-add" />
                           </Button>
-                        </div>
+                        
                       </Col>
                       <Col md="7" xs="7">
                         Add New Saler
@@ -192,7 +236,7 @@ function UserProfile() {
                             />
                           </FormGroup>
                           <FormGroup>
-                            <Label for="newSalerStatus">Job Start Date</Label>
+                            <Label for="newSalerStatus">Job Start Date (YYYY-MM-DD)</Label>
                             <Input
                               type="text"
                               id="newSalerStatus"
@@ -200,10 +244,10 @@ function UserProfile() {
                               onChange={(e) => setNewSalerStatus(e.target.value)}
                             />
                           </FormGroup>
-                          <Button color="success" onClick={handleAddSaler}>
+                          <Button className="btn-round" color="success" type="submit" onClick={handleAddSaler} disabled={!newSalerName || !newSalerStatus}>
                             Save
                           </Button>{" "}
-                          <Button color="secondary" onClick={() => setShowAddForm(false)}>
+                          <Button className="btn-round" color="danger" type="submit" onClick={() => setShowAddForm(false)}>
                             Cancel
                           </Button>
                         </Col>
@@ -224,12 +268,13 @@ function UserProfile() {
               <CardBody>
                 <Form>
                   <Row>
-
-                    <Col >
+                    <Col>
                       <FormGroup>
                         <label>Job Start Date</label>
                         <Input
-                          defaultValue={salersWholeData["job_start_date"]}
+                                defaultValue={salersWholeData["job_start_date"]}
+                            
+                          onChange={handleInputChange}
                           placeholder="Date"
                           type="text"
                         />
@@ -240,11 +285,11 @@ function UserProfile() {
                         <label>Activity</label>
                         <Input
                           defaultValue={salersWholeData["is_active"]}
+                          onChange={handleInputChange}
                           placeholder="Activity"
                           type="text"
                         />
                       </FormGroup>
-
                     </Col>
                   </Row>
                   <Row>
@@ -252,7 +297,8 @@ function UserProfile() {
                       <FormGroup>
                         <label>Experience Rating</label>
                         <Input
-                          defaultValue={salersWholeData["experience_rating"]}
+                         defaultValue={salersWholeData["experience_rating"]}
+                          onChange={handleInputChange}
                           placeholder="Exp. Rating"
                           type="text"
                         />
@@ -263,6 +309,7 @@ function UserProfile() {
                         <label>Monthly Total Sales Rating</label>
                         <Input
                           defaultValue={salersWholeData["monthly_total_sales_rating"]}
+                          onChange={handleInputChange}
                           placeholder="Mont. Tot. Sales Rating"
                           type="text"
                         />
@@ -275,6 +322,7 @@ function UserProfile() {
                         <label>Receipment Rating</label>
                         <Input
                           defaultValue={salersWholeData["receipment_rating"]}
+                          onChange={handleInputChange}
                           placeholder="Receipment Rating"
                           type="text"
                         />
@@ -284,16 +332,21 @@ function UserProfile() {
                   <Row>
                     <Col md="12">
                       <FormGroup>
-                        <label>
-                          M. Performance Rating
-                        </label>
-                        <Input placeholder="M.P.R" type="text" defaultValue={salersWholeData["manager_performance_rating"]} />
+                        <label>M. Performance Rating</label>
+                        <Input
+                          defaultValue={salersWholeData["manager_performance_rating"]}
+                          onChange={handleInputChange}
+                          placeholder="M.P.R"
+                          type="text"
+                        />
                       </FormGroup>
                     </Col>
-
                   </Row>
                 </Form>
               </CardBody>
+              <CardFooter>
+                <Button className="btn-round" color="success" type="submit" onClick={handleSave}>Save</Button>
+              </CardFooter>
             </Card>
           </Col>
         </Row>
