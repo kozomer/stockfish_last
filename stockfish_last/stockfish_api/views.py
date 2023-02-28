@@ -7,6 +7,8 @@ import json
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from .definitions import jalali_to_greg, greg_to_jalali, calculate_experience_rating
+from datetime import datetime
+from django.db.models import Sum
 
 
 
@@ -78,7 +80,7 @@ class AddSalesView(View):
             data = pd.read_excel(request.FILES['file'])
             for i, row in data.iterrows():
                 no = row["No"]
-                greg_date = jalali_to_greg(day=row["Day"],month=row["Month"] , year=row["Year"])
+                greg_date = jalali_to_greg(day=int(row["Day"]),month=int(row["Month"]) , year=int(row["Year"]))
                 if Sales.objects.filter(no=no).exists():
                     continue
                 sale = Sales(no=no, bill_number=row["Bill Number"], date=greg_date,
@@ -383,9 +385,10 @@ class ItemListView(View):
 @receiver(post_save, sender=Warehouse)
 def create_rop_for_warehouse(sender, instance, created, **kwargs):
     if created:
-        sales = Sales.objects.filter(good_code=instance.good_code)
-        product = Products.objects.filter(product_code_ir = instance.product_code)
-        rop = ROP(
+        sales = Sales.objects.filter(good_code=instance.product_code)
+        try:
+            product = Products.objects.get(product_code_ir = instance.product_code)
+            rop = ROP(
             group = product.group,
             subgroup = product.subgroup,
             feature = product.feature,
@@ -435,8 +438,14 @@ def create_rop_for_warehouse(sender, instance, created, **kwargs):
             calculated_need = None,
             calculated_max_stock = None,
             calculated_min_stock = None,
+            
             )
-        rop.save()
+            rop.save()
+
+        except Products.DoesNotExist:
+            pass
+        
+        
 # endregion
 
 # region Saler
@@ -459,7 +468,7 @@ class AddSalerView(View):
 class CollapsedSalerView(View):
     def get(self, request, *args, **kwargs):
         salers = Salers.objects.values().all()
-        salers_list = [[saler['id'], saler['name']] for saler in salers]
+        salers_list = [[saler['id'], saler['name'], saler['is_active']] for saler in salers]
         return JsonResponse(salers_list, safe=False)
 
     
@@ -512,6 +521,28 @@ def update_saler_performance_with_delete_sale(sender, instance, **kwargs):
 
 # region SaleSummary
 
+class SalesReportView(View):
+    def post(self, request, *args, **kwargs):
+        report_type = request.POST.get('report_type')
+        start_date = request.POST.get('start_date').split("-")
+        start_date_greg = jalali_to_greg(day= int(start_date[2]), month=int(start_date[1]), year=int(start_date[0]))
+        end_date = request.POST.get('end_date').split("-")
+        end_date_greg = jalali_to_greg(day= int(end_date[2]), month=int(end_date[1]), year=int(end_date[0]))
+
+        if report_type == 'daily':
+            data = SaleSummary.objects.filter(date__range = [start_date_greg, end_date_greg]).values('date').annotate(total_sales=Sum('sale')).order_by('date')
+        elif report_type == 'monthly':
+            data = SaleSummary.objects.filter(date__range = [start_date_greg, end_date_greg]).values('month', 'year').annotate(total_sales=Sum('sale')).order_by('year', 'month')
+            print("omer1")       
+        elif report_type == 'yearly':
+            data = SaleSummary.objects.filter(date__range = [start_date_greg, end_date_greg]).values('year').annotate(total_sales=Sum('sale')).order_by('year')
+            print("omer2")
+        else:
+            data = []
+
+        print({'data': list(data)})
+        return JsonResponse({'data': list(data)}, safe=False)
+
 @receiver(post_save, sender=Sales)
 def update_sale_summary_with_add_sale(sender, instance, created, **kwargs):
     if created:
@@ -519,7 +550,8 @@ def update_sale_summary_with_add_sale(sender, instance, created, **kwargs):
         sale_summary, created = SaleSummary.objects.get_or_create(
             year=instance.date.year,
             month=instance.date.month,
-            day=instance.date.day
+            day=instance.date.day,
+            date=instance.date,
         )
 
         # Update the sale value for the SalerPerformance object
@@ -534,6 +566,7 @@ def update_sale_summary_with_delete_sale(sender, instance, created, **kwargs):
             year=instance.date.year,
             month=instance.date.month,
             day=instance.date.day
+            
         )
 
         # Update the sale value for the SalerPerformance object
