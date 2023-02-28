@@ -148,4 +148,9 @@ class SaleSummary(models.Model):
     year = models.IntegerField()
     month = models.IntegerField()
     day = models.IntegerField()
+    date = models.DateField()
     sale = models.FloatField(default=0, null=True)
+
+
+
+

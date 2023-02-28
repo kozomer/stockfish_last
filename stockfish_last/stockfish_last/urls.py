@@ -16,7 +16,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from stockfish_api.views import ( AddCustomersView, AddSalesView, AddProductsView, AddWarehouseView, AddSalerView,
-                                 ViewSalesView,  ViewWarehouseView, ViewProductsView, ChartView, ItemListView, ViewCustomersView, CollapsedSalerView, SalerView,
+                                 ViewSalesView,  ViewWarehouseView, ViewProductsView, ChartView, ItemListView, ViewCustomersView, CollapsedSalerView, SalerView, SalesReportView,
                                  DeleteSaleView, DeleteCustomerView, DeleteProductView, 
                                  EditProductView, EditCustomerView, EditSaleView, EditWarehouseView
                                  )
@@ -47,6 +47,7 @@ urlpatterns = [
     
     path('item_list/',  ItemListView.as_view(), name='item_list'),
     path('item_list_filter/', ItemListView.as_view(), name='item_list_filter'),
+    path('sales_report/', SalesReportView.as_view(), name='sales_report'),
 
     path('edit_products/', EditProductView.as_view(), name='edit_product'),
     path('edit_customers/', EditCustomerView.as_view(), name='edit_customer'),
