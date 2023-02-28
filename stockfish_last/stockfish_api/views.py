@@ -448,10 +448,10 @@ class AddSalerView(View):
         saler = Salers(
                     name = data.get("name"),
                     job_start_date = greg_date,
-                    manager_performance_rating = data.get("manager_performance_rating"),
+                    manager_performance_rating = 1,
                     experience_rating = calculate_experience_rating(greg_date),
-                    monthly_total_sales_rating = data.get("monthly_total_sales_rating"),#will be calculated!!!!!!!!!!!!!!!!!!!!!!
-                    receipment_rating = data.get("receipment_rating"),#will be calculated!!!!!!!!!!!!!!!!!!!!!!
+                    monthly_total_sales_rating = 1,#will be calculated!!!!!!!!!!!!!!!!!!!!!!
+                    receipment_rating = 1,#will be calculated!!!!!!!!!!!!!!!!!!!!!!
                     is_active = data.get("is_active")
                 )
         saler.save()
