@@ -1,12 +1,12 @@
 from django.shortcuts import render
 import pandas as pd
-from .models import Customers, Products, Sales, Warehouse, ROP, Salers, SalerPerformance, SaleSummary
+from .models import Customers, Products, Sales, Warehouse, ROP, Salers, SalerPerformance, SaleSummary, SalerMonthlySaleRating
 from django.views import View
 from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
 import json
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
-from .definitions import jalali_to_greg, greg_to_jalali, calculate_experience_rating
+from .definitions import jalali_to_greg, greg_to_jalali, calculate_experience_rating, calculate_sale_rating
 from datetime import datetime
 from django.db.models import Sum
 
@@ -479,13 +479,13 @@ class CollapsedSalerView(View):
 class SalerView(View):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
-        print(data)
         id = data.get('id')
         saler = Salers.objects.get(id=id)
-        print(saler)
+        current_date = datetime.date.today()
+        monthly_sale_rating = SalerMonthlySaleRating.objects.get(name=saler.name, month= current_date.month, year= current_date.year )
         jalali_date = greg_to_jalali(day=saler.job_start_date.day , month=saler.job_start_date.month , year= saler.job_start_date.year).strftime('%Y-%m-%d')
         response_data = {'id': id , 'name': saler.name, 'job_start_date': jalali_date, 'manager_performance_rating': saler.manager_performance_rating,
-                          'experience_rating': saler.experience_rating, 'monthly_total_sales_rating': saler.monthly_total_sales_rating, 'receipment_rating':saler.receipment_rating,
+                          'experience_rating': saler.experience_rating, 'monthly_total_sales_rating': monthly_sale_rating, 'receipment_rating':saler.receipment_rating,
                           'is_active': saler.is_active}
         # Return the list of output_values as a JSON response
         return JsonResponse(response_data, safe=False)
@@ -516,6 +516,17 @@ def update_saler_performance_with_delete_sale(sender, instance, **kwargs):
     # Subtract the net sale amount from the sale field
     performance.sale -= instance.net_sales
     performance.save()
+
+@receiver(pre_save, sender=SalerPerformance)
+def update_month_sale_rating(sender, instance, **kwargs):
+    """
+    Signal handler function for updating the month_sale_rating field
+    of the SalerPerformance object based on the updated sale value.
+    """
+    # Calculate the sale rating based on the updated sale value
+    monthly_sale_rating = calculate_sale_rating(instance.name, instance.year, instance.month, instance.sale)
+    saler, created = SalerMonthlySaleRating.objects.get_or_create(name=instance.name, year=instance.year, month=instance.month)
+    saler.sale_rating = monthly_sale_rating
 
 
 
