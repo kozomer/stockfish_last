@@ -34,6 +34,7 @@ import Bonus from "views/tables/Bonus.js";
 import Sales from "views/tables/Sales.js";
 import Warehouse from "views/tables/Warehouse.js";
 import Products from "views/tables/Products.js";
+import SalesReport from "views/tables/SalesReport";
 
 import Register from "views/pages/Register.js";
 import RegularForms from "views/forms/RegularForms.js";
@@ -251,6 +252,13 @@ const routes = [
         name: "Products Table",
         mini: "PT",
         component: Products,
+        layout: "/admin"
+      },
+      {
+        path: "/sales-report",
+        name: "Sales Report",
+        mini: "SR",
+        component: SalesReport,
         layout: "/admin"
       },
     ]
