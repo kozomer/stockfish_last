@@ -538,17 +538,24 @@ def update_month_sale_rating(sender, instance, **kwargs):
 
 class SalesReportView(View):
     def post(self, request, *args, **kwargs):
-        report_type = request.POST.get('report_type')
-        start_date = request.POST.get('start_date').split("-")
+        data = json.loads(request.body)
+        report_type = data.get('report_type')
+        start_date =  data.get('start_date').split("-")
         start_date_greg = jalali_to_greg(day= int(start_date[2]), month=int(start_date[1]), year=int(start_date[0]))
-        end_date = request.POST.get('end_date').split("-")
+        end_date =  data.get('end_date').split("-")
         end_date_greg = jalali_to_greg(day= int(end_date[2]), month=int(end_date[1]), year=int(end_date[0]))
 
         if report_type == 'daily':
+            start_date_greg = jalali_to_greg(day= int(start_date[2]), month=int(start_date[1]), year=int(start_date[0]))
+            end_date_greg = jalali_to_greg(day= int(end_date[2]), month=int(end_date[1]), year=int(end_date[0]))
             data = SaleSummary.objects.filter(date__range = [start_date_greg, end_date_greg]).values('date').annotate(total_sales=Sum('sale')).order_by('date')
         elif report_type == 'monthly':
+            start_date_greg = jalali_to_greg(month=int(start_date[1]), year=int(start_date[0]))
+            end_date_greg = jalali_to_greg(month=int(end_date[1]), year=int(end_date[0]))
             data = SaleSummary.objects.filter(date__range = [start_date_greg, end_date_greg]).values('month', 'year').annotate(total_sales=Sum('sale')).order_by('year', 'month')
         elif report_type == 'yearly':
+            start_date_greg = jalali_to_greg(year=int(start_date[0]))
+            end_date_greg = jalali_to_greg(year=int(end_date[0]))
             data = SaleSummary.objects.filter(date__range = [start_date_greg, end_date_greg]).values('year').annotate(total_sales=Sum('sale')).order_by('year')
         else:
             data = []
