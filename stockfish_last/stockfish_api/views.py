@@ -527,11 +527,14 @@ def update_saler_performance_with_delete_sale(sender, instance, **kwargs):
 
 class SalesReportView(View):
     def post(self, request, *args, **kwargs):
-        report_type = request.POST.get('report_type')
-        start_date = request.POST.get('start_date').split("-")
+        data = json.loads(request.body)
+        report_type = data.get('report_type')
+        print(data)
+        start_date = data.get('start_date').split("-")
         start_date_greg = jalali_to_greg(day= int(start_date[2]), month=int(start_date[1]), year=int(start_date[0]))
-        end_date = request.POST.get('end_date').split("-")
+        end_date = data.get('end_date').split("-")
         end_date_greg = jalali_to_greg(day= int(end_date[2]), month=int(end_date[1]), year=int(end_date[0]))
+       
 
         if report_type == 'daily':
             data = SaleSummary.objects.filter(date__range = [start_date_greg, end_date_greg]).values('date').annotate(total_sales=Sum('sale')).order_by('date')

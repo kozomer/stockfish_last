@@ -18,7 +18,7 @@ from django.urls import path
 from stockfish_api.views import ( AddCustomersView, AddSalesView, AddProductsView, AddWarehouseView, AddSalerView,
                                  ViewSalesView,  ViewWarehouseView, ViewProductsView, ChartView, ItemListView, ViewCustomersView, CollapsedSalerView, SalerView, SalesReportView,
                                  DeleteSaleView, DeleteCustomerView, DeleteProductView, 
-                                 EditProductView, EditCustomerView, EditSaleView, EditWarehouseView
+                                 EditProductView, EditCustomerView, EditSaleView, EditWarehouseView, 
                                  )
 
 

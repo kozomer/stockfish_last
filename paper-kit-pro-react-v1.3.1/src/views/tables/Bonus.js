@@ -35,6 +35,7 @@ import {
 } from "reactstrap";
 import Switch from "react-bootstrap-switch";
 import '../../assets/css/Table.css';
+import ReactBSAlert from "react-bootstrap-sweetalert";
 
 function UserProfile() {
 
@@ -55,11 +56,13 @@ function UserProfile() {
   const [formData, setFormData] = useState({});
   const [originalData, setOriginalData] = useState({});
 
+  const [alert, setAlert] = useState(null);
+
   const handleSelectMember = (member) => {
 
     setSelectedSaler(member);
     const saler_id = {
-      id: selectedSaler
+      id: member
     };
     console.log(saler_id)
     fetch('http://127.0.0.1:8000/salers/', {
@@ -81,6 +84,7 @@ function UserProfile() {
   };
 
   const handleAddSaler = () => {
+    
     const newSaler = {
       name: newSalerName,
       job_start_date: newSalerStatus,
@@ -91,10 +95,14 @@ function UserProfile() {
       body: JSON.stringify(newSaler),
       credentials: "include",
     })
-      .then((response) => response.json())
+      .then((response) =>{
+         response.json();
+        successDelete()})
       .then((data) => {
+        
         setSalers(data);
         setShowAddForm(false);
+       
       });
   };
 
@@ -130,6 +138,49 @@ function UserProfile() {
     
   };
 
+  //delete
+  const warningWithConfirmAndCancelMessage = (id) => {
+    
+    setAlert(
+      
+      <ReactBSAlert
+        warning
+        style={{ display: "block", marginTop: "-100px" }}
+        title="Are you sure?"
+        onConfirm={() =>{ 
+        handleDeleteSaler(id)
+        successDelete()}}
+        onCancel={() => {
+          
+          cancelDelete()
+        }}
+        confirmBtnBsStyle="info"
+        cancelBtnBsStyle="danger"
+        confirmBtnText="Yes, delete it!"
+        cancelBtnText="Cancel"
+        showCancel
+        btnSize=""
+      >
+       Are you sure to delete this row?
+      </ReactBSAlert>
+    );
+    
+  };
+  const handleDeleteSaler = (id) => {
+    // Delete the saler with the given id
+  
+    fetch("http://127.0.0.1:8000/delete_saler/${id}/", {
+    method: "DELETE",
+    credentials: "include",
+    })
+    .then((response) => response.json())
+    .then((data) => {
+    setSalers(data);
+    successDelete();
+    })
+    .catch((error) => console.log(error));
+    };
+  
   /*
   const saler_id = {
     id:1
@@ -154,9 +205,31 @@ function UserProfile() {
       setOriginalData(salersWholeData);
       setFormData(salersWholeData);
     }, [salersWholeData]);
+
+    const successDelete = () => {
+      console.log("success")
+      setAlert(
+        <ReactBSAlert
+          success
+          style={{ display: "block", marginTop: "-100px" }}
+          title="Deleted!"
+          onConfirm={() => hideAlert()}
+          onCancel={() => hideAlert()}
+          confirmBtnBsStyle="info"
+          btnSize=""
+        >
+          Your row has been deleted.
+        </ReactBSAlert>
+      );
+    }
+
+    const hideAlert = () => {
+      setAlert(null);
+    };
   return (
     <>
       <div className="content">
+        {alert}
         <Row>
           <Col md="4">
 
@@ -195,6 +268,15 @@ function UserProfile() {
                                 <span className="form-check-sign" />
                               </Label>
                             </FormGroup>
+                            <Button
+                              className="btn-round btn-icon"
+                              color="danger"
+                              size="sm"
+                              onClick={() =>warningWithConfirmAndCancelMessage(saler[0])}
+                              outline
+                            >
+                              <i className="nc-icon nc-simple-remove" />
+                            </Button>
                           </Col>
                         </Row>
 
