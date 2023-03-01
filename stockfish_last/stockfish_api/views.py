@@ -533,10 +533,8 @@ class SalesReportView(View):
             data = SaleSummary.objects.filter(date__range = [start_date_greg, end_date_greg]).values('date').annotate(total_sales=Sum('sale')).order_by('date')
         elif report_type == 'monthly':
             data = SaleSummary.objects.filter(date__range = [start_date_greg, end_date_greg]).values('month', 'year').annotate(total_sales=Sum('sale')).order_by('year', 'month')
-            print("omer1")       
         elif report_type == 'yearly':
             data = SaleSummary.objects.filter(date__range = [start_date_greg, end_date_greg]).values('year').annotate(total_sales=Sum('sale')).order_by('year')
-            print("omer2")
         else:
             data = []
 

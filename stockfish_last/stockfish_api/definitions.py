@@ -3,14 +3,7 @@ from dateutil.relativedelta import relativedelta
 from datetime import datetime
 
 def jalali_to_greg(day,month,year):
-    print(type(day))
-    print(type(month))
-    print(type(year))
-    print(day)
-    print(month)
-    print(year)
     gregorian_date = jdatetime.date(year,month,day).togregorian()
-    print(gregorian_date)
     return gregorian_date
 
 def greg_to_jalali(day,month,year):
