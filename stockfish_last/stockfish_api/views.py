@@ -495,7 +495,6 @@ def update_saler_performance_with_add_sale(sender, instance, created, **kwargs):
     if created:
         # Get or create the SalerPerformance object
         saler_performance, created = SalerPerformance.objects.get_or_create(
-            print(instance.saler),
             name=instance.saler,
             year=instance.date.year,
             month=instance.date.month,
