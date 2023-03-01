@@ -8,6 +8,7 @@ from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
 from .definitions import jalali_to_greg, greg_to_jalali, calculate_experience_rating, calculate_sale_rating
 from datetime import datetime
+import datetime
 from django.db.models import Sum
 
 
@@ -482,7 +483,11 @@ class SalerView(View):
         id = data.get('id')
         saler = Salers.objects.get(id=id)
         current_date = datetime.date.today()
-        monthly_sale_rating = SalerMonthlySaleRating.objects.get(name=saler.name, month= current_date.month, year= current_date.year )
+        try:
+            saler_monthly_ratings = SalerMonthlySaleRating.objects.get(name=saler.name, month= current_date.month, year= current_date.year )
+            monthly_sale_rating = saler_monthly_ratings.sale_rating
+        except SalerMonthlySaleRating.DoesNotExist:
+            monthly_sale_rating = 1
         jalali_date = greg_to_jalali(day=saler.job_start_date.day , month=saler.job_start_date.month , year= saler.job_start_date.year).strftime('%Y-%m-%d')
         response_data = {'id': id , 'name': saler.name, 'job_start_date': jalali_date, 'manager_performance_rating': saler.manager_performance_rating,
                           'experience_rating': saler.experience_rating, 'monthly_total_sales_rating': monthly_sale_rating, 'receipment_rating':saler.receipment_rating,
