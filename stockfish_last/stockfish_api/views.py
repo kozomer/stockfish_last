@@ -452,6 +452,7 @@ def create_rop_for_warehouse(sender, instance, created, **kwargs):
 class AddSalerView(View):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
+        print(data)
         jalali_date = data.get("job_start_date").split("-")
         greg_date = jalali_to_greg(day=int(jalali_date[2]) , month=int(jalali_date[1]), year=int(jalali_date[0]))
         saler = Salers(
@@ -461,9 +462,11 @@ class AddSalerView(View):
                     experience_rating = calculate_experience_rating(greg_date),
                     monthly_total_sales_rating = 1,#will be calculated!!!!!!!!!!!!!!!!!!!!!!
                     receipment_rating = 1,#will be calculated!!!!!!!!!!!!!!!!!!!!!!
-                    is_active = data.get("is_active")
+                    is_active =  True,
                 )
+        print(saler)
         saler.save()
+        return HttpResponse("OK")
 
 class CollapsedSalerView(View):
     def get(self, request, *args, **kwargs):
@@ -476,8 +479,10 @@ class CollapsedSalerView(View):
 class SalerView(View):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
+        print(data)
         id = data.get('id')
-        saler = Salers.objects.filter(id=id)
+        saler = Salers.objects.get(id=id)
+        print(saler)
         jalali_date = greg_to_jalali(day=saler.job_start_date.day , month=saler.job_start_date.month , year= saler.job_start_date.year).strftime('%Y-%m-%d')
         response_data = {'id': id , 'name': saler.name, 'job_start_date': jalali_date, 'manager_performance_rating': saler.manager_performance_rating,
                           'experience_rating': saler.experience_rating, 'monthly_total_sales_rating': saler.monthly_total_sales_rating, 'receipment_rating':saler.receipment_rating,
