@@ -151,6 +151,18 @@ class SaleSummary(models.Model):
     date = models.DateField()
     sale = models.FloatField(default=0, null=True)
 
+class SalerMonthlySaleRating(models.Model):
+    year = models.IntegerField()
+    month = models.IntegerField()
+    name = models.CharField(max_length=100)
+    sale_rating = models.FloatField(default=1, null=True)
+
+class SalerReceipeRating(models.Model):
+    year = models.IntegerField()
+    month = models.IntegerField()
+    day = models.IntegerField()
+    sale_rating = models.FloatField(default=1, null=True)
+
 
 
 
