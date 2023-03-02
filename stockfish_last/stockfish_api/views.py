@@ -565,23 +565,20 @@ class SalesReportView(View):
             start_date = jdatetime.date(int(start_date[0]), int(start_date[1]), int(start_date[2]))
             end_date = jdatetime.date(int(end_date[0]), int(end_date[1]), int(end_date[2]))
             data = SaleSummary.objects.filter(date__range = [start_date, end_date]).values('date').annotate(total_sales=Sum('sale')).order_by('date')
-            dates = [d['date'].strftime('%Y-%m-%d') for d in data]
-            total_sales = [d['total_sales'] for d in data]
+            saler_report_list = [[d['date'].strftime('%Y-%m-%d'), d['total_sales']] for d in data]
         elif report_type == 'monthly':
             start_date = jdatetime.date(int(start_date[0]), int(start_date[1]), 1)
             end_date = jdatetime.date(int(end_date[0]), int(end_date[1]), 1)
             data = SaleSummary.objects.filter(date__range = [start_date, end_date]).values('date').annotate(total_sales=Sum('sale')).order_by('date')
-            dates = [d['date'].strftime('%Y-%m-%d') for d in data]
-            total_sales = [d['total_sales'] for d in data]
+            saler_report_list = [[d['date'].strftime('%Y-%m-%d'), d['total_sales']] for d in data]
         elif report_type == 'yearly':
             start_date = jdatetime.date(int(start_date[0]), 1, 1)
             end_date = jdatetime.date(int(end_date[0]), 1, 1)
             data = SaleSummary.objects.filter(date__range = [start_date, end_date]).values('date').annotate(total_sales=Sum('sale')).order_by('date')
-            dates = [d['date'].strftime('%Y-%m-%d') for d in data]
-            total_sales = [d['total_sales'] for d in data]
+            saler_report_list = [[d['date'].strftime('%Y-%m-%d'), d['total_sales']] for d in data]
         else:
             data = []
-        return JsonResponse({'dates': dates, 'total_sales': total_sales}, safe=False)
+        return JsonResponse(saler_report_list, safe=False)
 
 @receiver(post_save, sender=Sales)
 def update_sale_summary_with_add_sale(sender, instance, created, **kwargs):
