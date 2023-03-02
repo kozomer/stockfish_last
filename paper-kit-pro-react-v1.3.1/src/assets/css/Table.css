@@ -52,29 +52,23 @@
 
  
 }
-@media screen and (min-width: 701px) and (max-width: 1200px) {
-  /* Add styles for medium screens */
-  .top-left {
-    position: relative;
-  }
-  .pagination-top {
-    position: absolute;
-    top: 0;
-    margin-left: 300px;
-  }
+
+.pagination-top {
+  position: absolute;
+  top: -51px;
+  right: -150px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  width: 100%;
+  padding: 0 10px;
+  box-sizing: border-box;
 }
 
-@media screen and (max-width: 700px) {
-  /* Add styles for smaller screens */
-  .top-left {
-    position: relative;
-  }
-  .pagination-top {
-    position: absolute;
-    top: 0;
-    margin-left: 500px;
-  }
-}
+
+
+
+
 
 /* PopUp */
 .popup {
