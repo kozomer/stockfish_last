@@ -46,12 +46,7 @@ function UserProfile() {
   const [newSalerName, setNewSalerName] = useState("");
   const [newSalerStatus, setNewSalerStatus] = useState("");
 
-  const [jobStartDate, setJobStartDate] = useState(salersWholeData["job_start_date"]);
-  const [isActive, setIsActive] = useState(salersWholeData["is_active"]);
-  const [experienceRating, setExperienceRating] = useState(salersWholeData["experience_rating"]);
-  const [monthlyTotalSalesRating, setMonthlyTotalSalesRating] = useState(salersWholeData["monthly_total_sales_rating"]);
-  const [receipmentRating, setReceipmentRating] = useState(salersWholeData["receipment_rating"]);
-  const [managerPerformanceRating, setManagerPerformanceRating] = useState(salersWholeData["manager_performance_rating"]);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   const [formData, setFormData] = useState({});
   const [originalData, setOriginalData] = useState({});
@@ -104,6 +99,7 @@ function UserProfile() {
 
 
   function fetchSalersData() {
+    console.log("aaaaaaaaa")
     fetch('http://127.0.0.1:8000/collapsed_salers/')
       .then(response => response.json())
       .then(data => {
@@ -157,7 +153,7 @@ function UserProfile() {
         successDelete()}}
         onCancel={() => {
           
-          cancelDelete()
+          hideAlert()
         }}
         confirmBtnBsStyle="info"
         cancelBtnBsStyle="danger"
@@ -173,17 +169,27 @@ function UserProfile() {
   };
   const handleDeleteSaler = (id) => {
     // Delete the saler with the given id
-  
-    fetch("http://127.0.0.1:8000/delete_saler/${id}/", {
-    method: "DELETE",
-    credentials: "include",
+    console.log(id)
+    const delete_id={
+      id:id
+    }
+    fetch("http://127.0.0.1:8000/delete_saler/", {
+    method: "POST",
+    
+    body:JSON.stringify(delete_id),
+    credentials: "include"
+    
     })
-    .then((response) => response.json())
-    .then((data) => {
-    setSalers(data);
-    successDelete();
-    })
-    .catch((error) => console.log(error));
+    .then((response) => {
+      response.json()
+   
+      successDelete();
+      fetchSalersData();})
+    
+    
+    
+   
+    
     };
   
   /*
@@ -211,7 +217,7 @@ function UserProfile() {
       setFormData(salersWholeData);
     }, [salersWholeData]);
 
-    const successDelete = () => {
+    const successAdd = () => {
       console.log("success")
      
       setAlert(
@@ -223,6 +229,27 @@ function UserProfile() {
             handleAddSaler();
             hideAlert()
             setShowAddForm(false)}}
+          onCancel={() => hideAlert()}
+          confirmBtnBsStyle="info"
+          btnSize=""
+        >
+          Your saler has been successfully saved!
+        </ReactBSAlert>
+      );
+    }
+
+    
+    const successDelete = () => {
+      console.log("success")
+     
+      setAlert(
+        <ReactBSAlert
+          success
+          style={{ display: "block", marginTop: "-100px" }}
+          title="Deleted!"
+          onConfirm={() =>
+            hideAlert()
+            }
           onCancel={() => hideAlert()}
           confirmBtnBsStyle="info"
           btnSize=""
@@ -336,7 +363,7 @@ function UserProfile() {
                               onChange={(e) => setNewSalerStatus(e.target.value)}
                             />
                           </FormGroup>
-                          <Button className="btn-round" color="success" type="submit" onClick={successDelete} disabled={!newSalerName || !newSalerStatus}>
+                          <Button className="btn-round" color="success" type="submit" onClick={successAdd} disabled={!newSalerName || !newSalerStatus}>
                             Save
                           </Button>{" "}
                           <Button className="btn-round" color="danger" type="submit" onClick={() => setShowAddForm(false)}>

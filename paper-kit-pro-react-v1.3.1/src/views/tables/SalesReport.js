@@ -78,7 +78,8 @@ const [endDate, setEndDate] = useState("");
           }),
         });
         const data = await response.json();
-        setDataTable(data);
+        console.log(data)
+        //setDataTable(data);
         setDataChanged(false);
         setRenderEdit(false);
       };
@@ -129,18 +130,8 @@ const [endDate, setEndDate] = useState("");
                 <ReactTable
                   data={dataTable.map((row,index) => ({
                     id: row.id,
-                    group: row[0],
-                    subgroup: row[1],
-                    feature: row[2],
-                    product_code_ir: row[3],
-                    product_code_tr: row[4],
-                    description_tr: row[5],
-                    description_ir: row[6],
-                    unit: row[7],
-                    unit_secondary: row[8],
-                    weight: row[9],
-                    currency: row[10],
-                    price:row[11],
+                    total_sale: row[0],
+                 
 
                     actions: (
                       <div className='actions-left'>
@@ -228,51 +219,10 @@ const [endDate, setEndDate] = useState("");
 
                     },
                     {
-                      Header: 'Subgroup',
-                      accessor:  'subgroup'
-                    },
-                    {
-                      Header: 'Feature',
-                      accessor: 'feature'
+                      Header: 'Total Sale',
+                      accessor:  'total_sale'
                     },
                   
-                    {
-                      Header: 'Product Number(IR)',
-                      accessor: 'product_code_ir'
-                    },
-                    {
-                      Header: 'Product Number(TR)',
-                      accessor: 'product_code_tr'
-                    },
-                    {
-                      Header: 'Description(TR)',
-                      accessor: 'description_tr'
-                    },
-                    {
-                      Header: 'Description(IR)',
-                      accessor: 'description_ir'
-                    },
-                    {
-                      Header: 'Unit',
-                      accessor: 'unit'
-                    },
-                    {
-                      Header: 'Secondary Unit',
-                      accessor: 'unit_secondary'
-                    },
-                    {
-                      Header: 'Weight',
-                      accessor: 'weight'
-                    },
-                    
-                    {
-                      Header: 'Currency',
-                      accessor: 'currency'
-                    },
-                    {
-                      Header: 'Price',
-                      accessor: 'price'
-                    },
                     {
                       Header: 'Actions',
                       accessor: 'actions',

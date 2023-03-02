@@ -498,7 +498,9 @@ class SalerView(View):
 
 class DeleteSalerView(View):
     def post(self, request, *args, **kwargs):
-        id = request.POST.get('id')
+        data = json.loads(request.body)
+        id = data.get('id')
+        print(id)
         Salers.objects.get(id=id).delete()
         return HttpResponse('OK')
 
