@@ -79,7 +79,7 @@ const [endDate, setEndDate] = useState("");
         });
         const data = await response.json();
         console.log(data)
-        //setDataTable(data);
+        setDataTable(data);
         setDataChanged(false);
         setRenderEdit(false);
       };
@@ -130,7 +130,8 @@ const [endDate, setEndDate] = useState("");
                 <ReactTable
                   data={dataTable.map((row,index) => ({
                     id: row.id,
-                    total_sale: row[0],
+                    group:row[0],
+                    total_sale: row[1],
                  
 
                     actions: (
