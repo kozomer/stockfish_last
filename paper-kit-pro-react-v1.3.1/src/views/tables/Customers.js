@@ -44,6 +44,7 @@ const DataTable = () => {
     async function fetchData() {
       const response = await fetch('http://127.0.0.1:8000/customers/');
       const data = await response.json();
+      
       setDataTable(data);
       setDataChanged(false);
       setRenderEdit(false)

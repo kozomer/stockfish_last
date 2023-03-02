@@ -46,12 +46,7 @@ function UserProfile() {
   const [newSalerName, setNewSalerName] = useState("");
   const [newSalerStatus, setNewSalerStatus] = useState("");
 
-  const [jobStartDate, setJobStartDate] = useState(salersWholeData["job_start_date"]);
-  const [isActive, setIsActive] = useState(salersWholeData["is_active"]);
-  const [experienceRating, setExperienceRating] = useState(salersWholeData["experience_rating"]);
-  const [monthlyTotalSalesRating, setMonthlyTotalSalesRating] = useState(salersWholeData["monthly_total_sales_rating"]);
-  const [receipmentRating, setReceipmentRating] = useState(salersWholeData["receipment_rating"]);
-  const [managerPerformanceRating, setManagerPerformanceRating] = useState(salersWholeData["manager_performance_rating"]);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   const [formData, setFormData] = useState({});
   const [originalData, setOriginalData] = useState({});
@@ -97,27 +92,33 @@ function UserProfile() {
     })
       .then((response) =>{
          response.json();
-        successDelete()})
-      .then((data) => {
-        
-        setSalers(data);
-        setShowAddForm(false);
-       
-      });
+         handleSalesDataChange()
+       })
+      
   };
 
 
-  useEffect(() => {
+  function fetchSalersData() {
+    console.log("aaaaaaaaa")
     fetch('http://127.0.0.1:8000/collapsed_salers/')
       .then(response => response.json())
       .then(data => {
         setSalers(data);
-        console.log(salers[3])
+        console.log(data[3])
       })
       .catch(error => console.log(error));
-
-
+  }
+  
+  useEffect(() => {
+    fetchSalersData();
   }, []);
+  
+  // Whenever sales data is updated, call the fetchSalersData function
+  function handleSalesDataChange() {
+    // update sales data
+    fetchSalersData();
+  }
+  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -152,7 +153,7 @@ function UserProfile() {
         successDelete()}}
         onCancel={() => {
           
-          cancelDelete()
+          hideAlert()
         }}
         confirmBtnBsStyle="info"
         cancelBtnBsStyle="danger"
@@ -168,17 +169,27 @@ function UserProfile() {
   };
   const handleDeleteSaler = (id) => {
     // Delete the saler with the given id
-  
-    fetch("http://127.0.0.1:8000/delete_saler/${id}/", {
-    method: "DELETE",
-    credentials: "include",
+    console.log(id)
+    const delete_id={
+      id:id
+    }
+    fetch("http://127.0.0.1:8000/delete_saler/", {
+    method: "POST",
+    
+    body:JSON.stringify(delete_id),
+    credentials: "include"
+    
     })
-    .then((response) => response.json())
-    .then((data) => {
-    setSalers(data);
-    successDelete();
-    })
-    .catch((error) => console.log(error));
+    .then((response) => {
+      response.json()
+   
+      successDelete();
+      fetchSalersData();})
+    
+    
+    
+   
+    
     };
   
   /*
@@ -206,19 +217,44 @@ function UserProfile() {
       setFormData(salersWholeData);
     }, [salersWholeData]);
 
+    const successAdd = () => {
+      console.log("success")
+     
+      setAlert(
+        <ReactBSAlert
+          success
+          style={{ display: "block", marginTop: "-100px" }}
+          title="Saved!"
+          onConfirm={() => {
+            handleAddSaler();
+            hideAlert()
+            setShowAddForm(false)}}
+          onCancel={() => hideAlert()}
+          confirmBtnBsStyle="info"
+          btnSize=""
+        >
+          Your saler has been successfully saved!
+        </ReactBSAlert>
+      );
+    }
+
+    
     const successDelete = () => {
       console.log("success")
+     
       setAlert(
         <ReactBSAlert
           success
           style={{ display: "block", marginTop: "-100px" }}
           title="Deleted!"
-          onConfirm={() => hideAlert()}
+          onConfirm={() =>
+            hideAlert()
+            }
           onCancel={() => hideAlert()}
           confirmBtnBsStyle="info"
           btnSize=""
         >
-          Your row has been deleted.
+          Your saler has been successfully saved!
         </ReactBSAlert>
       );
     }
@@ -238,7 +274,6 @@ function UserProfile() {
                 <CardTitle tag="h4">Salers</CardTitle>
               </CardHeader>
               <CardBody>
-
                 <ul className="list-unstyled team-members">
                   {salers.map((saler) => (
                     <li key={saler[0]}>
@@ -247,7 +282,7 @@ function UserProfile() {
                           <Col md="1" xs="1" className="d-flex justify-content-center">
                             <div style={{ backgroundColor: saler[2] ? "green" : "red", width: "10px", height: "10px", borderRadius: "50%" }} />
                           </Col>
-                          <Col md="7" xs="7" className="text-right d-flex justify-content-center" style={{ marginRight: "10px" }}>
+                          <Col md="7" xs="7" className="text-right d-flex justify-content-center" style={{ marginRight: "10px"}}>
                             {saler[1]} <br />
                             <span className="text-muted">
                               {saler[2] ? (
@@ -257,13 +292,14 @@ function UserProfile() {
                               )}
                             </span>
                           </Col>
-                          <Col className="text-left d-flex justify-content-center" md="3" xs="3" style={{ marginBottom: "20px" }}>
-                            <FormGroup check>
+                          <Col className="text-left d-flex justify-content-center" md="3" xs="3" style={{ marginBottom: "3px",  marginTop: "3px", paddingBottom:"5px"}}>
+                            <FormGroup check >
                               <Label check>
                                 <Input
                                   type="checkbox"
                                   checked={selectedSaler === saler[0]}
                                   onChange={() => handleSelectMember(saler[0])}
+                                  
                                 />
                                 <span className="form-check-sign" />
                               </Label>
@@ -272,6 +308,7 @@ function UserProfile() {
                               className="btn-round btn-icon"
                               color="danger"
                               size="sm"
+                              style={{top:"2.5px"}}
                               onClick={() =>warningWithConfirmAndCancelMessage(saler[0])}
                               outline
                             >
@@ -326,7 +363,7 @@ function UserProfile() {
                               onChange={(e) => setNewSalerStatus(e.target.value)}
                             />
                           </FormGroup>
-                          <Button className="btn-round" color="success" type="submit" onClick={handleAddSaler} disabled={!newSalerName || !newSalerStatus}>
+                          <Button className="btn-round" color="success" type="submit" onClick={successAdd} disabled={!newSalerName || !newSalerStatus}>
                             Save
                           </Button>{" "}
                           <Button className="btn-round" color="danger" type="submit" onClick={() => setShowAddForm(false)}>

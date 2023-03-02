@@ -124,7 +124,7 @@ function Table({ columns, data }) {
   return (
     <>
       <div className="ReactTable -striped -highlight primary-pagination"  >
-        <div className="pagination-top" style={{ position:"absolute",top:"-51px",right:-150,display: "flex", justifyContent: "flex-end",  marginRight:"10px",width: "1000px",/* backgroundColor:"blue" */}} >
+        <div className="pagination-top"  >
           <div className="-pagination" style={{  width: "1000px"}}>
             <div className="-previous" >
               <button
@@ -138,13 +138,13 @@ function Table({ columns, data }) {
               </button>
             </div>
             <div className="-center" style={{display:"flex",marginLeft:"5px" /*backgroundColor:"red"*/ }}>
-              <Container >
+              <Container fluid >
                 <Row className="justify-content-center" >
                  <div>
                   <Col md="4" sm="6" xs="12">
                     <Select
                       className="react-select primary"
-                      classNamePrefix="react-select"
+                      
                       name="pageSelect"
                       value={pageSelect}
                       onChange={(value) => {
@@ -176,7 +176,7 @@ function Table({ columns, data }) {
                   
                     <Select
                       className="react-select primary"
-                      classNamePrefix="react-select"
+                      
                       name="numberOfRows"
                       value={numberOfRows}
                       onChange={(value) => {
