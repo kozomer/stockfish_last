@@ -1,4 +1,5 @@
 from django.db import models
+from django_jalali.db import models as jmodels
 
 class Customers(models.Model):
     customer_code = models.CharField(max_length=100, unique=True)
@@ -14,7 +15,7 @@ class Customers(models.Model):
 class Sales(models.Model):
     no = models.PositiveIntegerField(unique=True, db_index= True)
     bill_number = models.PositiveIntegerField(null=True, blank=True)
-    date = models.DateField(null= True)
+    date = jmodels.jDateField()
     psr = models.CharField(max_length=1)
     customer_code = models.PositiveIntegerField(null=True, blank=True)
     name = models.CharField(max_length=50)
@@ -131,7 +132,7 @@ class ROP(models.Model):
 class Salers(models.Model):
     #saler_code = models.IntegerField(unique= True)
     name = models.CharField(max_length=200)
-    job_start_date = models.DateField(null=True)
+    job_start_date = jmodels.jDateField()
     manager_performance_rating = models.FloatField(null=True)
     experience_rating = models.FloatField(null=True)
     monthly_total_sales_rating = models.FloatField(null=True)
@@ -140,28 +141,22 @@ class Salers(models.Model):
 
 class SalerPerformance(models.Model):
     name = models.CharField(max_length=100)
-    year = models.IntegerField()
-    month = models.IntegerField()
+    date = jmodels.jDateField()
     sale = models.FloatField(default=0, null=True)
 
 class SaleSummary(models.Model):
-    year = models.IntegerField()
-    month = models.IntegerField()
-    day = models.IntegerField()
-    date = models.DateField()
+    date = jmodels.jDateField()
     sale = models.FloatField(default=0, null=True)
 
 class SalerMonthlySaleRating(models.Model):
-    year = models.IntegerField()
-    month = models.IntegerField()
+    date = jmodels.jDateField()
     name = models.CharField(max_length=100)
     sale_rating = models.FloatField(default=1, null=True)
 
 class SalerReceipeRating(models.Model):
-    year = models.IntegerField()
-    month = models.IntegerField()
-    day = models.IntegerField()
+    date = jmodels.jDateField()
     sale_rating = models.FloatField(default=1, null=True)
+
 
 
 

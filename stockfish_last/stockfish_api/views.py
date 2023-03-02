@@ -9,6 +9,7 @@ from django.dispatch import receiver
 from .definitions import jalali_to_greg, greg_to_jalali, calculate_experience_rating, calculate_sale_rating
 from datetime import datetime
 import datetime
+import jdatetime
 from django.db.models import Sum
 
 
@@ -81,10 +82,9 @@ class AddSalesView(View):
             data = pd.read_excel(request.FILES['file'])
             for i, row in data.iterrows():
                 no = row["No"]
-                greg_date = jalali_to_greg(day=int(row["Day"]),month=int(row["Month"]) , year=int(row["Year"]))
                 if Sales.objects.filter(no=no).exists():
                     continue
-                sale = Sales(no=no, bill_number=row["Bill Number"], date=greg_date,
+                sale = Sales(no=no, bill_number=row["Bill Number"], date=jdatetime.date(int(row["Year"]), int(row["Month"]), int(row["Day"])),
                             psr=row["PSR"], customer_code=row["Customer Code"], name=row["Name"], area=row["Area"], group=row["Group"],
                             good_code=row["Good Code"], goods=row["Goods"], unit=row["Unit"], original_value=row["The Original Value"],
                             original_output_value=row["Original Output Value"], secondary_output_value=row["Secondary Output Value"],
@@ -111,7 +111,7 @@ class AddSalesView(View):
 class ViewSalesView(View):
     def get(self, request, *args, **kwargs):
         sales = Sales.objects.values().all()
-        sale_list = [[sale['no'], sale['bill_number'], greg_to_jalali(day=sale['date'].day , month=sale['date'].month , year= sale['date'].year).strftime('%Y-%m-%d'), sale['psr'], sale['customer_code'],
+        sale_list = [[sale['no'], sale['bill_number'], sale['date'].strftime('%Y-%m-%d'), sale['psr'], sale['customer_code'],
                       sale['name'], sale['area'], sale['group'], sale['good_code'], sale['goods'], sale['unit'],
                       sale['original_value'], sale['original_output_value'], sale['secondary_output_value'],
                       sale['price'], sale['original_price'], sale['discount_percentage'], sale['amount_sale'],
@@ -157,7 +157,7 @@ class EditSaleView(View):
 
         # Update other sale fields
         sale.bill_number = data.get('new_bill_number')
-        sale.date = jalali_to_greg(day=int(new_date[2]) , month=int(new_date[1]), year=int(new_date[0]))
+        sale.date = jdatetime.date(int(new_date[0]), int(new_date[1]), int(new_date[2]))
         sale.psr = data.get('new_psr')
         sale.customer_code = data.get('new_customer_code')
         sale.name = data.get('new_name')
@@ -455,12 +455,13 @@ class AddSalerView(View):
         data = json.loads(request.body)
         print(data)
         jalali_date = data.get("job_start_date").split("-")
-        greg_date = jalali_to_greg(day=int(jalali_date[2]) , month=int(jalali_date[1]), year=int(jalali_date[0]))
+        jalali_date = jdatetime.date(int(jalali_date[0]), int(jalali_date[1]), int(jalali_date[2]))
+        
         saler = Salers(
                     name = data.get("name"),
-                    job_start_date = greg_date,
+                    job_start_date = jalali_date,
                     manager_performance_rating = 1,
-                    experience_rating = calculate_experience_rating(greg_date),
+                    experience_rating = calculate_experience_rating(jalali_date),
                     monthly_total_sales_rating = 1,#will be calculated!!!!!!!!!!!!!!!!!!!!!!
                     receipment_rating = 1,#will be calculated!!!!!!!!!!!!!!!!!!!!!!
                     is_active =  True,
@@ -483,17 +484,24 @@ class SalerView(View):
         id = data.get('id')
         saler = Salers.objects.get(id=id)
         current_date = datetime.date.today()
+        jalali_current_date = jdatetime.date(current_date.year, current_date.month, current_date.day)
         try:
-            saler_monthly_ratings = SalerMonthlySaleRating.objects.get(name=saler.name, month= current_date.month, year= current_date.year )
+            saler_monthly_ratings = SalerMonthlySaleRating.objects.get(name=saler.name, date__month = jalali_current_date.month, date__year= jalali_current_date.year )
             monthly_sale_rating = saler_monthly_ratings.sale_rating
         except SalerMonthlySaleRating.DoesNotExist:
             monthly_sale_rating = 1
-        jalali_date = greg_to_jalali(day=saler.job_start_date.day , month=saler.job_start_date.month , year= saler.job_start_date.year).strftime('%Y-%m-%d')
-        response_data = {'id': id , 'name': saler.name, 'job_start_date': jalali_date, 'manager_performance_rating': saler.manager_performance_rating,
+        response_data = {'id': id , 'name': saler.name, 'job_start_date': saler.job_start_date.strftime('%Y-%m-%d'), 'manager_performance_rating': saler.manager_performance_rating,
                           'experience_rating': saler.experience_rating, 'monthly_total_sales_rating': monthly_sale_rating, 'receipment_rating':saler.receipment_rating,
                           'is_active': saler.is_active}
         # Return the list of output_values as a JSON response
         return JsonResponse(response_data, safe=False)
+
+class DeleteSalerView(View):
+    def post(self, request, *args, **kwargs):
+        id = request.POST.get('id')
+        Salers.objects.get(id=id).delete()
+        return HttpResponse('OK')
+
 
 @receiver(post_save, sender=Sales)
 def update_saler_performance_with_add_sale(sender, instance, created, **kwargs):
@@ -501,25 +509,25 @@ def update_saler_performance_with_add_sale(sender, instance, created, **kwargs):
         # Get or create the SalerPerformance object
         saler_performance, created = SalerPerformance.objects.get_or_create(
             name=instance.saler,
-            year=instance.date.year,
-            month=instance.date.month,
+            date=instance.date
         )
 
         # Update the sale value for the SalerPerformance object
-        saler_performance.sale += instance.net_sales
+        saler_performance.sale += instance.net_sales/10000000
         saler_performance.save()
 
 @receiver(post_delete, sender=Sales)
 def update_saler_performance_with_delete_sale(sender, instance, **kwargs):
     # Get the corresponding SalerPerformance object for the sale
+    find_month=instance.date.month
+    find_year = instance.date.month
     performance, created = SalerPerformance.objects.get_or_create(
         name=instance.saler, 
-        year=instance.date.year, 
-        month=instance.date.month,
+        date=jdatetime.date(int(find_year), int(find_month), 1)
         )
 
     # Subtract the net sale amount from the sale field
-    performance.sale -= instance.net_sales
+    performance.sale -= instance.net_sales/10000000
     performance.save()
 
 @receiver(pre_save, sender=SalerPerformance)
@@ -529,8 +537,10 @@ def update_month_sale_rating(sender, instance, **kwargs):
     of the SalerPerformance object based on the updated sale value.
     """
     # Calculate the sale rating based on the updated sale value
-    monthly_sale_rating = calculate_sale_rating(instance.name, instance.year, instance.month, instance.sale)
-    saler, created = SalerMonthlySaleRating.objects.get_or_create(name=instance.name, year=instance.year, month=instance.month)
+    print(instance.sale)
+    monthly_sale_rating = calculate_sale_rating(float(instance.sale)/10000000)
+    print(monthly_sale_rating)
+    saler, created = SalerMonthlySaleRating.objects.get_or_create(name=instance.name, date= instance.date)
     saler.sale_rating = monthly_sale_rating
 
 
@@ -546,38 +556,39 @@ class SalesReportView(View):
         data = json.loads(request.body)
         report_type = data.get('report_type')
         start_date =  data.get('start_date').split("-")
-        start_date_greg = jalali_to_greg(day= int(start_date[2]), month=int(start_date[1]), year=int(start_date[0]))
         end_date =  data.get('end_date').split("-")
-        end_date_greg = jalali_to_greg(day= int(end_date[2]), month=int(end_date[1]), year=int(end_date[0]))
        
 
         if report_type == 'daily':
-            start_date_greg = jalali_to_greg(day= int(start_date[2]), month=int(start_date[1]), year=int(start_date[0]))
-            end_date_greg = jalali_to_greg(day= int(end_date[2]), month=int(end_date[1]), year=int(end_date[0]))
-            data = SaleSummary.objects.filter(date__range = [start_date_greg, end_date_greg]).values('date').annotate(total_sales=Sum('sale')).order_by('date')
+            start_date = jdatetime.date(int(start_date[0]), int(start_date[1]), int(start_date[2]))
+            end_date = jdatetime.date(int(end_date[0]), int(end_date[1]), int(end_date[2]))
+            data = SaleSummary.objects.filter(date__range = [start_date, end_date]).values('date').annotate(total_sales=Sum('sale')).order_by('date')
+            dates = [d['date'].strftime('%Y-%m-%d') for d in data]
+            total_sales = [d['total_sales'] for d in data]
         elif report_type == 'monthly':
-            start_date_greg = jalali_to_greg(month=int(start_date[1]), year=int(start_date[0]))
-            end_date_greg = jalali_to_greg(month=int(end_date[1]), year=int(end_date[0]))
-            data = SaleSummary.objects.filter(date__range = [start_date_greg, end_date_greg]).values('month', 'year').annotate(total_sales=Sum('sale')).order_by('year', 'month')
+            start_date = jdatetime.date(int(start_date[0]), int(start_date[1]), 1)
+            end_date = jdatetime.date(int(end_date[0]), int(end_date[1]), 1)
+            data = SaleSummary.objects.filter(date__range = [start_date, end_date]).values('date').annotate(total_sales=Sum('sale')).order_by('date')
+            dates = [d['date'].strftime('%Y-%m-%d') for d in data]
+            total_sales = [d['total_sales'] for d in data]
         elif report_type == 'yearly':
-            start_date_greg = jalali_to_greg(year=int(start_date[0]))
-            end_date_greg = jalali_to_greg(year=int(end_date[0]))
-            data = SaleSummary.objects.filter(date__range = [start_date_greg, end_date_greg]).values('year').annotate(total_sales=Sum('sale')).order_by('year')
+            start_date = jdatetime.date(int(start_date[0]), 1, 1)
+            end_date = jdatetime.date(int(end_date[0]), 1, 1)
+            data = SaleSummary.objects.filter(date__range = [start_date, end_date]).values('date').annotate(total_sales=Sum('sale')).order_by('date')
+            dates = [d['date'].strftime('%Y-%m-%d') for d in data]
+            total_sales = [d['total_sales'] for d in data]
         else:
             data = []
-
-        print({'data': list(data)})
-        return JsonResponse({'data': list(data)}, safe=False)
+        return JsonResponse({'dates': dates, 'total_sales': total_sales}, safe=False)
 
 @receiver(post_save, sender=Sales)
 def update_sale_summary_with_add_sale(sender, instance, created, **kwargs):
     if created:
         # Get or create the SalerPerformance object
+        find_month = instance.date.month
+        find_year = instance.date.year
         sale_summary, created = SaleSummary.objects.get_or_create(
-            year=instance.date.year,
-            month=instance.date.month,
-            day=instance.date.day,
-            date=instance.date,
+            date=jdatetime.date(int(find_year), int(find_month), 1)
         )
 
         # Update the sale value for the SalerPerformance object
@@ -589,10 +600,7 @@ def update_sale_summary_with_delete_sale(sender, instance, created, **kwargs):
     if created:
         # Get or create the SalerPerformance object
         sale_summary, created = SaleSummary.objects.get_or_create(
-            year=instance.date.year,
-            month=instance.date.month,
-            day=instance.date.day
-            
+            date=instance.date, 
         )
 
         # Update the sale value for the SalerPerformance object
