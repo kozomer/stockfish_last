@@ -5,6 +5,7 @@ import ReactTable from 'components/ReactTable/ReactTable.js';
 const DataTable = () => {
   const [dataTable, setDataTable] = useState([]);
   const [file, setFile] = useState(null);
+  const [showUploadDiv, setShowUploadDiv] = useState(false);
   useEffect(() => {
     async function fetchData() {
       const response = await fetch('http://127.0.0.1:8000/warehouse/');
@@ -21,10 +22,13 @@ const DataTable = () => {
 */
 
 
- 
+const handleAddFileClick = () => {
+  setShowUploadDiv(true);
+}
 
   const handleFileInputChange = (e) => {
     setFile(e.target.files[0]);
+    console.log(file)
   };
 
   const handleUploadClick = () => {
@@ -67,10 +71,20 @@ const DataTable = () => {
               </CardHeader>
               <CardBody>
              
-      <input type='file' className='custom-file-upload' onChange={handleFileInputChange} />
-      <Button color='primary' className='btn-upload' onClick={handleUploadClick} disabled={!file} active={!file}>
-        Upload
-      </Button>
+              <div>
+                {!showUploadDiv && (
+                   <Button  className="my-button-class" color="primary" onClick={handleAddFileClick}>Add File</Button>
+                   )}
+                   {showUploadDiv && (
+                    <div>
+                  <input type='file' className='custom-file-upload' onChange={handleFileInputChange} />
+                  <Button color='primary' className='btn-upload' onClick={handleUploadClick} disabled={!file} >
+                    Upload
+                  </Button>
+                  </div>
+                   )}
+                   
+                </div>
                 <ReactTable
                   data={dataTable.map((prop, key) => ({
                     id: key,

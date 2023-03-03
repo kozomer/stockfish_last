@@ -15,7 +15,7 @@
 
 */
 import React from "react";
-
+import { Link } from "react-router-dom";
 // reactstrap components
 import {
   Button,
@@ -87,15 +87,7 @@ function Login() {
                   </FormGroup>
                 </CardBody>
                 <CardFooter>
-                  <Button
-                    block
-                    className="btn-round mb-3"
-                    color="warning"
-                    href="#pablo"
-                    onClick={(e) => e.preventDefault()}
-                  >
-                    Get Started
-                  </Button>
+                <Link to="/dashboard" className="btn btn-primary">Sign up</Link>
                 </CardFooter>
               </Card>
             </Form>

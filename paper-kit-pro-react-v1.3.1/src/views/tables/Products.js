@@ -18,7 +18,7 @@ const DataTable = () => {
   const [editData, setEditData] = useState(null);
   const [isUpdated, setIsUpdated] = useState(false);
   const [renderEdit, setRenderEdit] = useState(false);
-
+  const [isLoading, setIsLoading] = useState(false);
   //Edit Variables
   const [group, setGroup] = useState(null);
   const [subgroup, setSubgroup] = useState(null);
@@ -70,6 +70,7 @@ const DataTable = () => {
     
   }
   const handleUploadClick = () => {
+    setIsLoading(true);
     const formData = new FormData();
     formData.append('file', file);
     console.log(file)
@@ -80,7 +81,8 @@ const DataTable = () => {
     })
       .then((response) => {
 
-        console.log(response);
+        setIsLoading(false);
+        successUpload();
         alert('File uploaded successfully');
         fetch('http://127.0.0.1:8000/products/')
           .then((response) => response.json())
@@ -93,7 +95,8 @@ const DataTable = () => {
       .catch((error) => {
         console.error(error);
         alert('Error uploading file');
-
+        setIsLoading(false);
+        errorUpload()
       });
 
   };
@@ -183,7 +186,37 @@ const DataTable = () => {
     setAlert(null);
   };
 
-  
+  const successUpload = () => {
+    setAlert(
+      <ReactBSAlert
+        success
+        style={{ display: "block", marginTop: "-100px" }}
+        title="Uploaded!"
+        onConfirm={() => hideAlert()}
+        onCancel={() => hideAlert()}
+        confirmBtnBsStyle="info"
+        btnSize=""
+      >
+        Your file has been successfully uploaded!
+      </ReactBSAlert>
+    );
+  };
+
+  const errorUpload = () => {
+    setAlert(
+      <ReactBSAlert
+        danger
+        style={{ display: "block", marginTop: "-100px" }}
+        title="Error"
+        onConfirm={() => hideAlert()}
+        onCancel={() => hideAlert()}
+        confirmBtnBsStyle="info"
+        btnSize=""
+      >
+        Error uploading file, try again. Make sure selecting correct file.
+      </ReactBSAlert>
+    );
+  };
     
     useEffect(() => {
       if (deleteConfirm) {
@@ -453,6 +486,9 @@ const DataTable = () => {
                   <Button color='primary' className='btn-upload' onClick={handleUploadClick} disabled={!file} active={!file}>
                     Upload
                   </Button>
+                  <div className="spinner-container">
+                  {isLoading && <div className="loading-spinner"></div>}
+                  </div>
                   </div>
                    )}
                 </div>
