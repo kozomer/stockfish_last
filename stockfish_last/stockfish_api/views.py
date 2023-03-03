@@ -12,6 +12,53 @@ import datetime
 import jdatetime
 from django.db.models import Sum
 
+from django.contrib.auth import authenticate, login
+from rest_framework.authtoken.models import Token
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
+
+# region Login Logout
+
+
+class LoginView(TokenObtainPairView):
+    def post(self, request, *args, **kwargs):
+        username = request.POST.get('username')
+        username = username.strip()
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        if user is not None and user.is_active:
+            response = super().post(request, *args, **kwargs)
+            return response
+        else:
+            return JsonResponse({'error': 'Invalid credentials'}, status=401)
+
+class LogoutView(View):
+    permission_classes = (IsAuthenticated,)
+    def post(self, request):
+        try:
+            print(request.body)
+            #data = json.loads(request.body)
+            #refresh_token = data["refresh_token"]
+            refresh_token = request.POST.get('refresh_token')
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+
+            return JsonResponse({'success': 'successful log out'}, status=205)
+        except Exception as e:
+            print(str(e))
+            return JsonResponse({'error': 'BAD REQUEST'}, status=400)
+
+
+
+# endregion
+
+
+
+
 
 
 # region Customers
