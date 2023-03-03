@@ -18,21 +18,33 @@ from django.urls import path
 from stockfish_api.views import ( AddCustomersView, AddSalesView, AddProductsView, AddWarehouseView, AddSalerView,
                                  ViewSalesView,  ViewWarehouseView, ViewProductsView, ChartView, ItemListView, ViewCustomersView, CollapsedSalerView, SalerView, SalesReportView,
                                  DeleteSaleView, DeleteCustomerView, DeleteProductView, DeleteSalerView,
-                                 EditProductView, EditCustomerView, EditSaleView, EditWarehouseView, 
+                                 EditProductView, EditCustomerView, EditSaleView, EditWarehouseView,
+                                 LoginView, LogoutView
                                  )
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+    TokenBlacklistView,
+    
+)
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    
+    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('token/blacklist/', TokenBlacklistView.as_view(), name='token_blacklist'),
+    path('login/', LoginView.as_view(), name='login'),
+    path('logout/', LogoutView.as_view(), name='logout'),
+
     path('add_customers/', AddCustomersView.as_view(), name='add_customers'),
-    #path('add_goods/', AddGoodsView.as_view(), name='add_goods'),
     path('add_warehouse/', AddWarehouseView.as_view(), name='add_warehouse'),
     path('add_sales/', AddSalesView.as_view(), name='add_sales'),
     path('add_products/',AddProductsView.as_view(), name='add_pricelists'),
     path('add_salers/',AddSalerView.as_view(), name='add_salers'),
 
     path('customers/', ViewCustomersView.as_view(), name='view_customers'),
-    #path('goods/', ViewGoodsView.as_view(), name='view_goods'),
     path('sales/', ViewSalesView.as_view(), name='view_sales'),
     path('warehouse/', ViewWarehouseView.as_view(), name='view_warehouse'),
     path('charts/', ChartView.as_view(), name='view_charts'),
@@ -40,7 +52,6 @@ urlpatterns = [
     path('salers/', SalerView.as_view(), name='view_saler'),
     path('collapsed_salers/', CollapsedSalerView.as_view(), name='view_saler_collapsed'),
 
-    #path('delete_goods/',  DeleteGoodView.as_view(), name='delete_goods'),
     path('delete_sales/',  DeleteSaleView.as_view(), name='delete_sales'),
     path('delete_customers/',  DeleteCustomerView.as_view(), name='delete_customers'),
     path('delete_products/', DeleteProductView.as_view(), name='delete_goods'),
