@@ -4,6 +4,7 @@ import ReactTable from 'components/ReactTable/ReactTable.js';
 import ReactBSAlert from "react-bootstrap-sweetalert";
 import '../../assets/css/Table.css';
 
+
 const DataTable = () => {
   const [dataTable, setDataTable] = useState([]);
   const [file, setFile] = useState(null);
@@ -17,7 +18,7 @@ const DataTable = () => {
   const [editData, setEditData] = useState(null);
   const [isUpdated, setIsUpdated] = useState(false);
   const [renderEdit, setRenderEdit] = useState(false);
-
+  const [isLoading, setIsLoading] = useState(false);
   /* Variables */
   const [customerCode, setCustomerCode] = useState(null);
   const [description, setDescription] = useState(null);
@@ -70,6 +71,7 @@ const DataTable = () => {
     setShowUploadDiv(true);
   }
   const handleUploadClick = () => {
+    setIsLoading(true);
     const formData = new FormData();
     formData.append('file', file);
     console.log(file)
@@ -79,8 +81,8 @@ const DataTable = () => {
       credentials: 'include'
     })
       .then((response) => {
-
-        console.log(response);
+        setIsLoading(false);
+        successUpload();
         alert('File uploaded successfully');
         fetch('http://127.0.0.1:8000/customers/')
           .then((response) => response.json())
@@ -90,6 +92,8 @@ const DataTable = () => {
       .catch((error) => {
         console.error(error);
         alert('Error uploading file');
+        setIsLoading(false);
+        errorUpload();
        
       });
     
@@ -161,6 +165,21 @@ const DataTable = () => {
     );
     setRenderEdit(true)
   };
+  const successUpload = () => {
+    setAlert(
+      <ReactBSAlert
+        success
+        style={{ display: "block", marginTop: "-100px" }}
+        title="Uploaded!"
+        onConfirm={() => hideAlert()}
+        onCancel={() => hideAlert()}
+        confirmBtnBsStyle="info"
+        btnSize=""
+      >
+        Your file has been successfully uploaded!
+      </ReactBSAlert>
+    );
+  };
 
   const cancelDelete = () => {
     setAlert(
@@ -181,6 +200,21 @@ const DataTable = () => {
     setAlert(null);
   };
 
+  const errorUpload = () => {
+    setAlert(
+      <ReactBSAlert
+        danger
+        style={{ display: "block", marginTop: "-100px" }}
+        title="Error"
+        onConfirm={() => hideAlert()}
+        onCancel={() => hideAlert()}
+        confirmBtnBsStyle="info"
+        btnSize=""
+      >
+        Error uploading file, try again. Make sure selecting correct file.
+      </ReactBSAlert>
+    );
+  };
   
     
     useEffect(() => {
@@ -383,7 +417,7 @@ const DataTable = () => {
                 <CardTitle tag='h4'>CUSTOMERS</CardTitle>
               </CardHeader>
               <CardBody>
-              <div>
+              <div className="upload-container">
                 {!showUploadDiv && (
                    <Button  className="my-button-class" color="primary" onClick={handleAddFileClick}>Add File</Button>
                    )}
@@ -393,6 +427,9 @@ const DataTable = () => {
                   <Button color='primary' className='btn-upload' onClick={handleUploadClick} disabled={!file} active={!file}>
                     Upload
                   </Button>
+                  <div className="spinner-container">
+                  {isLoading && <div className="loading-spinner"></div>}
+                  </div>
                   </div>
                    )}
                    

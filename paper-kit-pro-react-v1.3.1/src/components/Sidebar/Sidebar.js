@@ -16,13 +16,13 @@
 */
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { Nav, Collapse } from "reactstrap";
+import { Nav, Collapse, Button } from "reactstrap";
 // javascript plugin used to create scrollbars on windows
 import PerfectScrollbar from "perfect-scrollbar";
 
 import avatar from "assets/img/faces/ayo-ogunseinde-2.jpg";
 import logo from "assets/img/react-logo.png";
-
+import localforage from 'localforage';
 var ps;
 
 function Sidebar(props) {
@@ -120,7 +120,9 @@ function Sidebar(props) {
               </>
             )}
           </NavLink>
+         
         </li>
+        
       );
     });
   };
@@ -147,6 +149,40 @@ function Sidebar(props) {
   React.useEffect(() => {
     setCollapseStates(getCollapseStates(props.routes));
   }, []);
+
+  async function handleLogout() {
+ 
+    try {
+      
+        const access_token = await localforage.getItem('access_token');
+        const refresh_token = await localforage.getItem('refresh_token');
+        const response = await fetch('http://127.0.0.1:8000/logout/', {
+            
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer '+ String(access_token)
+            },
+            body: JSON.stringify({
+              refresh_token: refresh_token
+            })
+        });
+        
+        if (response.ok) {
+            // Remove the token from async storage
+            console.log("successful")
+            await localforage.removeItem('access_token');
+            await localforage.removeItem('refresh_token');
+           // navigation.navigate("Login")
+        }
+        if (!response.ok){
+          console.log('Bearer '+ String(access_token))
+        }
+    } catch (error) {
+        console.error(error);
+    }
+    
+  }
   return (
     <div
       className="sidebar"
@@ -158,7 +194,7 @@ function Sidebar(props) {
           href="https://www.creative-tim.com"
           className="simple-text logo-mini"
         >
-          <div className="logo-img">
+          <div className="logo-img">\admin\sales-report
             <img src={logo} alt="react-logo" />
           </div>
         </a>
@@ -212,6 +248,7 @@ function Sidebar(props) {
           </div>
         </div>
         <Nav>{createLinks(props.routes)}</Nav>
+        <Button  className="my-button-class" color="primary" onClick={handleLogout} style={{marginLeft:"30px", marginTop:"100px"}}>Log Out<i className="fa fa-times" /></Button>
       </div>
     </div>
   );

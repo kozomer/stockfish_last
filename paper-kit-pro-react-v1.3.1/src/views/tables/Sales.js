@@ -18,7 +18,7 @@ const DataTable = () => {
   const [isUpdated, setIsUpdated] = useState(false);
   const [renderEdit, setRenderEdit] = useState(false);
   const [oldData, setOldData] = useState(null);
-
+  const [isLoading, setIsLoading] = useState(false);
 //Variable Set
 const [no, setNo] = useState(null);
 const [billNumber, setBillNumber] = useState(null);
@@ -99,6 +99,7 @@ const [bonus, setBonus] = useState(null);
     
   }
   const handleUploadClick = () => {
+    setIsLoading(true);
     const formData = new FormData();
     formData.append('file', file);
     
@@ -109,7 +110,8 @@ const [bonus, setBonus] = useState(null);
     })
       .then((response) => {
 
-        
+        setIsLoading(false);
+        successUpload();
         alert('File uploaded successfully');
         fetch('http://127.0.0.1:8000/sales/')
           .then((response) => response.json())
@@ -119,9 +121,9 @@ const [bonus, setBonus] = useState(null);
    
       })
       .catch((error) => {
-        
+        setIsLoading(false);
         alert('Error uploading file');
-
+        errorUpload()
       });
 
   };
@@ -191,6 +193,38 @@ const [bonus, setBonus] = useState(null);
     setAlert(null);
   };
 
+  const successUpload = () => {
+    setAlert(
+      <ReactBSAlert
+        success
+        style={{ display: "block", marginTop: "-100px" }}
+        title="Uploaded!"
+        onConfirm={() => hideAlert()}
+        onCancel={() => hideAlert()}
+        confirmBtnBsStyle="info"
+        btnSize=""
+      >
+        Your file has been successfully uploaded!
+      </ReactBSAlert>
+    );
+  };
+
+  const errorUpload = () => {
+    setAlert(
+      <ReactBSAlert
+        danger
+        style={{ display: "block", marginTop: "-100px" }}
+        title="Error"
+        onConfirm={() => hideAlert()}
+        onCancel={() => hideAlert()}
+        confirmBtnBsStyle="info"
+        btnSize=""
+      >
+        Error uploading file, try again. Make sure selecting the correct file.
+      </ReactBSAlert>
+    );
+  };
+    
   
     
     useEffect(() => {
@@ -830,7 +864,11 @@ const [bonus, setBonus] = useState(null);
                   <Button color='primary' className='btn-upload' onClick={handleUploadClick} disabled={!file} active={!file}>
                     Upload
                   </Button>
-                  </div>
+                  
+                     <div className="spinner-container">
+                     {isLoading && <div className="loading-spinner"></div>}
+                     </div>
+                     </div>
                    )}
                 </div>
                 <ReactTable

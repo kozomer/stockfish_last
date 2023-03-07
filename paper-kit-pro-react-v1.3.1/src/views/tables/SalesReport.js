@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Card, CardHeader, CardBody, CardTitle, Row, Col, Input,Form, FormGroup, Label,CardFooter} from 'reactstrap';
+import { Button, Card, CardHeader, CardBody, CardTitle, Row, Col, Input, Form, FormGroup, Label, CardFooter } from 'reactstrap';
 import ReactTable from 'components/ReactTable/ReactTable.js';
 import '../../assets/css/Table.css';
 import ReactBSAlert from "react-bootstrap-sweetalert";
@@ -37,8 +37,12 @@ const DataTable = () => {
 
 
   const [filterOption, setFilterOption] = useState("");
-const [startDate, setStartDate] = useState("");
-const [endDate, setEndDate] = useState("");
+  const [startYear, setStartYear] = useState("")
+  const [startMonth, setStartMonth] = useState("");
+  const [startDay, setStartDay] = useState("");;
+  const [endYear, setEndYear] = useState("")
+  const [endMonth, setEndMonth] = useState("");
+  const [endDay, setEndDay] = useState("");;
 
   React.useEffect(() => {
     return function cleanup() {
@@ -57,42 +61,54 @@ const [endDate, setEndDate] = useState("");
       setRenderEdit(false)
     }
     fetchData();
-  }, [dataChanged,renderEdit]);
-
-  
+  }, [dataChanged, renderEdit]);
 
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-      
 
-     
-        // Send the data to the Django endpoint
-        const response = await fetch("http://127.0.0.1:8000/sales_report/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            report_type: filterOption,
-            start_date: startDate,
-            end_date: endDate,
-          }),
-        });
-        const data = await response.json();
-        console.log(data)
-        setDataTable(data);
-        setDataChanged(false);
-        setRenderEdit(false);
-      };
 
-    
-    
-    
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    let formattedStartDate = "";
+    let formattedEndDate = "";
+
+    if (filterOption === "yearly") {
+      formattedStartDate = `${startYear}`;
+      formattedEndDate = `${endYear}`;
+    } else if (filterOption === "monthly") {
+      formattedStartDate = `${startYear}-${startMonth.padStart(2, "0")}`;
+      formattedEndDate = `${endYear}-${endMonth.padStart(2, "0")}`;
+    } else if (filterOption === "daily") {
+      formattedStartDate = `${startYear}-${startMonth.padStart(2, "0")}-${startDay.padStart(2, "0")}`;
+      formattedEndDate = `${endYear}-${endMonth.padStart(2, "0")}-${endDay.padStart(2, "0")}`;
+    }
+
+
+    // Send the data to the Django endpoint
+    const response = await fetch("http://127.0.0.1:8000/sales_report/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        report_type: filterOption,
+        start_date: formattedStartDate,
+        end_date: formattedEndDate,
+      }),
+    });
+    const data = await response.json();
+    console.log(data)
+    setDataTable(data);
+    setDataChanged(false);
+    setRenderEdit(false);
+  };
+
+
+
+
   return (
     <>
       <div className='content'>
-      {alert}
+        {alert}
 
-   
+
         <Row>
           <Col
           >
@@ -103,67 +119,81 @@ const [endDate, setEndDate] = useState("");
               <CardBody >
 
                 <div className='top-right'>
-                <Form onSubmit={handleSubmit}>
-  <FormGroup>
-    <Label for="selectType">Select Type:</Label>
-    <Input type="select" name="select" id="selectType" onChange={(e) => setFilterOption(e.target.value)}>
-      <option value="">Select Type</option>
-      <option value="monthly">Monthly</option>
-      <option value="yearly">Yearly</option>
-      <option value="daily">Daily</option>
-    </Input>
-  </FormGroup>
+                  <CardBody style={{ marginBottom: "100px" }}>
+                    <Form onSubmit={handleSubmit}>
+                      <FormGroup row>
+                        <Col sm={3}>
+                          <Label for="selectType">Select Type:</Label>
+                          <Input type="select" name="select" id="selectType" onChange={(e) => setFilterOption(e.target.value)}>
+                            <option value="">Select Type</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="yearly">Yearly</option>
+                            <option value="daily">Daily</option>
+                          </Input>
+                        </Col>
+                        <Col sm={3}>
+                          <Label for="startDate">Start Date:</Label>
+                          <div style={{ display: "flex", flexDirection: "row" }}>
+                            <Input type="text" name="startYear" id="startYear" placeholder="yyyy" value={startYear} onChange={(e) => setStartYear(e.target.value)} disabled={filterOption !== "yearly" && filterOption !== "monthly" && filterOption !== "daily"} style={{ width: "80px", marginRight: "10px" }} />
+                            <Input type="text" name="startMonth" id="startMonth" placeholder="mm" value={startMonth} onChange={(e) => setStartMonth(e.target.value)} disabled={filterOption !== "monthly" && filterOption !== "daily"} style={{ width: "50px", marginRight: "10px" }} />
+                            <Input type="text" name="startDay" id="startDay" placeholder="dd" value={startDay} onChange={(e) => setStartDay(e.target.value)} disabled={filterOption !== "daily"} style={{ width: "50px" }} />
+                          </div>
+                        </Col>
+                        <Col sm={3}>
+                          <Label for="endDate">End Date:</Label>
+                          <div style={{ display: "flex", flexDirection: "row" }}>
+                            <Input type="text" name="endYear" id="endYear" placeholder="yyyy" value={endYear} onChange={(e) => setEndYear(e.target.value)} disabled={filterOption !== "yearly" && filterOption !== "monthly" && filterOption !== "daily"} style={{ width: "80px", marginRight: "10px" }} />
+                            <Input type="text" name="endMonth" id="endMonth" placeholder="mm" value={endMonth} onChange={(e) => setEndMonth(e.target.value)} disabled={filterOption !== "monthly" && filterOption !== "daily"} style={{ width: "50px", marginRight: "10px" }} />
+                            <Input type="text" name="endDay" id="endDay" placeholder="dd" value={endDay} onChange={(e) => setEndDay(e.target.value)} disabled={filterOption !== "daily"} style={{ width: "50px" }} />
+                          </div>
+                        </Col>
+                        <Col sm={3}>
+                          <Button color="primary" type="submit" style={{ marginTop: "28px" }}>Save</Button>
+                        </Col>
+                      </FormGroup>
+                    </Form>
+                  </CardBody>
 
-  <FormGroup>
-    <Label for="startDate">Start Date:</Label>
-    <Input type="text" name="startDate" id="startDate" placeholder="mm/dd/yyyy" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-  </FormGroup>
 
-  <FormGroup>
-    <Label for="endDate">End Date:</Label>
-    <Input type="text" name="endDate" id="endDate" placeholder="mm/dd/yyyy" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-  </FormGroup>
 
-  <Button color="primary" type="submit">Save</Button>
-</Form>
                 </div>
                 <ReactTable
-                  data={dataTable.map((row,index) => ({
+                  data={dataTable.map((row, index) => ({
                     id: row.id,
-                    group:row[0],
+                    group: row[0],
                     total_sale: row[1],
-                 
+
 
                     actions: (
                       <div className='actions-left'>
-                       
-                         <Button
+
+                        <Button
                           disabled={showPopup}
                           onClick={() => {
                             // Enable edit mode
-                            
-                           {handleClick(row)}
-                           
-                          
+
+                            { handleClick(row) }
+
+
                           }}
-                          
+
                           color='warning'
                           size='sm'
                           className='btn-icon btn-link edit'
                         >
                           <i className='fa fa-edit' />
                         </Button>{' '}
-                        
+
                         <>
-    
-    
+
+
                           <Button
                             disabled={showPopup}
                             onClick={() => {
-                              
-                               warningWithConfirmAndCancelMessage() 
-                               const rowToDelete = {...row};
-                               const data = {
+
+                              warningWithConfirmAndCancelMessage()
+                              const rowToDelete = { ...row };
+                              const data = {
                                 product_code_ir: rowToDelete[3],
 
                               };
@@ -205,8 +235,8 @@ const [endDate, setEndDate] = useState("");
                           >
                             <i className="fa fa-times" />
                           </Button>
-    
-  </>
+
+                        </>
 
 
                       </div>
@@ -214,23 +244,23 @@ const [endDate, setEndDate] = useState("");
                   }))}
                   columns={[
                     {
-                      Header: 'Group',
+                      Header: 'Date',
                       accessor: 'group',
 
 
                     },
                     {
                       Header: 'Total Sale',
-                      accessor:  'total_sale'
+                      accessor: 'total_sale'
                     },
-                  
+
                     {
                       Header: 'Actions',
                       accessor: 'actions',
                       sortable: false,
                       filterable: false,
-                     
-                      
+
+
                     }
                   ]}
                   defaultPageSize={10}
@@ -242,7 +272,7 @@ const [endDate, setEndDate] = useState("");
         </Row>
       </div>
     </>
-    
+
   );
 };
 

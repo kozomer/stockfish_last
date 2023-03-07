@@ -21,7 +21,7 @@ import { Route, Switch } from "react-router-dom";
 
 import AuthNavbar from "components/Navbars/AuthNavbar.js";
 import Footer from "components/Footer/Footer.js";
-
+import {Button} from "reactstrap"
 import routes from "routes.js";
 
 var ps;
@@ -58,13 +58,19 @@ function Pages() {
   };
   return (
     <>
+    
       <AuthNavbar />
       <div className="wrapper wrapper-full-page" ref={fullPages}>
+        
         <div className="full-page section-image">
+          
           <Switch>{getRoutes(routes)}</Switch>
           <Footer fluid />
+          
         </div>
+        
       </div>
+      
     </>
   );
 }

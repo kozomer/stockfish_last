@@ -25,6 +25,7 @@ import Sidebar from "components/Sidebar/Sidebar.js";
 import FixedPlugin from "components/FixedPlugin/FixedPlugin.js";
 
 import routes from "routes.js";
+import { Button } from "reactstrap";
 
 var ps;
 
@@ -60,11 +61,13 @@ function Admin(props) {
       }
       if (prop.layout === "/admin") {
         return (
+          
           <Route
             path={prop.layout + prop.path}
             component={prop.component}
             key={key}
           />
+          
         );
       } else {
         return null;
@@ -87,13 +90,16 @@ function Admin(props) {
   };
   return (
     <div className="wrapper">
+      
       <Sidebar
         {...props}
         routes={routes}
         bgColor={backgroundColor}
         activeColor={activeColor}
+        
       />
       <div className="main-panel" ref={mainPanel}>
+        
         <AdminNavbar {...props} handleMiniClick={handleMiniClick} />
         <Switch>{getRoutes(routes)}</Switch>
         {
@@ -102,7 +108,9 @@ function Admin(props) {
             <Footer fluid />
           )
         }
+        
       </div>
+      
       <FixedPlugin
         bgColor={backgroundColor}
         activeColor={activeColor}
@@ -111,6 +119,8 @@ function Admin(props) {
         handleBgClick={handleBgClick}
         handleMiniClick={handleMiniClick}
       />
+      
+      
     </div>
   );
 }
