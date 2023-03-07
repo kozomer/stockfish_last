@@ -21,8 +21,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
-# region Login Logout
-
+# region Login/Logout
 
 class LoginView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
@@ -47,7 +46,7 @@ class LogoutView(View):
             token = RefreshToken(refresh_token)
             token.blacklist()
 
-            return JsonResponse({'success': 'successful log out'}, status=205)
+            return JsonResponse({'success': 'successfully log out'}, status=205)
         except Exception as e:
             print(str(e))
             return JsonResponse({'error': 'BAD REQUEST'}, status=400)
@@ -55,11 +54,6 @@ class LogoutView(View):
 
 
 # endregion
-
-
-
-
-
 
 # region Customers
 
@@ -643,20 +637,28 @@ class SalesReportView(View):
             start_date = jdatetime.date(int(start_date[0]), int(start_date[1]), int(start_date[2]))
             end_date = jdatetime.date(int(end_date[0]), int(end_date[1]), int(end_date[2]))
             data = SaleSummary.objects.filter(date__range = [start_date, end_date]).values('date').annotate(total_sales=Sum('sale')).order_by('date')
-            saler_report_list = [[d['date'].strftime('%Y-%m-%d'), d['total_sales']] for d in data]
+            sales_report_list = [[d['date'].strftime('%Y-%m-%d'), d['total_sales']] for d in data]
         elif report_type == 'monthly':
             start_date = jdatetime.date(int(start_date[0]), int(start_date[1]), 1)
             end_date = jdatetime.date(int(end_date[0]), int(end_date[1]), 1)
-            data = SaleSummary.objects.filter(date__range = [start_date, end_date]).values('date').annotate(total_sales=Sum('sale')).order_by('date')
-            saler_report_list = [[d['date'].strftime('%Y-%m-%d'), d['total_sales']] for d in data]
+            data = SaleSummary.objects.filter(date__range=[start_date, end_date]).values('date__year', 'date__month').annotate(total_sales=Sum('sale')).order_by('date__year', 'date__month')
+            sales_report_list = [[f"{greg_to_jalali(d['date.year'], d['date.month'], 1).strftime('%Y-%m-%d')}", d['total_sales']] for d in data]
+            print(data)
+           
+           
+           
+            # start_date = jdatetime.date(int(start_date[0]), int(start_date[1]), 1)
+            # end_date = jdatetime.date(int(end_date[0]), int(end_date[1]), 1)
+            # data = SaleSummary.objects.filter(date__range = [start_date, end_date]).values('date').annotate(total_sales=Sum('sale')).order_by('date')
+            # saler_report_list = [[d['date'].strftime('%Y-%m-%d'), d['total_sales']] for d in data]
         elif report_type == 'yearly':
             start_date = jdatetime.date(int(start_date[0]), 1, 1)
             end_date = jdatetime.date(int(end_date[0]), 1, 1)
             data = SaleSummary.objects.filter(date__range = [start_date, end_date]).values('date').annotate(total_sales=Sum('sale')).order_by('date')
-            saler_report_list = [[d['date'].strftime('%Y-%m-%d'), d['total_sales']] for d in data]
+            sales_report_list = [[d['date'].strftime('%Y-%m-%d'), d['total_sales']] for d in data]
         else:
             data = []
-        return JsonResponse(saler_report_list, safe=False)
+        return JsonResponse(sales_report_list, safe=False)
 
 
 
