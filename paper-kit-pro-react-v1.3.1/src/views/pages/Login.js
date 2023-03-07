@@ -14,7 +14,7 @@
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 */
-import React from "react";
+import React,{useState, useEffect} from "react";
 import { Link } from "react-router-dom";
 // reactstrap components
 import {
@@ -35,13 +35,53 @@ import {
   Row
 } from "reactstrap";
 
+import localforage from 'localforage';
+
+
+
 function Login() {
-  React.useEffect(() => {
-    document.body.classList.toggle("login-page");
-    return function cleanup() {
-      document.body.classList.toggle("login-page");
-    };
-  });
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleEmailChange = (event) => setUsername(event.target.value);
+  const handlePasswordChange = (event) => setPassword(event.target.value);
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    console.log(username)
+    try {
+      const response = await fetch("http://127.0.0.1:8000/login/", {
+        method: "POST",
+      
+        body: JSON.stringify({
+          username: username,
+          password: password,
+        }),
+        headers: {
+          'Content-Type': 'application/json'
+        },
+       
+      });
+
+      if (!response.ok) {
+        
+        throw new Error("Invalid email or password");
+      }
+
+      const data = await response.json();
+      const { access, refresh } = data;
+
+      if (response.ok) {
+        // if login is successful, store the token in local storage
+        await localforage.setItem("access_token", access);
+        await localforage.setItem("refresh_token", refresh);
+      }
+    } catch (error) {
+      console.log(error.message);
+      // show error message to the user
+    }
+  };
+
   return (
     <div className="login-page">
       <Container>
@@ -61,7 +101,12 @@ function Login() {
                         <i className="nc-icon nc-single-02" />
                       </InputGroupText>
                     </InputGroupAddon>
-                    <Input placeholder="First Name..." type="text" />
+                    <Input
+                      placeholder="Username"
+                      type="suername"
+                      value={username}
+                      onChange={handleEmailChange}
+                    />
                   </InputGroup>
                   <InputGroup>
                     <InputGroupAddon addonType="prepend">
@@ -73,6 +118,8 @@ function Login() {
                       placeholder="Password"
                       type="password"
                       autoComplete="off"
+                      value={password}
+                      onChange={handlePasswordChange}
                     />
                   </InputGroup>
                   <br />
@@ -87,7 +134,9 @@ function Login() {
                   </FormGroup>
                 </CardBody>
                 <CardFooter>
-                <Link to="/dashboard" className="btn btn-primary">Sign up</Link>
+                  <Button onClick={handleSubmit} className="btn btn-primary">
+                    Sign up
+                  </Button>
                 </CardFooter>
               </Card>
             </Form>

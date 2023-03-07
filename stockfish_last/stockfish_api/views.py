@@ -26,9 +26,12 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 class LoginView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
-        username = request.POST.get('username')
+        data = json.loads(request.body)
+        username = data.get('username')
+        print(username)
         username = username.strip()
-        password = request.POST.get('password')
+        password = data.get('password')
+       
         user = authenticate(request, username=username, password=password)
         if user is not None and user.is_active:
             response = super().post(request, *args, **kwargs)
@@ -634,6 +637,7 @@ def update_sale_summary_with_delete_sale(sender, instance, created, **kwargs):
 class SalesReportView(View):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
+        print(data)
         report_type = data.get('report_type')
         start_date =  data.get('start_date').split("-")
         end_date =  data.get('end_date').split("-")
