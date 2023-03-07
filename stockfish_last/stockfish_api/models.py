@@ -141,19 +141,24 @@ class Salers(models.Model):
     is_active = models.BooleanField(default=True)
 
 class SalerPerformance(models.Model):
-    objects = jmodels.jManager()
     name = models.CharField(max_length=100)
-    date = jmodels.jDateField()
+    year = models.IntegerField(null=True)
+    month = models.IntegerField(null=True)
     sale = models.FloatField(default=0, null=True)
 
 class SaleSummary(models.Model):
     objects = jmodels.jManager()
     date = jmodels.jDateField()
+    year = models.IntegerField(null=True)
+    month = models.IntegerField(null=True)
+    day = models.IntegerField(null=True)
     sale = models.FloatField(default=0, null=True)
 
 class SalerMonthlySaleRating(models.Model):
     objects = jmodels.jManager()
-    date = jmodels.jDateField()
+    year = models.IntegerField(null=True)
+    month = models.IntegerField(null=True)
+    day = models.IntegerField(null=True)
     name = models.CharField(max_length=100)
     sale_rating = models.FloatField(default=1, null=True)
 

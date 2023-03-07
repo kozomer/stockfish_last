@@ -12,6 +12,7 @@ import datetime
 import jdatetime
 from django.db.models import Sum
 
+
 from django.contrib.auth import authenticate, login
 from rest_framework.authtoken.models import Token
 from django.views.decorators.csrf import csrf_exempt
@@ -555,7 +556,8 @@ def update_saler_performance_with_add_sale(sender, instance, created, **kwargs):
         # Get or create the SalerPerformance object
         saler_performance, created = SalerPerformance.objects.get_or_create(
             name=instance.saler,
-            date=instance.date
+            year=instance.date.year,
+            month= instance.date.month
         )
 
         # Update the sale value for the SalerPerformance object
@@ -566,27 +568,29 @@ def update_saler_performance_with_add_sale(sender, instance, created, **kwargs):
 def update_saler_performance_with_delete_sale(sender, instance, **kwargs):
     # Get the corresponding SalerPerformance object for the sale
     find_month=instance.date.month
-    find_year = instance.date.month
+    find_year = instance.date.year
     performance, created = SalerPerformance.objects.get_or_create(
         name=instance.saler, 
-        date=jdatetime.date(int(find_year), int(find_month), 1)
+        year=instance.date.year,
+        month=instance.date.month
         )
 
     # Subtract the net sale amount from the sale field
     performance.sale -= instance.net_sales/10000000
     performance.save()
 
+#! Update monthly group, now it is not grouped by monthly!!!!!!
 @receiver(pre_save, sender=SalerPerformance)
 def update_month_sale_rating(sender, instance, **kwargs):
-    """
-    Signal handler function for updating the month_sale_rating field
-    of the SalerPerformance object based on the updated sale value.
-    """
     # Calculate the sale rating based on the updated sale value
     print(instance.sale)
     monthly_sale_rating = calculate_sale_rating(float(instance.sale)/10000000)
     print(monthly_sale_rating)
-    saler, created = SalerMonthlySaleRating.objects.get_or_create(name=instance.name, date= instance.date)
+    saler, created = SalerMonthlySaleRating.objects.get_or_create(
+        name=instance.name, 
+        year=instance.year,
+        month=instance.month
+        )
     saler.sale_rating = monthly_sale_rating
 
 
@@ -604,8 +608,9 @@ def update_sale_summary_with_add_sale(sender, instance, created, **kwargs):
         find_month = instance.date.month
         find_year = instance.date.year
         find_day = instance.date.day
+        print(f"{find_year}, {find_month}, {find_day}")
         sale_summary, created = SaleSummary.objects.get_or_create(
-            date=jdatetime.date(int(find_year), int(find_month), int(find_day))
+            date=jdatetime.date(int(find_year), int(find_month), int(find_day)), year= find_year, month = find_month, day = find_day
         )
 
         # Update the sale value for the SalerPerformance object
@@ -613,25 +618,24 @@ def update_sale_summary_with_add_sale(sender, instance, created, **kwargs):
         sale_summary.save()
 
 @receiver(post_delete, sender=Sales)
-def update_sale_summary_with_delete_sale(sender, instance, created, **kwargs):
-    if created:
-        # Get or create the SalerPerformance object
-        find_month = instance.date.month
-        find_year = instance.date.year
-        find_day = instance.date.day
-        sale_summary, created = SaleSummary.objects.get_or_create(
-            date=jdatetime.date(int(find_year), int(find_month), int(find_day))
-        )
+def update_sale_summary_with_delete_sale(sender, instance, **kwargs):
+    # Get or create the SalerPerformance object
+    find_month = instance.date.month
+    find_year = instance.date.year
+    find_day = instance.date.day
 
-        # Update the sale value for the SalerPerformance object
-        sale_summary.sale -= instance.net_sales
-        sale_summary.save()
+    sale_summary = SaleSummary.objects.get(
+        date=jdatetime.date(int(find_year), int(find_month), int(find_day))
+    )
 
+    # Update the sale value for the SalerPerformance object
+    sale_summary.sale -= instance.net_sales
+    sale_summary.save()
 
 class SalesReportView(View):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
-        print(data)
+
         report_type = data.get('report_type')
         start_date =  data.get('start_date').split("-")
         end_date =  data.get('end_date').split("-")
@@ -641,25 +645,46 @@ class SalesReportView(View):
             start_date = jdatetime.date(int(start_date[0]), int(start_date[1]), int(start_date[2]))
             end_date = jdatetime.date(int(end_date[0]), int(end_date[1]), int(end_date[2]))
             data = SaleSummary.objects.filter(date__range = [start_date, end_date]).values('date').annotate(total_sales=Sum('sale')).order_by('date')
-            sales_report_list = [[d['date'].strftime('%Y-%m-%d'), d['total_sales']] for d in data]
+            sales_report_list = [[d['date'].month,d['date'].year, d['total_sales']] for d in data]
+
         elif report_type == 'monthly':
-            start_date = jdatetime.date(int(start_date[0]), int(start_date[1]), 1)
-            end_date = jdatetime.date(int(end_date[0]), int(end_date[1]), 1)
-            data = SaleSummary.objects.filter(date__range=[start_date, end_date]).values('date__year', 'date__month').annotate(total_sales=Sum('sale')).order_by('date__year', 'date__month')
-            sales_report_list = [[f"{greg_to_jalali(d['date.year'], d['date.month'], 1).strftime('%Y-%m-%d')}", d['total_sales']] for d in data]
-            print(data)
-           
-           
-           
-            # start_date = jdatetime.date(int(start_date[0]), int(start_date[1]), 1)
-            # end_date = jdatetime.date(int(end_date[0]), int(end_date[1]), 1)
-            # data = SaleSummary.objects.filter(date__range = [start_date, end_date]).values('date').annotate(total_sales=Sum('sale')).order_by('date')
-            # saler_report_list = [[d['date'].strftime('%Y-%m-%d'), d['total_sales']] for d in data]
+            start_year, start_month = int(start_date[0]), int(start_date[1])
+            end_year, end_month = int(end_date[0]), int(end_date[1])
+            sales_report_list = []
+            
+            while start_year < end_year or (start_year == end_year and start_month < end_month):
+                # Get the data for the current month
+                data = SaleSummary.objects.filter(year=start_year, month=start_month).values('year', 'month').annotate(total_sales=Sum('sale'))
+
+                # Format the data for the current month and add it to the sales report list
+                sales_report_list.extend([[f"{jdatetime.date(start_year, start_month, 1).strftime('%Y-%m-%d')}", d['total_sales']] for d in data])
+
+                # Increment the month and year
+                start_month += 1
+                if start_month > 12:
+                    start_month = 1
+                    start_year += 1
+
+            # Sort the sales report list by date
+            sales_report_list.sort()
         elif report_type == 'yearly':
-            start_date = jdatetime.date(int(start_date[0]), 1, 1)
-            end_date = jdatetime.date(int(end_date[0]), 1, 1)
-            data = SaleSummary.objects.filter(date__range = [start_date, end_date]).values('date').annotate(total_sales=Sum('sale')).order_by('date')
-            sales_report_list = [[d['date'].strftime('%Y-%m-%d'), d['total_sales']] for d in data]
+            start_year  = int(start_date[0])
+            end_year  = int(end_date[0])
+            sales_report_list = []
+            
+            while start_year < end_year :
+                # Get the data for the current month
+                data = SaleSummary.objects.filter(year=start_year).values('year').annotate(total_sales=Sum('sale'))
+
+                # Format the data for the current month and add it to the sales report list
+                sales_report_list.extend([[f"{jdatetime.date(start_year, 1, 1).strftime('%Y-%m-%d')}", d['total_sales']] for d in data])
+
+                # Increment the month and year
+                start_year += 1
+
+            # Sort the sales report list by date
+            sales_report_list.sort()
+
         else:
             data = []
         return JsonResponse(sales_report_list, safe=False)
@@ -668,6 +693,8 @@ class SalesReportView(View):
 
 
 # endregion
+
+#TODO: Ürün bazlı aylık satışlar için yeni field yapılacak
 
 
 
