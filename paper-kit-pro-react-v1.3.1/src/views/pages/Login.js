@@ -15,7 +15,7 @@
 
 */
 import React,{useState, useEffect} from "react";
-import { Link } from "react-router-dom";
+import { withRouter } from 'react-router-dom';
 // reactstrap components
 import {
   Button,
@@ -39,7 +39,7 @@ import localforage from 'localforage';
 
 
 
-function Login() {
+function Login({ history }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
@@ -73,6 +73,11 @@ function Login() {
 
       if (response.ok) {
         // if login is successful, store the token in local storage
+        console.log("sadasd"),
+        
+        setTimeout(() => {
+          history.push('/admin/dashboard');
+        }, 2000); // wait for 2 seconds before navigating to home page
         await localforage.setItem("access_token", access);
         await localforage.setItem("refresh_token", refresh);
       }
@@ -153,4 +158,4 @@ function Login() {
   );
 }
 
-export default Login;
+export default withRouter(Login);

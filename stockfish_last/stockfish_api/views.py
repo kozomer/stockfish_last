@@ -38,6 +38,7 @@ class LoginView(TokenObtainPairView):
         password = data.get('password')
        
         user = authenticate(request, username=username, password=password)
+        print(user)
         if user is not None and user.is_active:
             response = super().post(request, *args, **kwargs)
             return response
