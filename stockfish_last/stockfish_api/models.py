@@ -167,6 +167,17 @@ class SalerReceipeRating(models.Model):
     date = jmodels.jDateField()
     sale_rating = models.FloatField(default=1, null=True)
 
+class MonthlyProductSales(models.Model):
+    objects = jmodels.jManager()
+    product_name = models.CharField(max_length=100)
+    product_code = models.IntegerField(null=True)
+    date = jmodels.jDateField()
+    year = models.IntegerField(null=True)
+    month = models.IntegerField(null=True)
+    piece = models.FloatField(null=True)
+    sale = models.FloatField(default=0, null=True)
+
+
 
 
 
