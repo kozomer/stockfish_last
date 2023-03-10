@@ -1,6 +1,6 @@
 from django.shortcuts import render
 import pandas as pd
-from .models import Customers, Products, Sales, Warehouse, ROP, Salers, SalerPerformance, SaleSummary, SalerMonthlySaleRating
+from .models import Customers, Products, Sales, Warehouse, ROP, Salers, SalerPerformance, SaleSummary, SalerMonthlySaleRating, MonthlyProductSales
 from django.views import View
 from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
 import json
@@ -12,17 +12,17 @@ import datetime
 import jdatetime
 from django.db.models import Sum
 
-from django.contrib.auth import authenticate, login
+
+from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
-from django.views.decorators.csrf import csrf_exempt
+
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
-# region Login Logout
 
+# region Login/Logout
 
 class LoginView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
@@ -50,7 +50,7 @@ class LogoutView(View):
             token = RefreshToken(refresh_token)
             token.blacklist()
 
-            return JsonResponse({'success': 'successful log out'}, status=205)
+            return JsonResponse({'success': 'successfully log out'}, status=205)
         except Exception as e:
             print(str(e))
             return JsonResponse({'error': 'BAD REQUEST'}, status=400)
@@ -59,14 +59,10 @@ class LogoutView(View):
 
 # endregion
 
-
-
-
-
-
 # region Customers
 
 class AddCustomersView(View):
+    permission_classes = (IsAuthenticated,)
     def post(self, request,*args, **kwargs):
         if request.method == 'POST':
             data = pd.read_excel(request.FILES['file'])
@@ -81,6 +77,7 @@ class AddCustomersView(View):
         return render(request, 'upload.html', {})
 
 class ViewCustomersView(View):
+    permission_classes = (IsAuthenticated,)
     def get(self,request,*args, **kwargs):
          customers = Customers.objects.values().all()
          customer_list = [[customer['customer_code'], customer['description'], customer['quantity'],
@@ -89,12 +86,14 @@ class ViewCustomersView(View):
          return JsonResponse(customer_list,safe=False)
 
 class DeleteCustomerView(View):
+    permission_classes = (IsAuthenticated,)
     def post(self, request, *args, **kwargs):
         customer_code = request.POST.get('customer_code')
         Customers.objects.filter(customer_code=customer_code).delete()
         return HttpResponse('OK')
 
 class EditCustomerView(View):
+    permission_classes = (IsAuthenticated,)
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
         old_customer_code = data.get('old_customer_code')
@@ -127,6 +126,7 @@ class EditCustomerView(View):
 # region Sales
 
 class AddSalesView(View):
+    permission_classes = (IsAuthenticated,)
     def post(self, request, *args, **kwargs):
         if request.method == 'POST':
             data = pd.read_excel(request.FILES['file'])
@@ -159,6 +159,7 @@ class AddSalesView(View):
         return render(request, 'upload.html', {})
 
 class ViewSalesView(View):
+    permission_classes = (IsAuthenticated,)
     def get(self, request, *args, **kwargs):
         sales = Sales.objects.values().all()
         sale_list = [[sale['no'], sale['bill_number'], sale['date'].strftime('%Y-%m-%d'), sale['psr'], sale['customer_code'],
@@ -174,6 +175,7 @@ class ViewSalesView(View):
         return JsonResponse(sale_list, safe=False)
 
 class DeleteSaleView(View):
+    permission_classes = (IsAuthenticated,)
     def post(self, request, *args, **kwargs):
         no = request.POST.get('no', None)
         product_code = request.POST.get('good_code', None)
@@ -188,6 +190,7 @@ class DeleteSaleView(View):
         return HttpResponse('OK')
 
 class EditSaleView(View):
+    permission_classes = (IsAuthenticated,)
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
         old_no = data.get('old_no')
@@ -265,6 +268,7 @@ class EditSaleView(View):
 # region Warehouse
 
 class AddWarehouseView(View):
+    permission_classes = (IsAuthenticated,)
     def post(self, request, *args, **kwargs):
         if request.method == 'POST':
             data = pd.read_excel(request.FILES['file'])
@@ -278,18 +282,21 @@ class AddWarehouseView(View):
         return render(request, 'upload.html', {})
 
 class ViewWarehouseView(View):
+    permission_classes = (IsAuthenticated,)
     def get(self, request, *args, **kwargs):
         warehouse_items = Warehouse.objects.values().all()
         warehouse_list = [[item['product_code'], item['title'], item['unit'], item['stock']] for item in warehouse_items]
         return JsonResponse(warehouse_list, safe=False)
 
 class DeleteWarehouseView(View):
+    permission_classes = (IsAuthenticated,)
     def post(self, request, *args, **kwargs):
         product_code = request.POST.get('product_code')
         Warehouse.objects.filter(product_code=product_code).delete()
         return HttpResponse('OK')
 
 class EditWarehouseView(View):
+    permission_classes = (IsAuthenticated,)
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
         old_product_code = data.get('old_product_code')
@@ -319,6 +326,7 @@ class EditWarehouseView(View):
 # region Products
 
 class AddProductsView(View):
+    permission_classes = (IsAuthenticated,)
     def post(self, request, *args, **kwargs):
         if request.method == 'POST':
             data = pd.read_excel(request.FILES['file'])
@@ -345,6 +353,7 @@ class AddProductsView(View):
         return render(request, 'upload.html', {})
 
 class ViewProductsView(View):
+    permission_classes = (IsAuthenticated,)
     def get(self, request, *args, **kwargs):
         products = Products.objects.values().all()
         product_list = [[p['group'], p['subgroup'], p['feature'], p['product_code_ir'], p['product_code_tr'],
@@ -352,12 +361,14 @@ class ViewProductsView(View):
         return JsonResponse(product_list, safe=False)
 
 class DeleteProductView(View):
+    permission_classes = (IsAuthenticated,)
     def post(self, request, *args, **kwargs):
         product_code_ir = request.POST.get('product_code_ir')
         Products.objects.filter(product_code_ir=product_code_ir).delete()
         return HttpResponse('OK')
 
 class EditProductView(View):
+    permission_classes = (IsAuthenticated,)
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
         old_product_code_ir = data.get('old_product_code_ir')
@@ -393,6 +404,7 @@ class EditProductView(View):
 # region Charts
 
 class ChartView(View):
+    permission_classes = (IsAuthenticated,)
     def post(self, request, *args, **kwargs):
         #start_date = request.POST.get('start_date')
         #end_date = request.POST.get('end_date')
@@ -407,6 +419,7 @@ class ChartView(View):
         return JsonResponse(response_data, safe=False)
 
 class ItemListView(View):
+    permission_classes = (IsAuthenticated,)
     def get(self, request, *args, **kwargs):
         product_codes = Products.objects.values_list('product_code_ir', flat=True)
         return JsonResponse(list(product_codes), safe=False)
@@ -501,6 +514,7 @@ def create_rop_for_warehouse(sender, instance, created, **kwargs):
 
 # region Saler
 class AddSalerView(View):
+    permission_classes = (IsAuthenticated,)
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
         print(data)
@@ -521,6 +535,7 @@ class AddSalerView(View):
         return HttpResponse("OK")
 
 class CollapsedSalerView(View):
+    permission_classes = (IsAuthenticated,)
     def get(self, request, *args, **kwargs):
         salers = Salers.objects.values().all()
         salers_list = [[saler['id'], saler['name'], saler['is_active']] for saler in salers]
@@ -529,6 +544,7 @@ class CollapsedSalerView(View):
     
  # Everyday experience rating must be automatically updated !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   
 class SalerView(View):
+    permission_classes = (IsAuthenticated,)
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
         id = data.get('id')
@@ -547,6 +563,7 @@ class SalerView(View):
         return JsonResponse(response_data, safe=False)
 
 class DeleteSalerView(View):
+    permission_classes = (IsAuthenticated,)
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
         id = data.get('id')
@@ -561,7 +578,8 @@ def update_saler_performance_with_add_sale(sender, instance, created, **kwargs):
         # Get or create the SalerPerformance object
         saler_performance, created = SalerPerformance.objects.get_or_create(
             name=instance.saler,
-            date=instance.date
+            year=instance.date.year,
+            month= instance.date.month
         )
 
         # Update the sale value for the SalerPerformance object
@@ -572,27 +590,29 @@ def update_saler_performance_with_add_sale(sender, instance, created, **kwargs):
 def update_saler_performance_with_delete_sale(sender, instance, **kwargs):
     # Get the corresponding SalerPerformance object for the sale
     find_month=instance.date.month
-    find_year = instance.date.month
+    find_year = instance.date.year
     performance, created = SalerPerformance.objects.get_or_create(
         name=instance.saler, 
-        date=jdatetime.date(int(find_year), int(find_month), 1)
+        year=instance.date.year,
+        month=instance.date.month
         )
 
     # Subtract the net sale amount from the sale field
     performance.sale -= instance.net_sales/10000000
     performance.save()
 
+
 @receiver(pre_save, sender=SalerPerformance)
 def update_month_sale_rating(sender, instance, **kwargs):
-    """
-    Signal handler function for updating the month_sale_rating field
-    of the SalerPerformance object based on the updated sale value.
-    """
     # Calculate the sale rating based on the updated sale value
     print(instance.sale)
     monthly_sale_rating = calculate_sale_rating(float(instance.sale)/10000000)
     print(monthly_sale_rating)
-    saler, created = SalerMonthlySaleRating.objects.get_or_create(name=instance.name, date= instance.date)
+    saler, created = SalerMonthlySaleRating.objects.get_or_create(
+        name=instance.name, 
+        year=instance.year,
+        month=instance.month
+        )
     saler.sale_rating = monthly_sale_rating
 
 
@@ -610,8 +630,9 @@ def update_sale_summary_with_add_sale(sender, instance, created, **kwargs):
         find_month = instance.date.month
         find_year = instance.date.year
         find_day = instance.date.day
+        print(f"{find_year}, {find_month}, {find_day}")
         sale_summary, created = SaleSummary.objects.get_or_create(
-            date=jdatetime.date(int(find_year), int(find_month), int(find_day))
+            date=jdatetime.date(int(find_year), int(find_month), int(find_day)), year= find_year, month = find_month, day = find_day
         )
 
         # Update the sale value for the SalerPerformance object
@@ -619,25 +640,25 @@ def update_sale_summary_with_add_sale(sender, instance, created, **kwargs):
         sale_summary.save()
 
 @receiver(post_delete, sender=Sales)
-def update_sale_summary_with_delete_sale(sender, instance, created, **kwargs):
-    if created:
-        # Get or create the SalerPerformance object
-        find_month = instance.date.month
-        find_year = instance.date.year
-        find_day = instance.date.day
-        sale_summary, created = SaleSummary.objects.get_or_create(
-            date=jdatetime.date(int(find_year), int(find_month), int(find_day))
-        )
+def update_sale_summary_with_delete_sale(sender, instance, **kwargs):
+    # Get or create the SalerPerformance object
+    find_month = instance.date.month
+    find_year = instance.date.year
+    find_day = instance.date.day
 
-        # Update the sale value for the SalerPerformance object
-        sale_summary.sale -= instance.net_sales
-        sale_summary.save()
+    sale_summary = SaleSummary.objects.get(
+        date=jdatetime.date(int(find_year), int(find_month), int(find_day))
+    )
 
+    # Update the sale value for the SalerPerformance object
+    sale_summary.sale -= instance.net_sales
+    sale_summary.save()
 
 class SalesReportView(View):
+    permission_classes = (IsAuthenticated,)
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
-        print(data)
+
         report_type = data.get('report_type')
         start_date =  data.get('start_date').split("-")
         end_date =  data.get('end_date').split("-")
@@ -647,23 +668,85 @@ class SalesReportView(View):
             start_date = jdatetime.date(int(start_date[0]), int(start_date[1]), int(start_date[2]))
             end_date = jdatetime.date(int(end_date[0]), int(end_date[1]), int(end_date[2]))
             data = SaleSummary.objects.filter(date__range = [start_date, end_date]).values('date').annotate(total_sales=Sum('sale')).order_by('date')
-            saler_report_list = [[d['date'].strftime('%Y-%m-%d'), d['total_sales']] for d in data]
+            sales_report_list = [[d['date'].month,d['date'].year, d['total_sales']] for d in data]
+
         elif report_type == 'monthly':
-            start_date = jdatetime.date(int(start_date[0]), int(start_date[1]), 1)
-            end_date = jdatetime.date(int(end_date[0]), int(end_date[1]), 1)
-            data = SaleSummary.objects.filter(date__range = [start_date, end_date]).values('date').annotate(total_sales=Sum('sale')).order_by('date')
-            saler_report_list = [[d['date'].strftime('%Y-%m-%d'), d['total_sales']] for d in data]
+            start_year, start_month = int(start_date[0]), int(start_date[1])
+            end_year, end_month = int(end_date[0]), int(end_date[1])
+            sales_report_list = []
+            
+            while start_year < end_year or (start_year == end_year and start_month < end_month):
+                # Get the data for the current month
+                data = SaleSummary.objects.filter(year=start_year, month=start_month).values('year', 'month').annotate(total_sales=Sum('sale'))
+
+                # Format the data for the current month and add it to the sales report list
+                sales_report_list.extend([[f"{jdatetime.date(start_year, start_month, 1).strftime('%Y-%m-%d')}", d['total_sales']] for d in data])
+
+                # Increment the month and year
+                start_month += 1
+                if start_month > 12:
+                    start_month = 1
+                    start_year += 1
+
+            # Sort the sales report list by date
+            sales_report_list.sort()
         elif report_type == 'yearly':
-            start_date = jdatetime.date(int(start_date[0]), 1, 1)
-            end_date = jdatetime.date(int(end_date[0]), 1, 1)
-            data = SaleSummary.objects.filter(date__range = [start_date, end_date]).values('date').annotate(total_sales=Sum('sale')).order_by('date')
-            saler_report_list = [[d['date'].strftime('%Y-%m-%d'), d['total_sales']] for d in data]
+            start_year  = int(start_date[0])
+            end_year  = int(end_date[0])
+            sales_report_list = []
+            
+            while start_year < end_year :
+                # Get the data for the current month
+                data = SaleSummary.objects.filter(year=start_year).values('year').annotate(total_sales=Sum('sale'))
+
+                # Format the data for the current month and add it to the sales report list
+                sales_report_list.extend([[f"{jdatetime.date(start_year, 1, 1).strftime('%Y-%m-%d')}", d['total_sales']] for d in data])
+
+                # Increment the month and year
+                start_year += 1
+
+            # Sort the sales report list by date
+            sales_report_list.sort()
+
         else:
             data = []
-        return JsonResponse(saler_report_list, safe=False)
+        return JsonResponse(sales_report_list, safe=False)
 
 
 
+
+# endregion
+
+# region MonthlyProductSales
+
+@receiver(post_save, sender=Sales)
+def update_monthly_product_sales_with_add_sale(sender, instance, created, **kwargs):
+    if created:
+
+        monthly_sale, created = MonthlyProductSales.objects.get_or_create(
+            prodct_name=instance.goods,
+            product_code=instance.good_code,
+            year=instance.date.year,
+            month= instance.date.month
+        )
+
+        monthly_sale.piece+= instance.original_output_value
+        monthly_sale.sale += instance.net_sales
+        monthly_sale.save()
+
+@receiver(post_delete, sender=Sales)
+def update_monthly_product_sales_with_delete_sale(sender, instance, **kwargs):
+
+    monthly_sale = MonthlyProductSales.objects.get(
+        prodct_name=instance.goods,
+        product_code=instance.good_code,
+        year=instance.date.year,
+        month= instance.date.month
+        )
+
+    monthly_sale.piece -= instance.original_output_value
+    monthly_sale.sale -= instance.net_sales
+    monthly_sale.save()
 
 # endregion
 

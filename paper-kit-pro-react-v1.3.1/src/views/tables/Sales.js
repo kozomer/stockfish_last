@@ -946,9 +946,9 @@ const [bonus, setBonus] = useState(null);
                                warningWithConfirmAndCancelMessage() 
                                const rowToDelete = {...row};
                                const data = {
-                                no: rowToDelete[0],
-                                good_code: rowToDelete[8],
-                                original_output_value: rowToDelete[12],
+                                no: rowToDelete [0],
+                                good_code: rowToDelete [8],
+                                original_output_value: rowToDelete [12],
                               };
                               setDeleteData(data);
                               

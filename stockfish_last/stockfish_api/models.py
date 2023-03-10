@@ -131,6 +131,7 @@ class ROP(models.Model):
 
 class Salers(models.Model):
     #saler_code = models.IntegerField(unique= True)
+    objects = jmodels.jManager()
     name = models.CharField(max_length=200)
     job_start_date = jmodels.jDateField()
     manager_performance_rating = models.FloatField(null=True)
@@ -141,21 +142,41 @@ class Salers(models.Model):
 
 class SalerPerformance(models.Model):
     name = models.CharField(max_length=100)
-    date = jmodels.jDateField()
+    year = models.IntegerField(null=True)
+    month = models.IntegerField(null=True)
     sale = models.FloatField(default=0, null=True)
 
 class SaleSummary(models.Model):
+    objects = jmodels.jManager()
     date = jmodels.jDateField()
+    year = models.IntegerField(null=True)
+    month = models.IntegerField(null=True)
+    day = models.IntegerField(null=True)
     sale = models.FloatField(default=0, null=True)
 
 class SalerMonthlySaleRating(models.Model):
-    date = jmodels.jDateField()
+    objects = jmodels.jManager()
+    year = models.IntegerField(null=True)
+    month = models.IntegerField(null=True)
+    day = models.IntegerField(null=True)
     name = models.CharField(max_length=100)
     sale_rating = models.FloatField(default=1, null=True)
 
 class SalerReceipeRating(models.Model):
+    objects = jmodels.jManager()
     date = jmodels.jDateField()
     sale_rating = models.FloatField(default=1, null=True)
+
+class MonthlyProductSales(models.Model):
+    objects = jmodels.jManager()
+    product_name = models.CharField(max_length=100)
+    product_code = models.IntegerField(null=True)
+    date = jmodels.jDateField()
+    year = models.IntegerField(null=True)
+    month = models.IntegerField(null=True)
+    piece = models.FloatField(null=True)
+    sale = models.FloatField(default=0, null=True)
+
 
 
 
