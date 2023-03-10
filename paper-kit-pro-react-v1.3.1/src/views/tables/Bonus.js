@@ -36,6 +36,7 @@ import {
 import Switch from "react-bootstrap-switch";
 import '../../assets/css/Table.css';
 import ReactBSAlert from "react-bootstrap-sweetalert";
+import localforage from 'localforage';
 
 function UserProfile() {
 
@@ -53,17 +54,23 @@ function UserProfile() {
 
   const [alert, setAlert] = useState(null);
 
-  const handleSelectMember = (member) => {
+  const handleSelectMember = async(member) => {
 
     setSelectedSaler(member);
     const saler_id = {
       id: member
     };
     console.log(saler_id)
+    
+    const access_token = await localforage.getItem('access_token');
     fetch('http://127.0.0.1:8000/salers/', {
       method: 'POST',
       body: JSON.stringify(saler_id),
-      credentials: 'include'
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer '+ String(access_token)
+      },
     })
       .then(response => response.json())
 
@@ -254,7 +261,7 @@ function UserProfile() {
           confirmBtnBsStyle="info"
           btnSize=""
         >
-          Your saler has been successfully saved!
+          Your saler has been successfully deleted!
         </ReactBSAlert>
       );
     }

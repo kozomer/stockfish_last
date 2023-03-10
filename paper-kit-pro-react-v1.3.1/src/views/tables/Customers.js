@@ -3,7 +3,7 @@ import { Button, Card, CardHeader, CardBody, CardTitle, Row, Col, Input,Form, Fo
 import ReactTable from 'components/ReactTable/ReactTable.js';
 import ReactBSAlert from "react-bootstrap-sweetalert";
 import '../../assets/css/Table.css';
-
+import localforage from 'localforage';
 
 const DataTable = () => {
   const [dataTable, setDataTable] = useState([]);
@@ -43,7 +43,15 @@ const DataTable = () => {
 
   useEffect(() => {
     async function fetchData() {
-      const response = await fetch('http://127.0.0.1:8000/customers/');
+      const access_token = await localforage.getItem('access_token'); 
+      console.log(access_token)
+      const response = await fetch('http://127.0.0.1:8000/customers/',{
+       
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer '+ String(access_token)
+        }
+      })
       const data = await response.json();
       
       setDataTable(data);
@@ -75,10 +83,15 @@ const DataTable = () => {
     const formData = new FormData();
     formData.append('file', file);
     console.log(file)
+    const access_token = localforage.getItem('access_token'); 
     fetch('http://127.0.0.1:8000/add_customers/', {
       method: 'POST',
       body: formData,
-      credentials: 'include'
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer '+ String(access_token)
+      }
     })
       .then((response) => {
         setIsLoading(false);
@@ -220,10 +233,14 @@ const DataTable = () => {
     useEffect(() => {
       if (deleteConfirm) {
        console.log("delete")
-        
+       const access_token =  localforage.getItem('access_token'); 
         fetch(`http://127.0.0.1:8000/delete_customers/`, {
           method: "POST",
           body: new URLSearchParams(deleteData),
+          headers: {
+           
+            'Authorization': 'Bearer '+ String(access_token)
+          }
         })
           setDataChanged(!dataChanged);
        
@@ -251,7 +268,7 @@ const DataTable = () => {
 
 
     const handleSubmit = (e) => {
-      console.log("e")
+      const access_token =  localforage.getItem('access_token'); 
       console.log(oldData)
       const updatedData = {
         new_customer_code:customerCode,
@@ -277,7 +294,8 @@ const DataTable = () => {
       method: 'POST',
       body: JSON.stringify(updatedData),
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer '+ String(access_token)
       },
       credentials: 'include'
     })
