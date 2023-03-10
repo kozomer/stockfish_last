@@ -23,12 +23,14 @@ import PerfectScrollbar from "perfect-scrollbar";
 import avatar from "assets/img/faces/ayo-ogunseinde-2.jpg";
 import logo from "assets/img/react-logo.png";
 import localforage from 'localforage';
+import { useHistory } from 'react-router-dom';
 var ps;
 
 function Sidebar(props) {
   const [openAvatar, setOpenAvatar] = React.useState(false);
   const [collapseStates, setCollapseStates] = React.useState({});
   const sidebar = React.useRef();
+  const history = useHistory(); // get the history object
   // this creates the intial state of this component based on the collapse routes
   // that it gets through props.routes
   const getCollapseStates = (routes) => {
@@ -151,7 +153,7 @@ function Sidebar(props) {
   }, []);
 
   async function handleLogout() {
- 
+   
     try {
       
         const access_token = await localforage.getItem('access_token');
@@ -171,8 +173,14 @@ function Sidebar(props) {
         if (response.ok) {
             // Remove the token from async storage
             console.log("successful")
+
             await localforage.removeItem('access_token');
             await localforage.removeItem('refresh_token');
+          
+           
+            setTimeout(() => {
+              history.push('/auth/login');
+            }, 2000); // wait for 2 seconds before navigating to login page
            // navigation.navigate("Login")
         }
         if (!response.ok){
