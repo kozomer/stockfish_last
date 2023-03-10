@@ -85,8 +85,8 @@ function UserProfile() {
 
   };
 
-  const handleAddSaler = () => {
-    
+  const handleAddSaler = async () => {
+    const access_token = await localforage.getItem('access_token');
     const newSaler = {
       name: newSalerName,
       job_start_date: newSalerStatus,
@@ -96,18 +96,30 @@ function UserProfile() {
       method: "POST",
       body: JSON.stringify(newSaler),
       credentials: "include",
+      headers: {
+        
+        'Authorization': 'Bearer '+ String(access_token)
+      },
     })
       .then((response) =>{
          response.json();
+         if(response.ok){
          handleSalesDataChange()
+         }
        })
       
   };
 
 
-  function fetchSalersData() {
+  async function fetchSalersData() {
     console.log("aaaaaaaaa")
-    fetch('http://127.0.0.1:8000/collapsed_salers/')
+    const access_token = await localforage.getItem('access_token');
+    fetch('http://127.0.0.1:8000/collapsed_salers/',{
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer '+ String(access_token)
+      },
+    })
       .then(response => response.json())
       .then(data => {
         setSalers(data);
@@ -174,18 +186,22 @@ function UserProfile() {
     );
     
   };
-  const handleDeleteSaler = (id) => {
+  const handleDeleteSaler = async(id) => {
     // Delete the saler with the given id
     console.log(id)
     const delete_id={
       id:id
     }
+    const access_token = await localforage.getItem('access_token');
     fetch("http://127.0.0.1:8000/delete_saler/", {
     method: "POST",
-    
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer '+ String(access_token)
+    },
     body:JSON.stringify(delete_id),
     credentials: "include"
-    
+   
     })
     .then((response) => {
       response.json()

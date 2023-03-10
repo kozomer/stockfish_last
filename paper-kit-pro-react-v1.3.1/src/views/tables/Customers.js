@@ -78,12 +78,12 @@ const DataTable = () => {
   const handleAddFileClick = () => {
     setShowUploadDiv(true);
   }
-  const handleUploadClick = () => {
+  const handleUploadClick = async () => {
     setIsLoading(true);
     const formData = new FormData();
     formData.append('file', file);
     console.log(file)
-    const access_token = localforage.getItem('access_token'); 
+    const access_token = await localforage.getItem('access_token'); 
     fetch('http://127.0.0.1:8000/add_customers/', {
       method: 'POST',
       body: formData,
@@ -231,9 +231,10 @@ const DataTable = () => {
   
     
     useEffect(() => {
+      async function deleteFunc() {
       if (deleteConfirm) {
        console.log("delete")
-       const access_token =  localforage.getItem('access_token'); 
+       const access_token =  await localforage.getItem('access_token'); 
         fetch(`http://127.0.0.1:8000/delete_customers/`, {
           method: "POST",
           body: new URLSearchParams(deleteData),
@@ -246,7 +247,10 @@ const DataTable = () => {
        
         setDeleteConfirm(false);
       }
-    }, [deleteConfirm]);
+   
+  }
+  deleteFunc()
+}, [deleteConfirm]);
 
 
     const handleClick = (row) => {
@@ -267,8 +271,8 @@ const DataTable = () => {
     };
 
 
-    const handleSubmit = (e) => {
-      const access_token =  localforage.getItem('access_token'); 
+    const handleSubmit = async (e) => {
+      const access_token = await localforage.getItem('access_token'); 
       console.log(oldData)
       const updatedData = {
         new_customer_code:customerCode,

@@ -1,14 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Card, CardHeader, CardBody, CardTitle, Row, Col } from 'reactstrap';
 import ReactTable from 'components/ReactTable/ReactTable.js';
-
+import localforage from 'localforage';
 const DataTable = () => {
   const [dataTable, setDataTable] = useState([]);
   const [file, setFile] = useState(null);
   const [showUploadDiv, setShowUploadDiv] = useState(false);
   useEffect(() => {
     async function fetchData() {
-      const response = await fetch('http://127.0.0.1:8000/warehouse/');
+      const access_token = await localforage.getItem('access_token'); 
+      
+      const response = await fetch('http://127.0.0.1:8000/warehouse/',{
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer '+ String(access_token)
+        }});
       const data = await response.json();
       setDataTable(data);
     }
@@ -31,14 +37,18 @@ const handleAddFileClick = () => {
     console.log(file)
   };
 
-  const handleUploadClick = () => {
+  const handleUploadClick = async() => {
     const formData = new FormData();
     formData.append('file', file);
-    console.log(file)
+    const access_token = await localforage.getItem('access_token'); 
     fetch('http://127.0.0.1:8000/add_warehouse/', {
       method: 'POST',
       body: formData,
-      credentials: 'include'
+      credentials: 'include',
+      headers: {
+        
+        'Authorization': 'Bearer '+ String(access_token)
+      }
     })
       .then((response) => {
 
@@ -95,19 +105,7 @@ const handleAddFileClick = () => {
                     
                     actions: (
                       <div className='actions-left'>
-                        <Button
-                          onClick={() => {
-                            let obj = dataTable.find((o) => o.id === key);
-                            alert(
-                              `You've clicked LIKE button on \n{ \nName: ${obj.customer_code}, \nDescription: ${obj.description}, \nQuantity: ${obj.quantity}, \nArea Code: ${obj.area_code}, \nCode: ${obj.code}, \nCity: ${obj.city}, \nArea: ${obj.area} \n}.`
-                            );
-                          }}
-                          color='info'
-                          size='sm'
-                          className='btn-icon btn-link like'
-                        >
-                          <i className='fa fa-heart' />
-                        </Button>{' '}
+                      
                         <Button
                           onClick={() => {
                             let obj = dataTable.find((o) => o.id === key);

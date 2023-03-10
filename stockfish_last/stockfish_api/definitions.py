@@ -12,7 +12,7 @@ def greg_to_jalali(year,month,day):
 
 def calculate_experience_rating(job_start_date):
     current_date = datetime.now().date()
-    jalali_current_date = greg_to_jalali(current_date.day,current_date.month,current_date.year)
+    jalali_current_date = greg_to_jalali(current_date.year,current_date.month,current_date.day)
     year_diff = jalali_current_date.year - job_start_date.year
     month_diff = jalali_current_date.month - job_start_date.month
     total_diff = (month_diff + (year_diff * 12))/12

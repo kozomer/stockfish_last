@@ -551,8 +551,9 @@ class AddSalerView(APIView):
         data = json.loads(request.body)
         print(data)
         jalali_date = data.get("job_start_date").split("-")
+        print(jalali_date)
         jalali_date = jdatetime.date(int(jalali_date[0]), int(jalali_date[1]), int(jalali_date[2]))
-        
+        print(jalali_date)
         saler = Salers(
                     name = data.get("name"),
                     job_start_date = jalali_date,
@@ -586,7 +587,7 @@ class SalerView(APIView):
         current_date = datetime.date.today()
         jalali_current_date = jdatetime.date(current_date.year, current_date.month, current_date.day)
         try:
-            saler_monthly_ratings = SalerMonthlySaleRating.objects.get(name=saler.name, date__month = jalali_current_date.month, date__year= jalali_current_date.year )
+            saler_monthly_ratings = SalerMonthlySaleRating.objects.get(name=saler.name, month = jalali_current_date.month, year= jalali_current_date.year )
             monthly_sale_rating = saler_monthly_ratings.sale_rating
         except SalerMonthlySaleRating.DoesNotExist:
             monthly_sale_rating = 1
@@ -704,7 +705,7 @@ class SalesReportView(APIView):
             start_date = jdatetime.date(int(start_date[0]), int(start_date[1]), int(start_date[2]))
             end_date = jdatetime.date(int(end_date[0]), int(end_date[1]), int(end_date[2]))
             data = SaleSummary.objects.filter(date__range = [start_date, end_date]).values('date').annotate(total_sales=Sum('sale')).order_by('date')
-            sales_report_list = [[d['date'].year,d['date'].month,d['date'].day, d['total_sales']] for d in data]
+            sales_report_list = [[d['date'].strftime('%Y-%m-%d'), d['total_sales']] for d in data]
 
         elif report_type == 'monthly':
             start_year, start_month = int(start_date[0]), int(start_date[1])

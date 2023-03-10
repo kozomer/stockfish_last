@@ -3,7 +3,7 @@ import { Button, Card, CardHeader, CardBody, CardTitle, Row, Col,Form, FormGroup
 import ReactTable from 'components/ReactTable/ReactTable.js';
 import '../../assets/css/Table.css';
 import ReactBSAlert from "react-bootstrap-sweetalert";
-
+import localforage from 'localforage';
 const DataTable = () => {
   const [dataTable, setDataTable] = useState([]);
   const [file, setFile] = useState(null);
@@ -73,7 +73,13 @@ const [bonus, setBonus] = useState(null);
   useEffect(() => {
    
     async function fetchData() {
-      const response = await fetch('http://127.0.0.1:8000/sales/');
+      const access_token = await localforage.getItem('access_token'); 
+      const response = await fetch('http://127.0.0.1:8000/sales/',{
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer '+ String(access_token)
+        }
+      });
       const data = await response.json();
       setDataTable(data);
       
@@ -98,15 +104,19 @@ const [bonus, setBonus] = useState(null);
    
     
   }
-  const handleUploadClick = () => {
+  const handleUploadClick = async () => {
     setIsLoading(true);
     const formData = new FormData();
     formData.append('file', file);
-    
+    const access_token = await localforage.getItem('access_token'); 
     fetch('http://127.0.0.1:8000/add_sales/', {
       method: 'POST',
       body: formData,
-      credentials: 'include'
+      credentials: 'include',
+      headers: {
+       
+        'Authorization': 'Bearer '+ String(access_token)
+      }
     })
       .then((response) => {
 
@@ -228,17 +238,24 @@ const [bonus, setBonus] = useState(null);
   
     
     useEffect(() => {
+      async function deleteFunc() {
       if (deleteConfirm) {
        
-        
+        const access_token =  await localforage.getItem('access_token');
         fetch(`http://127.0.0.1:8000/delete_sales/`, {
           method: "POST",
           body: new URLSearchParams(deleteData),
+          headers: {
+           
+            'Authorization': 'Bearer '+ String(access_token)
+          }
         })
           setDataChanged(!dataChanged);
        
         setDeleteConfirm(false);
       }
+    }
+    deleteFunc()
     }, [deleteConfirm]);
   
 
@@ -292,10 +309,10 @@ const [bonus, setBonus] = useState(null);
       console.log(row)
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
       console.log("e")
       console.log(oldData)
-     
+      const access_token =  await localforage.getItem('access_token');
       const updatedData = {
         new_no: no,
         new_bill_number: billNumber,
@@ -384,7 +401,8 @@ const [bonus, setBonus] = useState(null);
       method: 'POST',
       body: JSON.stringify(updatedData),
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer '+ String(access_token)
       },
       credentials: 'include'
     })

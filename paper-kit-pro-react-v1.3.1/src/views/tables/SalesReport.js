@@ -3,7 +3,7 @@ import { Button, Card, CardHeader, CardBody, CardTitle, Row, Col, Input, Form, F
 import ReactTable from 'components/ReactTable/ReactTable.js';
 import '../../assets/css/Table.css';
 import ReactBSAlert from "react-bootstrap-sweetalert";
-import Popup from 'components/ReactTable/Popup.js';
+import localforage from 'localforage';
 
 const DataTable = () => {
   const [dataTable, setDataTable] = useState([]);
@@ -54,9 +54,7 @@ const DataTable = () => {
   }, []);
   useEffect(() => {
     async function fetchData() {
-      const response = await fetch('http://127.0.0.1:8000/sales_report/');
-      const data = await response.json();
-      setDataTable(data);
+     
       setDataChanged(false);
       setRenderEdit(false)
     }
@@ -84,9 +82,11 @@ const DataTable = () => {
 
 
     // Send the data to the Django endpoint
+    const access_token = await localforage.getItem('access_token'); 
     const response = await fetch("http://127.0.0.1:8000/sales_report/", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", 
+      'Authorization': 'Bearer '+ String(access_token)},
       body: JSON.stringify({
         report_type: filterOption,
         start_date: formattedStartDate,
@@ -164,83 +164,7 @@ const DataTable = () => {
                     total_sale: row[1],
 
 
-                    actions: (
-                      <div className='actions-left'>
-
-                        <Button
-                          disabled={showPopup}
-                          onClick={() => {
-                            // Enable edit mode
-
-                            { handleClick(row) }
-
-
-                          }}
-
-                          color='warning'
-                          size='sm'
-                          className='btn-icon btn-link edit'
-                        >
-                          <i className='fa fa-edit' />
-                        </Button>{' '}
-
-                        <>
-
-
-                          <Button
-                            disabled={showPopup}
-                            onClick={() => {
-
-                              warningWithConfirmAndCancelMessage()
-                              const rowToDelete = { ...row };
-                              const data = {
-                                product_code_ir: rowToDelete[3],
-
-                              };
-                              setDeleteData(data);
-                              console.log(deleteConfirm)
-                              /*
-                              if (deleteConfirm) {
-                                const updatedDataTable = dataTable.find((o) => o.id == row.id);
-                                //console.log(updatedDataTable[0]);
-                                const data = {
-                                  no: updatedDataTable[0],
-                                  good_code: updatedDataTable[10],
-                                  original_output_value: updatedDataTable[14],
-                                };
-                                setDeleteData(data);
-                                //console.log(data);
-                                fetch(`http://127.0.0.1:8000/delete_sales/`, {
-                                  method: "POST",
-                                  body: new URLSearchParams(data),
-                                }).then(() => {
-                                  //  console.log("row id:", row.id);
-                                  //console.log("dataTable:", dataTable);
-                                  const filteredDataTable = dataTable.filter(
-                                    (o) => Number(o.id) !== Number(row.id)
-                                  );
-                                  //  console.log(filteredDataTable);
-                                  setDataTable(filteredDataTable);
-                                  setDataChanged(!dataChanged);
-                                });
-
-                              }
-                              */
-
-                            }
-                            }
-                            color="danger"
-                            size="sm"
-                            className="btn-icon btn-link remove"
-                          >
-                            <i className="fa fa-times" />
-                          </Button>
-
-                        </>
-
-
-                      </div>
-                    ),
+                    
                   }))}
                   columns={[
                     {
@@ -254,14 +178,7 @@ const DataTable = () => {
                       accessor: 'total_sale'
                     },
 
-                    {
-                      Header: 'Actions',
-                      accessor: 'actions',
-                      sortable: false,
-                      filterable: false,
-
-
-                    }
+                  
                   ]}
                   defaultPageSize={10}
                   className='-striped -highlight'
