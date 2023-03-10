@@ -48,13 +48,17 @@ INSTALLED_APPS = [
     'stockfish_api',
     'corsheaders',
     'rest_framework_simplejwt',
+    'rest_framework.authtoken',
     'rest_framework_simplejwt.token_blacklist',
+    'rest_framework_jwt',
 ]
 CSRF_TRUSTED_ORIGINS = ['http://localhost:3000']
 
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
 }
