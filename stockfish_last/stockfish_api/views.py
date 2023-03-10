@@ -2,6 +2,7 @@ from django.shortcuts import render
 import pandas as pd
 from .models import Customers, Products, Sales, Warehouse, ROP, Salers, SalerPerformance, SaleSummary, SalerMonthlySaleRating, MonthlyProductSales
 from django.views import View
+from rest_framework.views import APIView
 from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
 import json
 from django.db.models.signals import post_save, post_delete, pre_save
@@ -14,11 +15,15 @@ from django.db.models import Sum
 
 
 from django.contrib.auth import authenticate
-from rest_framework.authtoken.models import Token
+
 
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.decorators import  permission_classes, authentication_classes
+from rest_framework.authentication import SessionAuthentication, TokenAuthentication
+
 
 
 
@@ -39,8 +44,9 @@ class LoginView(TokenObtainPairView):
         else:
             return JsonResponse({'error': 'Invalid credentials'}, status=401)
 
-class LogoutView(View):
+class LogoutView(APIView):
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
     def post(self, request):
         try:
             print(request.body)
@@ -61,8 +67,9 @@ class LogoutView(View):
 
 # region Customers
 
-class AddCustomersView(View):
+class AddCustomersView(APIView):
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
     def post(self, request,*args, **kwargs):
         if request.method == 'POST':
             data = pd.read_excel(request.FILES['file'])
@@ -76,8 +83,9 @@ class AddCustomersView(View):
             return render(request, 'success.html', {})
         return render(request, 'upload.html', {})
 
-class ViewCustomersView(View):
+class ViewCustomersView(APIView):
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
     def get(self,request,*args, **kwargs):
          customers = Customers.objects.values().all()
          customer_list = [[customer['customer_code'], customer['description'], customer['quantity'],
@@ -85,15 +93,17 @@ class ViewCustomersView(View):
                      for customer in customers]
          return JsonResponse(customer_list,safe=False)
 
-class DeleteCustomerView(View):
+class DeleteCustomerView(APIView):
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
         customer_code = request.POST.get('customer_code')
         Customers.objects.filter(customer_code=customer_code).delete()
         return HttpResponse('OK')
 
-class EditCustomerView(View):
+class EditCustomerView(APIView):
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
         old_customer_code = data.get('old_customer_code')
@@ -125,8 +135,9 @@ class EditCustomerView(View):
 
 # region Sales
 
-class AddSalesView(View):
+class AddSalesView(APIView):
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
         if request.method == 'POST':
             data = pd.read_excel(request.FILES['file'])
@@ -158,9 +169,13 @@ class AddSalesView(View):
             return render(request, 'success.html', {})
         return render(request, 'upload.html', {})
 
-class ViewSalesView(View):
-    permission_classes = (IsAuthenticated,)
+@permission_classes((IsAuthenticated,))
+@authentication_classes((JWTAuthentication,))
+class ViewSalesView(APIView):
+    permission_classes = [IsAuthenticated,]
+    authentication_classes = [JWTAuthentication,]
     def get(self, request, *args, **kwargs):
+        print(request.user)
         sales = Sales.objects.values().all()
         sale_list = [[sale['no'], sale['bill_number'], sale['date'].strftime('%Y-%m-%d'), sale['psr'], sale['customer_code'],
                       sale['name'], sale['area'], sale['group'], sale['good_code'], sale['goods'], sale['unit'],
@@ -174,8 +189,9 @@ class ViewSalesView(View):
                      for sale in sales]
         return JsonResponse(sale_list, safe=False)
 
-class DeleteSaleView(View):
+class DeleteSaleView(APIView):
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
         no = request.POST.get('no', None)
         product_code = request.POST.get('good_code', None)
@@ -189,8 +205,9 @@ class DeleteSaleView(View):
             warehouse_item = None
         return HttpResponse('OK')
 
-class EditSaleView(View):
+class EditSaleView(APIView):
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
         old_no = data.get('old_no')
@@ -267,8 +284,9 @@ class EditSaleView(View):
 
 # region Warehouse
 
-class AddWarehouseView(View):
+class AddWarehouseView(APIView):
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
         if request.method == 'POST':
             data = pd.read_excel(request.FILES['file'])
@@ -281,22 +299,28 @@ class AddWarehouseView(View):
             return render(request, 'success.html', {})
         return render(request, 'upload.html', {})
 
-class ViewWarehouseView(View):
+class ViewWarehouseView(APIView):
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
     def get(self, request, *args, **kwargs):
+        print(request.user)
+        # if not request.user.is_authenticated:
+        #     return HttpResponse(status=401)
         warehouse_items = Warehouse.objects.values().all()
         warehouse_list = [[item['product_code'], item['title'], item['unit'], item['stock']] for item in warehouse_items]
         return JsonResponse(warehouse_list, safe=False)
 
-class DeleteWarehouseView(View):
+class DeleteWarehouseView(APIView):
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
         product_code = request.POST.get('product_code')
         Warehouse.objects.filter(product_code=product_code).delete()
         return HttpResponse('OK')
 
-class EditWarehouseView(View):
+class EditWarehouseView(APIView):
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
         old_product_code = data.get('old_product_code')
@@ -325,8 +349,9 @@ class EditWarehouseView(View):
 
 # region Products
 
-class AddProductsView(View):
+class AddProductsView(APIView):
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
         if request.method == 'POST':
             data = pd.read_excel(request.FILES['file'])
@@ -352,23 +377,26 @@ class AddProductsView(View):
             return render(request, 'success.html', {})
         return render(request, 'upload.html', {})
 
-class ViewProductsView(View):
+class ViewProductsView(APIView):
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
     def get(self, request, *args, **kwargs):
         products = Products.objects.values().all()
         product_list = [[p['group'], p['subgroup'], p['feature'], p['product_code_ir'], p['product_code_tr'],
                          p['description_tr'], p['description_ir'], p['unit'], p['unit_secondary'],p['weight'],p['currency'], p['price']] for p in products]
         return JsonResponse(product_list, safe=False)
 
-class DeleteProductView(View):
+class DeleteProductView(APIView):
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
         product_code_ir = request.POST.get('product_code_ir')
         Products.objects.filter(product_code_ir=product_code_ir).delete()
         return HttpResponse('OK')
 
-class EditProductView(View):
+class EditProductView(APIView):
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
         old_product_code_ir = data.get('old_product_code_ir')
@@ -403,8 +431,9 @@ class EditProductView(View):
 
 # region Charts
 
-class ChartView(View):
+class ChartView(APIView):
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
         #start_date = request.POST.get('start_date')
         #end_date = request.POST.get('end_date')
@@ -418,8 +447,9 @@ class ChartView(View):
 
         return JsonResponse(response_data, safe=False)
 
-class ItemListView(View):
+class ItemListView(APIView):
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
     def get(self, request, *args, **kwargs):
         product_codes = Products.objects.values_list('product_code_ir', flat=True)
         return JsonResponse(list(product_codes), safe=False)
@@ -513,8 +543,9 @@ def create_rop_for_warehouse(sender, instance, created, **kwargs):
 # endregion
 
 # region Saler
-class AddSalerView(View):
+class AddSalerView(APIView):
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
         print(data)
@@ -534,8 +565,9 @@ class AddSalerView(View):
         saler.save()
         return HttpResponse("OK")
 
-class CollapsedSalerView(View):
+class CollapsedSalerView(APIView):
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
     def get(self, request, *args, **kwargs):
         salers = Salers.objects.values().all()
         salers_list = [[saler['id'], saler['name'], saler['is_active']] for saler in salers]
@@ -543,8 +575,9 @@ class CollapsedSalerView(View):
 
     
  # Everyday experience rating must be automatically updated !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   
-class SalerView(View):
-    permission_classes = (IsAuthenticated,)
+class SalerView(APIView):
+    permission_classes = (IsAuthenticated,) 
+    authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
         id = data.get('id')
@@ -562,8 +595,9 @@ class SalerView(View):
         # Return the list of output_values as a JSON response
         return JsonResponse(response_data, safe=False)
 
-class DeleteSalerView(View):
+class DeleteSalerView(APIView):
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
         id = data.get('id')
@@ -654,8 +688,9 @@ def update_sale_summary_with_delete_sale(sender, instance, **kwargs):
     sale_summary.sale -= instance.net_sales
     sale_summary.save()
 
-class SalesReportView(View):
+class SalesReportView(APIView):
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
 
@@ -668,7 +703,7 @@ class SalesReportView(View):
             start_date = jdatetime.date(int(start_date[0]), int(start_date[1]), int(start_date[2]))
             end_date = jdatetime.date(int(end_date[0]), int(end_date[1]), int(end_date[2]))
             data = SaleSummary.objects.filter(date__range = [start_date, end_date]).values('date').annotate(total_sales=Sum('sale')).order_by('date')
-            sales_report_list = [[d['date'].month,d['date'].year, d['total_sales']] for d in data]
+            sales_report_list = [[d['date'].year,d['date'].month,d['date'].day, d['total_sales']] for d in data]
 
         elif report_type == 'monthly':
             start_year, start_month = int(start_date[0]), int(start_date[1])
