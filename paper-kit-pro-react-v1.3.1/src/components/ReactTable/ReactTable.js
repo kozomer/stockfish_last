@@ -125,19 +125,19 @@ function Table({ columns, data }) {
     <>
       <div className="ReactTable -striped -highlight primary-pagination"  >
         <div className="pagination-top"  >
-          <div className="-pagination" style={{  width: "1000px"}}>
+          <div className="-pagination" style={{  width: "600px",marginRight:"200px"}}>
             <div className="-previous" >
               <button
                 type="button"
                 onClick={() => previousPage()}
                 disabled={!canPreviousPage}
                 className="-btn"
-                style={{ width: "100px", height: "38px",marginLeft:"185px" }}
+                style={{ width: "100px", height: "38px" }}
               >
                 Previous
               </button>
             </div>
-            <div className="-center" style={{display:"flex",marginLeft:"5px" /*backgroundColor:"red"*/ }}>
+            <div className="-center" style={{display:"flex",marginLeft:"5px"}}>
               <Container fluid >
                 <Row className="justify-content-center" >
                  <div>
