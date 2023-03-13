@@ -90,28 +90,50 @@ const DataTable = () => {
         'Authorization': 'Bearer '+ String(access_token)
       },
     })
-      .then((response) => {
-
-        setIsLoading(false);
-        successUpload();
-        alert('File uploaded successfully');
-        fetch('http://127.0.0.1:8000/products/')
-          .then((response) => response.json())
-          .then((data) => {setDataTable(data)
-          console.log(data)});
-          clearTimeout(timeoutId); // Clear any existing timeout
-          setTimeoutId(setTimeout(() => setShowUploadDiv(false), 500));
-   
+    .then((response) => {
+      if (!response.ok) {
+        return response.json().then(data => {
+          console.log(data.error)
+          setIsLoading(false);
+          errorUpload(data.error);
+        });
+      }
+     
+      else{
+        return response.json().then(data => {
+      setIsLoading(false);
+      successUpload(data.message);
+      
+      fetch('http://127.0.0.1:8000/products/',{
+        headers: {
+          'Authorization': 'Bearer '+ String(access_token)
+        }
       })
-      .catch((error) => {
-        console.error(error);
-        alert('Error uploading file');
-        setIsLoading(false);
-        errorUpload()
-      });
+        .then((response) => response.json())
+        console.log(response)
+        .then((data) => setDataTable(data));
+        setShowUploadDiv(false);
+    })
+  
+  }
+  })
 
   };
-
+  const errorUpload = (e) => {
+    setAlert(
+      <ReactBSAlert
+        danger
+        style={{ display: "block", marginTop: "-100px" }}
+        title="Error"
+        onConfirm={() => hideAlert()}
+        onCancel={() => hideAlert()}
+        confirmBtnBsStyle="info"
+        btnSize=""
+      >
+       {e}
+      </ReactBSAlert>
+    );
+  };
   const warningWithConfirmAndCancelMessage = () => {
     console.log("sadsads"),
     setAlert(
@@ -197,7 +219,7 @@ const DataTable = () => {
     setAlert(null);
   };
 
-  const successUpload = () => {
+  const successUpload = (s) => {
     setAlert(
       <ReactBSAlert
         success
@@ -208,26 +230,12 @@ const DataTable = () => {
         confirmBtnBsStyle="info"
         btnSize=""
       >
-        Your file has been successfully uploaded!
+        {s}
       </ReactBSAlert>
     );
   };
 
-  const errorUpload = () => {
-    setAlert(
-      <ReactBSAlert
-        danger
-        style={{ display: "block", marginTop: "-100px" }}
-        title="Error"
-        onConfirm={() => hideAlert()}
-        onCancel={() => hideAlert()}
-        confirmBtnBsStyle="info"
-        btnSize=""
-      >
-        Error uploading file, try again. Make sure selecting correct file.
-      </ReactBSAlert>
-    );
-  };
+  
     
     useEffect(() => {
       async function deleteFunc() {

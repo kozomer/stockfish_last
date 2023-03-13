@@ -401,9 +401,10 @@ class EditWarehouseView(APIView):
         data = json.loads(request.body)
         old_product_code = data.get('old_product_code')
         warehouse_item = Warehouse.objects.get(product_code=old_product_code)
-
+        print(old_product_code)
         # Check if new product_code value is unique
         new_product_code = data.get('new_product_code')
+        print(new_product_code)
         if new_product_code and new_product_code != old_product_code:
             if Warehouse.objects.filter(product_code=new_product_code).exists():
                 error_message = f"The product code '{new_product_code}' already exists in the warehouse."
@@ -415,7 +416,7 @@ class EditWarehouseView(APIView):
         warehouse_item.title = data.get('title')
         warehouse_item.unit = data.get('unit')
         warehouse_item.stock = data.get('stock')
-
+       
         warehouse_item.save()
         return HttpResponse('OK')
 
@@ -439,6 +440,7 @@ class AddProductsView(APIView):
                 return JsonResponse({'error': "The uploaded file is not a valid Excel file"}, status=400)
 
             data = pd.read_excel(file)
+            print(data)
             if data.empty:
                 return JsonResponse({'error': "The uploaded file is empty"}, status=400)
             count = 0
@@ -462,9 +464,12 @@ class AddProductsView(APIView):
                         currency = row["Currency"],
                         price= row["Price"]
                     )
+                    print(row["Subgroup"])
                     product.save()
                 except KeyError as e:
                     return JsonResponse({'error': f"Column '{e}' not found in the uploaded file"}, status=400)
+                except Exception as e:
+                    return JsonResponse({'error': str(e)}, status=400)
             return JsonResponse({'message': f"{count} Products data added successfully"}, status=200)
         except OperationalError as e:
             return JsonResponse({'error': f"Database error: {str(e)}"}, status=500)

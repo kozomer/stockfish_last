@@ -99,9 +99,10 @@ const DataTable = () => {
           });
         }
        
-        console.log(response)
+        else{
+          return response.json().then(data => {
         setIsLoading(false);
-        successUpload();
+        successUpload(data.message);
         
         fetch('http://127.0.0.1:8000/customers/',{
           headers: {
@@ -113,14 +114,9 @@ const DataTable = () => {
           .then((data) => setDataTable(data));
           setShowUploadDiv(false);
       })
-      .catch((error) => {
-        console.error(error);
-        
-        setIsLoading(false);
-        errorUpload();
-       
-      });
     
+    }
+    })
   };
   
   const warningWithConfirmAndCancelMessage = () => {
@@ -189,7 +185,7 @@ const DataTable = () => {
     );
     setRenderEdit(true)
   };
-  const successUpload = () => {
+  const successUpload = (s) => {
     setAlert(
       <ReactBSAlert
         success
@@ -200,7 +196,7 @@ const DataTable = () => {
         confirmBtnBsStyle="info"
         btnSize=""
       >
-        Your file has been successfully uploaded!
+        {s}
       </ReactBSAlert>
     );
   };
@@ -510,7 +506,7 @@ const DataTable = () => {
 
                               };
                               setDeleteData(data);
-                              console.log(deleteConfirm)
+                              
                               /*
                               if (deleteConfirm) {
                                 const updatedDataTable = dataTable.find((o) => o.id == row.id);

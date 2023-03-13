@@ -97,18 +97,28 @@ function UserProfile() {
       body: JSON.stringify(newSaler),
       credentials: "include",
       headers: {
-        
         'Authorization': 'Bearer '+ String(access_token)
       },
     })
-      .then((response) =>{
-         response.json();
-         if(response.ok){
-         handleSalesDataChange()
-         }
-       })
-      
+    .then((response) => {
+      if (!response.ok) {
+        return response.json().then(data => {
+          console.log(data.error)
+          errorUpload(data.error);
+          throw new Error(data.error);
+        });
+      } else {
+        return response.json().then(data => {
+          handleSalesDataChange();
+          successAdd();
+        });
+      }
+    })
+    .catch((error) => {
+      console.log(error);
+    });
   };
+  
 
 
   async function fetchSalersData() {
@@ -215,23 +225,21 @@ function UserProfile() {
     
     };
   
-  /*
-  const saler_id = {
-    id:1
-  };
-  fetch('http://127.0.0.1:8000/salers/', {
-    method: 'POST',
-    body:JSON.stringify(saler_id),
-    credentials: 'include'
-  })
-    .then((response) => {
-
-      console.log(response);
-      
-       
- 
-    })
-    */
+    const errorUpload = (e) => {
+      setAlert(
+        <ReactBSAlert
+          danger
+          style={{ display: "block", marginTop: "-100px" }}
+          title="Error"
+          onConfirm={() => hideAlert()}
+          onCancel={() => hideAlert()}
+          confirmBtnBsStyle="info"
+          btnSize=""
+        >
+         {e}
+        </ReactBSAlert>
+      );
+    };
 
 
     useEffect(() => {
@@ -249,7 +257,7 @@ function UserProfile() {
           style={{ display: "block", marginTop: "-100px" }}
           title="Saved!"
           onConfirm={() => {
-            handleAddSaler();
+           
             hideAlert()
             setShowAddForm(false)}}
           onCancel={() => hideAlert()}
@@ -380,13 +388,14 @@ function UserProfile() {
                           <FormGroup>
                             <Label for="newSalerStatus">Job Start Date (YYYY-MM-DD)</Label>
                             <Input
+                             
                               type="text"
                               id="newSalerStatus"
                               value={newSalerStatus}
                               onChange={(e) => setNewSalerStatus(e.target.value)}
                             />
                           </FormGroup>
-                          <Button className="btn-round" color="success" type="submit" onClick={successAdd} disabled={!newSalerName || !newSalerStatus}>
+                          <Button className="btn-round" color="success" type="submit" onClick={ handleAddSaler} disabled={!newSalerName || !newSalerStatus}>
                             Save
                           </Button>{" "}
                           <Button className="btn-round" color="danger" type="submit" onClick={() => setShowAddForm(false)}>
@@ -415,7 +424,7 @@ function UserProfile() {
                         <label>Job Start Date</label>
                         <Input
                                 defaultValue={salersWholeData["job_start_date"]}
-                            
+                                
                           onChange={handleInputChange}
                           placeholder="Date"
                           type="text"
@@ -425,12 +434,13 @@ function UserProfile() {
                     <Col>
                       <FormGroup>
                         <label>Activity</label>
-                        <Input
-                          defaultValue={salersWholeData["is_active"]}
-                          onChange={handleInputChange}
-                          placeholder="Activity"
-                          type="text"
-                        />
+                        <br></br>
+                        <Switch
+                          offColor="success"
+                          offText={<i className="nc-icon nc-simple-remove" />}
+                          onColor="success"
+                          onText={<i className="nc-icon nc-check-2" />}
+                        />{" "}
                       </FormGroup>
                     </Col>
                   </Row>
@@ -439,6 +449,7 @@ function UserProfile() {
                       <FormGroup>
                         <label>Experience Rating</label>
                         <Input
+                          disabled
                          defaultValue={salersWholeData["experience_rating"]}
                           onChange={handleInputChange}
                           placeholder="Exp. Rating"
@@ -450,6 +461,7 @@ function UserProfile() {
                       <FormGroup>
                         <label>Monthly Total Sales Rating</label>
                         <Input
+                          disabled
                           defaultValue={salersWholeData["monthly_total_sales_rating"]}
                           onChange={handleInputChange}
                           placeholder="Mont. Tot. Sales Rating"
@@ -463,6 +475,7 @@ function UserProfile() {
                       <FormGroup>
                         <label>Receipment Rating</label>
                         <Input
+                          disabled
                           defaultValue={salersWholeData["receipment_rating"]}
                           onChange={handleInputChange}
                           placeholder="Receipment Rating"

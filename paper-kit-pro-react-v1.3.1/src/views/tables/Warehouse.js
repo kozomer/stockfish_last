@@ -1,11 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Card, CardHeader, CardBody, CardTitle, Row, Col } from 'reactstrap';
+import { Button, Card, CardHeader, CardBody, CardTitle, Row, Col, Input,Form, FormGroup, Label,CardFooter} from 'reactstrap';
 import ReactTable from 'components/ReactTable/ReactTable.js';
 import localforage from 'localforage';
+import ReactBSAlert from "react-bootstrap-sweetalert";
 const DataTable = () => {
   const [dataTable, setDataTable] = useState([]);
   const [file, setFile] = useState(null);
   const [showUploadDiv, setShowUploadDiv] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
+  const [productCode, setProductCode] = useState(null);
+  const [productTitle, setProductTitle] = useState(null);
+  const [unit, setUnit] = useState(null);
+  const [stock, setStock] = useState(null);
+  const [alert, setAlert] = useState(null);
+  const [renderEdit, setRenderEdit] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isUpdated, setIsUpdated] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleteData, setDeleteData] = useState(null);
+  const [dataChanged, setDataChanged] = useState(false);
+
+  const [editData, setEditData] = useState(null);
+  const [oldData, setOldData] = useState(null);
+  
   useEffect(() => {
     async function fetchData() {
       const access_token = await localforage.getItem('access_token'); 
@@ -19,7 +36,7 @@ const DataTable = () => {
       setDataTable(data);
     }
     fetchData();
-  }, []);
+  }, [dataChanged,renderEdit]);
 
   /*
   useEffect(() => {
@@ -38,6 +55,7 @@ const handleAddFileClick = () => {
   };
 
   const handleUploadClick = async() => {
+    setIsLoading(true);
     const formData = new FormData();
     formData.append('file', file);
     const access_token = await localforage.getItem('access_token'); 
@@ -51,28 +69,312 @@ const handleAddFileClick = () => {
       }
     })
       .then((response) => {
-
+        if (!response.ok) {
+          return response.json().then(data => {
+            console.log(data.error)
+            setIsLoading(false);
+            errorUpload(data.error);
+          });
+        }
         console.log(response);
-        alert('File uploaded successfully');
-        fetch('http://127.0.0.1:8000/warehouse/')
+        setIsLoading(false);
+        successUpload();
+
+        fetch('http://127.0.0.1:8000/warehouse/',{
+          headers: {
+            'Authorization': 'Bearer '+ String(access_token)
+          }
+        })
           .then((response) => response.json())
           .then((data) => setDataTable(data));
+          setShowUploadDiv(false)
           
       })
       .catch((error) => {
         console.error(error);
-        alert('Error uploading file');
+        setIsLoading(true);
        
       });
     
   };
+  const handleClick = (row) => {
+     
+    setEditData(row);
+    setOldData(row);
+
+    setProductCode(row.product_code);
+    setProductTitle(row.title);
+    setUnit(row.unit);
+    setStock(row.stock);
+   
+    setShowPopup(!showPopup);
+    console.log(row)
+  };
+  const handleSubmit = async (e) => {
+    const access_token = await localforage.getItem('access_token'); 
+    console.log(oldData)
+    const updatedData = {
+      new_product_code:productCode,
+      new_title:productTitle,
+      new_unit:unit,
+      new_stock:stock,
+     
+      
+
+      old_product_code:oldData[0],
+      old_title:oldData[1],
+      old_unit:oldData[2],
+      old_stock:oldData[3],
+      
+      
+    };
+    console.log(updatedData)
+    fetch('http://127.0.0.1:8000/edit_warehouse/', {
+    method: 'POST',
+    body: JSON.stringify(updatedData),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer '+ String(access_token)
+    },
+    credentials: 'include'
+  })
+  setEditData(updatedData);
+  successEdit()
+
+    // Call your Django API to send the updated values here
+  };
+  const successEdit = () => {
+    console.log("edit success")
+    setAlert(
+      <ReactBSAlert
+        success
+        style={{ display: "block", marginTop: "-100px" }}
+        title="Saved!"
+        onConfirm={() => {
+          hideAlert()
+          setShowPopup(false)}
+        }
+        onCancel={() => hideAlert()}
+        confirmBtnBsStyle="info"
+        btnSize=""
+      >
+        Your edit has been successfully saved.
+      </ReactBSAlert>
+    );
+    setRenderEdit(true)
+  };
+  const successUpload = () => {
+    setAlert(
+      <ReactBSAlert
+        success
+        style={{ display: "block", marginTop: "-100px" }}
+        title="Uploaded!"
+        onConfirm={() => hideAlert()}
+        onCancel={() => hideAlert()}
+        confirmBtnBsStyle="info"
+        btnSize=""
+      >
+        Your file has been successfully uploaded!
+      </ReactBSAlert>
+    );
+  };
+
+
+  const handleCancel = () => {
+    setShowPopup(false);
+    setEditData(null)
+  };
   
+  useEffect(() => {
+    console.log("useEffect called")
+    if(editData){
+      
+      setProductCode(editData[0]);
+      setProductTitle(editData[1]);
+      setUnit(editData[2]);
+      setStock(editData[3]);
+       
+        setIsUpdated(true)
+    }
+  }, [editData])
+  const errorUpload = (e) => {
+    setAlert(
+      <ReactBSAlert
+        danger
+        style={{ display: "block", marginTop: "-100px" }}
+        title="Error"
+        onConfirm={() => hideAlert()}
+        onCancel={() => hideAlert()}
+        confirmBtnBsStyle="info"
+        btnSize=""
+      >
+       {e}
+      </ReactBSAlert>
+    );
+  };
+
+  //delete
   
+
+
+  const warningWithConfirmAndCancelMessage = () => {
+    console.log("sadsads"),
+    setAlert(
+      
+      <ReactBSAlert
+        warning
+        style={{ display: "block", marginTop: "-100px" }}
+        title="Are you sure?"
+        onConfirm={() =>{ 
+        setDeleteConfirm(true);
+        successDelete()}}
+        onCancel={() => {
+          setDeleteConfirm(false);
+          cancelDelete()
+        }}
+        confirmBtnBsStyle="info"
+        cancelBtnBsStyle="danger"
+        confirmBtnText="Yes, delete it!"
+        cancelBtnText="Cancel"
+        showCancel
+        btnSize=""
+      >
+       Are you sure to delete this row?
+      </ReactBSAlert>
+    );
+      };
+
+      useEffect(() => {
+        async function deleteFunc() {
+        if (deleteConfirm) {
+         console.log("delete")
+         const access_token =  await localforage.getItem('access_token'); 
+          fetch(`http://127.0.0.1:8000/delete_warehouse/`, {
+            method: "POST",
+            body: new URLSearchParams(deleteData),
+            headers: {
+             
+              'Authorization': 'Bearer '+ String(access_token)
+            }
+          })
+            setDataChanged(!dataChanged);
+         
+          setDeleteConfirm(false);
+        }
+     
+    }
+    deleteFunc()
+    }, [deleteConfirm]);
+
+    
+    
+      const successDelete = () => {
+        setAlert(
+          <ReactBSAlert
+            success
+            style={{ display: "block", marginTop: "-100px" }}
+            title="Deleted!"
+            onConfirm={() => hideAlert()}
+            onCancel={() => hideAlert()}
+            confirmBtnBsStyle="info"
+            btnSize=""
+          >
+            Your row has been deleted.
+          </ReactBSAlert>
+        );
+      };
+
+      const cancelDelete = () => {
+        setAlert(
+          <ReactBSAlert
+            danger
+            style={{ display: "block", marginTop: "-100px" }}
+            title="Cancelled"
+            onConfirm={() => hideAlert()}
+            onCancel={() => hideAlert()}
+            confirmBtnBsStyle="info"
+            btnSize=""
+          >
+            Your row is safe :)
+          </ReactBSAlert>
+        );
+      };
+  
+  const hideAlert = () => {
+    setAlert(null);
+  };
   return (
     <>
       <div className='content'>
-      
-      
+      {alert}
+      {showPopup && isUpdated &&(
+       <div className="popup">
+      <Card>
+            <CardHeader>
+              <CardTitle tag="h4">Edit Customers</CardTitle>
+            </CardHeader>
+            <CardBody>
+              <Form onSubmit={handleSubmit}>
+              <div>
+
+        <div className="form-group-col">
+          <label>Product Code</label>
+          <FormGroup>
+            <Input
+              
+              type="text"
+              defaultValue={productCode}
+              onChange={(e) => setProductCode(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Product Title</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={productTitle}
+              onChange={(e) => setProductTitle(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Unit</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={unit}
+              onChange={(e) => setUnit(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Stock</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={stock}
+              onChange={(e) => setStock(e.target.value)}
+            />
+          </FormGroup>
+
+          
+          </div>
+         
+        
+          
+        
+        </div>
+              </Form>
+            </CardBody>
+              <CardFooter>
+                <Button className="btn-round" color="success" type="submit" onClick={handleSubmit}>
+                  Submit
+                </Button>
+                <Button className="btn-round" color="danger" type="submit"  onClick={handleCancel}>
+                  Cancel
+                </Button>
+              </CardFooter>
+            </Card>
+            </div>
+)}
         <Row>
           <Col md='12'>
             <Card>
@@ -91,45 +393,66 @@ const handleAddFileClick = () => {
                   <Button color='primary' className='btn-upload' onClick={handleUploadClick} disabled={!file} >
                     Upload
                   </Button>
+                  <div className="spinner-container">
+                  {isLoading && <div className="loading-spinner"></div>}
+                  </div>
                   </div>
                    )}
                    
                 </div>
                 <ReactTable
-                  data={dataTable.map((prop, key) => ({
+                  data={dataTable.map((row, key) => ({
                     id: key,
-                    product_code: prop[0],
-                    title: prop[1],
-                    unit: prop[2],
-                    stock: prop[3],
+                    product_code: row[0],
+                    title: row[1],
+                    unit: row[2],
+                    stock: row[3],
                     
                     actions: (
                       <div className='actions-left'>
-                      
-                        <Button
+                         <Button
+                          disabled={showPopup}
                           onClick={() => {
-                            let obj = dataTable.find((o) => o.id === key);
-                            alert(
-                              `You've clicked EDIT button on \n{ \nName: ${obj.customer_code}, \nDescription: ${obj.description}, \nQuantity: ${obj.quantity}, \nArea Code: ${obj.area_code}, \nCode: ${obj.code}, \nCity: ${obj.city}, \nArea: ${obj.area} \n}.`
-                            );
+                            // Enable edit mode
+                            
+                           {handleClick(row)}
+                           
+                          
                           }}
+                          
                           color='warning'
                           size='sm'
                           className='btn-icon btn-link edit'
                         >
                           <i className='fa fa-edit' />
                         </Button>{' '}
-                        <Button
-                          onClick={() => {
-                            let data = dataTable.filter((o) => o.id !== key);
-                            setDataTable(data);
-                          }}
-                          color='danger'
-                          size='sm'
-                          className='btn-icon btn-link remove'
-                        >
-                          <i className='fa fa-times' />
-                        </Button>{' '}
+                        
+                        <>
+    
+    
+                          <Button
+                            disabled={showPopup}
+                            onClick={() => {
+                              
+                               warningWithConfirmAndCancelMessage() 
+                               const rowToDelete = {...row};
+                               const data = {
+                                product_code: rowToDelete[0],
+
+                              };
+                              setDeleteData(data);
+                              console.log(deleteConfirm)
+                             
+                            
+                            }
+                            }
+                            color="danger"
+                            size="sm"
+                            className="btn-icon btn-link remove"
+                          >
+                            <i className="fa fa-times" />
+                          </Button>
+                          </>
                       </div>
                     ),
                   }))}

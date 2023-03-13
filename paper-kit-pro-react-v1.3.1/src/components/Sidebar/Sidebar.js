@@ -180,7 +180,7 @@ function Sidebar(props) {
            
             setTimeout(() => {
               history.push('/auth/login');
-            }, 2000); // wait for 2 seconds before navigating to login page
+            }, 500); // wait for 2 seconds before navigating to login page
            // navigation.navigate("Login")
         }
         if (!response.ok){
