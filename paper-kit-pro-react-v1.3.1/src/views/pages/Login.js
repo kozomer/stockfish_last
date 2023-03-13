@@ -36,12 +36,13 @@ import {
 } from "reactstrap";
 
 import localforage from 'localforage';
-
+import '../../assets/css/Table.css';
 
 
 function Login({ history }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   const handleEmailChange = (event) => setUsername(event.target.value);
   const handlePasswordChange = (event) => setPassword(event.target.value);
@@ -83,7 +84,8 @@ function Login({ history }) {
       }
     } catch (error) {
       console.log(error.message);
-      // show error message to the user
+      setError("Invalid email or password");
+      setPassword("");
     }
   };
 
@@ -93,54 +95,51 @@ function Login({ history }) {
         <Row>
           <Col className="ml-auto mr-auto" lg="4" md="6">
             <Form action="" className="form" method="">
-              <Card className="card-login">
+              <Card className="card-login" >
                 <CardHeader>
                   <CardHeader>
                     <h3 className="header text-center">Login</h3>
                   </CardHeader>
                 </CardHeader>
-                <CardBody>
+                <CardBody style={{marginLeft:"10px", marginRight:"10px"}} >
                   <InputGroup>
-                    <InputGroupAddon addonType="prepend">
-                      <InputGroupText>
-                        <i className="nc-icon nc-single-02" />
-                      </InputGroupText>
-                    </InputGroupAddon>
+                   
                     <Input
                       placeholder="Username"
                       type="suername"
                       value={username}
                       onChange={handleEmailChange}
+                      style={{ 
+                       
+                        borderLeft:"1px solid #dedede",
+                        borderRight:"1px solid #dedede"
+                      }}
                     />
                   </InputGroup>
-                  <InputGroup>
-                    <InputGroupAddon addonType="prepend">
-                      <InputGroupText>
-                        <i className="nc-icon nc-key-25" />
-                      </InputGroupText>
-                    </InputGroupAddon>
+                  <InputGroup >
+                    
+
                     <Input
-                      placeholder="Password"
-                      type="password"
-                      autoComplete="off"
-                      value={password}
-                      onChange={handlePasswordChange}
-                    />
+    placeholder="Password"
+    type="password"
+    autoComplete="off"
+    value={password}
+    onChange={handlePasswordChange}
+    style={{ 
+      border: error ? '0.5px solid #D32F2F' : '',
+      boxShadow: error ? '0 0 10px rgba(255, 0, 0, 0.5)' : '',
+      borderLeft:"1px solid #dedede",
+      borderRight:"1px solid #dedede"
+    }}
+  />
                   </InputGroup>
+                  {error && <p style={{ color: 'red' }}>{error}</p>}
                   <br />
-                  <FormGroup>
-                    <FormGroup check>
-                      <Label check>
-                        <Input defaultChecked defaultValue="" type="checkbox" />
-                        <span className="form-check-sign" />
-                        Subscribe to newsletter
-                      </Label>
-                    </FormGroup>
-                  </FormGroup>
+                
                 </CardBody>
                 <CardFooter>
-                  <Button onClick={handleSubmit} className="btn btn-primary">
-                    Sign up
+                  <Button onClick={handleSubmit}  className="my-button-class" color="primary">
+                    LOGIN
                   </Button>
                 </CardFooter>
               </Card>

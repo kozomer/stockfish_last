@@ -153,3 +153,9 @@
   flex-direction: row;
   align-items: center;
 }
+
+@media (max-width: 1000px) {
+  .pagination-top {
+  background-color: blue;
+  }
+}
