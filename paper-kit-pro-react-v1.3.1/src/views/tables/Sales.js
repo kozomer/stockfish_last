@@ -419,11 +419,25 @@ const [bonus, setBonus] = useState(null);
       },
       credentials: 'include'
     })
-    setEditData(updatedData);
-    successEdit()
+    .then((response) => {
+      if (!response.ok) {
+        return response.json().then(data => {
+          console.log("sdadas")
+          setIsLoading(false);
+          errorUpload(data.error);
+        });
+      }
+      else{
+        return response.json().then(data => {
+          console.log("asdaasdas")
+         setEditData(updatedData);
+          successEdit()
+        });
+      }
 
       // Call your Django API to send the updated values here
-    };
+    });
+  };
 
     const handleCancel = () => {
       setShowPopup(false);
