@@ -22,7 +22,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.decorators import  permission_classes, authentication_classes
-from rest_framework.authentication import SessionAuthentication, TokenAuthentication
+from django.db.utils import OperationalError
+from rest_framework.exceptions import ValidationError
+import filetype
 
 
 
@@ -33,12 +35,10 @@ class LoginView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
         username = data.get('username')
-        print(username)
         username = username.strip()
         password = data.get('password')
        
         user = authenticate(request, username=username, password=password)
-        print(user)
         if user is not None and user.is_active:
             response = super().post(request, *args, **kwargs)
             return response
@@ -50,16 +50,12 @@ class LogoutView(APIView):
     authentication_classes = (JWTAuthentication,)
     def post(self, request):
         try:
-            print(request.body)
-            #data = json.loads(request.body)
-            #refresh_token = data["refresh_token"]
             refresh_token = request.POST.get('refresh_token')
             token = RefreshToken(refresh_token)
             token.blacklist()
 
             return JsonResponse({'success': 'successfully log out'}, status=205)
         except Exception as e:
-            print(str(e))
             return JsonResponse({'error': 'BAD REQUEST'}, status=400)
 
 
@@ -71,18 +67,36 @@ class LogoutView(APIView):
 class AddCustomersView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
-    def post(self, request,*args, **kwargs):
-        if request.method == 'POST':
-            data = pd.read_excel(request.FILES['file'])
+    
+    def post(self, request, *args, **kwargs):
+        try:
+            if 'file' not in request.FILES:
+                raise ValidationError("No file uploaded")
+            file = request.FILES['file']
+            kind = filetype.guess(file.read())
+            if kind is None or kind.mime not in ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']:
+                return JsonResponse({'error': "The uploaded file is not a valid Excel file1"}, status=400)
+
+            data = pd.read_excel(file)
+            if data.empty:
+                return JsonResponse({'error': "The uploaded file is empty"}, status=400)
+            count = 0
             for i, row in data.iterrows():
-                customer_code = row["Customer Code"]
-                if Customers.objects.filter(customer_code=customer_code).exists():
-                    continue
-                customer = Customers(customer_code=customer_code, description=row["Description"], quantity=row["Quantity"],
-                                    area_code=row["Area Code"], code=row["Code"], city=row["City"], area=row["Area"])
-                customer.save()
-            return render(request, 'success.html', {})
-        return render(request, 'upload.html', {})
+                try:
+                    customer_code = row["Customer Code"]
+                    if Customers.objects.filter(customer_code=customer_code).exists():
+                        continue
+                    count+=1
+                    customer = Customers(customer_code=customer_code, description=row["Description"], quantity=row["Quantity"],
+                                        area_code=row["Area Code"], code=row["Code"], city=row["City"], area=row["Area"])
+                    customer.save()
+                except KeyError as e:
+                    return JsonResponse({'error': f"Column '{e}' not found in the uploaded file"}, status=400)
+            return JsonResponse({'message': f"{count} Customers data added successfully"}, status=200)
+        except OperationalError as e:
+            return JsonResponse({'error': f"Database error: {str(e)}"}, status=500)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
 
 class ViewCustomersView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -139,36 +153,81 @@ class EditCustomerView(APIView):
 class AddSalesView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
+
     def post(self, request, *args, **kwargs):
-        if request.method == 'POST':
-            data = pd.read_excel(request.FILES['file'])
+        try:
+            if 'file' not in request.FILES:
+                raise ValidationError("No file uploaded")
+            file = request.FILES['file']
+            kind = filetype.guess(file.read())
+            if kind is None or kind.mime not in ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']:
+                return JsonResponse({'error': "The uploaded file is not a valid Excel file1"}, status=400)
+
+            data = pd.read_excel(file)
+            if data.empty:
+                return JsonResponse({'error': "The uploaded file is empty"}, status=400)
+            count = 0
             for i, row in data.iterrows():
                 no = row["No"]
                 if Sales.objects.filter(no=no).exists():
                     continue
-                sale = Sales(no=no, bill_number=row["Bill Number"], date=jdatetime.date(int(row["Year"]), int(row["Month"]), int(row["Day"])),
-                            psr=row["PSR"], customer_code=row["Customer Code"], name=row["Name"], area=row["Area"], group=row["Group"],
-                            good_code=row["Good Code"], goods=row["Goods"], unit=row["Unit"], original_value=row["The Original Value"],
-                            original_output_value=row["Original Output Value"], secondary_output_value=row["Secondary Output Value"],
-                            price=row["Price"], original_price=row["Original Price"], discount_percentage=row["Discount Percantage (%)"],
-                            amount_sale=row["Amount Sale"], discount=row["Discount"], additional_sales=row["Additional Sales"],
-                            net_sales=row["Net Sales"], discount_percentage_2=row["Discount Percantage 2(%)"],
-                            real_discount_percentage=row["Real Discount Percantage (%)"], payment_cash=row["Payment Cash"],
-                            payment_check=row["Payment Check"], balance=row["Balance"], saler=row["Saler"], currency=row["Currency"],
-                            dollar=row["Dollar"], manager_rating=row["Manager Rating"], senior_saler=row["Senior Saler"],
-                            tot_monthly_sales=row["Tot Monthly Sales"], receipment=row["Receipment"], ct=row["CT"],
-                            payment_type=row["Payment Type"], customer_size=row["Customer Size"], saler_factor=row["Saler Factor"],
-                            prim_percentage=row["Prim Percantage"], bonus_factor=row["Bonus Factor"], bonus=row["Bonus"])
+                count+=1
+                sale = Sales(
+                    no=no,
+                    bill_number=row["Bill Number"],
+                    date=jdatetime.date(int(row["Year"]), int(row["Month"]), int(row["Day"])),
+                    psr=row["PSR"],
+                    customer_code=row["Customer Code"],
+                    name=row["Name"],
+                    area=row["Area"],
+                    group=row["Group"],
+                    good_code=row["Good Code"],
+                    goods=row["Goods"],
+                    unit=row["Unit"],
+                    original_value=row["The Original Value"],
+                    original_output_value=row["Original Output Value"],
+                    secondary_output_value=row["Secondary Output Value"],
+                    price=row["Price"],
+                    original_price=row["Original Price"],
+                    discount_percentage=row["Discount Percantage (%)"],
+                    amount_sale=row["Amount Sale"],
+                    discount=row["Discount"],
+                    additional_sales=row["Additional Sales"],
+                    net_sales=row["Net Sales"],
+                    discount_percentage_2=row["Discount Percantage 2(%)"],
+                    real_discount_percentage=row["Real Discount Percantage (%)"],
+                    payment_cash=row["Payment Cash"],
+                    payment_check=row["Payment Check"],
+                    balance=row["Balance"],
+                    saler=row["Saler"],
+                    currency=row["Currency"],
+                    dollar=row["Dollar"],
+                    manager_rating=row["Manager Rating"],
+                    senior_saler=row["Senior Saler"],
+                    tot_monthly_sales=row["Tot Monthly Sales"],
+                    receipment=row["Receipment"],
+                    ct=row["CT"],
+                    payment_type=row["Payment Type"],
+                    customer_size=row["Customer Size"],
+                    saler_factor=row["Saler Factor"],
+                    prim_percentage=row["Prim Percantage"],
+                    bonus_factor=row["Bonus Factor"],
+                    bonus=row["Bonus"]
+                )
                 sale.save()
+
                 try:
                     warehouse_item = Warehouse.objects.get(product_code=sale.good_code)
                     warehouse_item.stock -= sale.original_output_value
                     warehouse_item.save()
                 except Warehouse.DoesNotExist:
-                    warehouse_item = None
+                    pass #TODO: Further add a error message that is "this item does not exist in warehouse"
 
-            return render(request, 'success.html', {})
-        return render(request, 'upload.html', {})
+            return JsonResponse({'message': f"{count} sales data added successfully"}, status=200)
+        except OperationalError as e:
+            return JsonResponse({'error': f"Database error: {str(e)}"}, status=500)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
 
 @permission_classes((IsAuthenticated,))
 @authentication_classes((JWTAuthentication,))
@@ -176,7 +235,6 @@ class ViewSalesView(APIView):
     permission_classes = [IsAuthenticated,]
     authentication_classes = [JWTAuthentication,]
     def get(self, request, *args, **kwargs):
-        print(request.user)
         sales = Sales.objects.values().all()
         sale_list = [[sale['no'], sale['bill_number'], sale['date'].strftime('%Y-%m-%d'), sale['psr'], sale['customer_code'],
                       sale['name'], sale['area'], sale['group'], sale['good_code'], sale['goods'], sale['unit'],
@@ -288,23 +346,40 @@ class EditSaleView(APIView):
 class AddWarehouseView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
+    
     def post(self, request, *args, **kwargs):
-        if request.method == 'POST':
-            data = pd.read_excel(request.FILES['file'])
+        try:
+            if 'file' not in request.FILES:
+                raise ValidationError("No file uploaded")
+            file = request.FILES['file']
+            kind = filetype.guess(file.read())
+            if kind is None or kind.mime not in ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']:
+                return JsonResponse({'error': "The uploaded file is not a valid Excel file"}, status=400)
+
+            data = pd.read_excel(file)
+            if data.empty:
+                return JsonResponse({'error': "The uploaded file is empty"}, status=400)
+            count = 0
             for i, row in data.iterrows():
-                product_code = row["Product Code"]
-                if Warehouse.objects.filter(product_code=product_code).exists():
-                    continue
-                warehouse_item = Warehouse(product_code=product_code, title=row["Product Title"], unit=row["Unit"], stock=row["Stock"])
-                warehouse_item.save()
-            return render(request, 'success.html', {})
-        return render(request, 'upload.html', {})
+                try:
+                    product_code = row["Product Code"]
+                    if Warehouse.objects.filter(product_code=product_code).exists():
+                        continue
+                    count+=1
+                    warehouse_item = Warehouse(product_code=product_code, title=row["Product Title"], unit=row["Unit"], stock=row["Stock"])
+                    warehouse_item.save()
+                except KeyError as e:
+                    return JsonResponse({'error': f"Column '{e}' not found in the uploaded file"}, status=400)
+            return JsonResponse({'message': f"{count} Warehouse items added successfully"}, status=200)
+        except OperationalError as e:
+            return JsonResponse({'error': f"Database error: {str(e)}"}, status=500)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
 
 class ViewWarehouseView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
     def get(self, request, *args, **kwargs):
-        print(request.user)
         # if not request.user.is_authenticated:
         #     return HttpResponse(status=401)
         warehouse_items = Warehouse.objects.values().all()
@@ -353,30 +428,49 @@ class EditWarehouseView(APIView):
 class AddProductsView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
+
     def post(self, request, *args, **kwargs):
-        if request.method == 'POST':
-            data = pd.read_excel(request.FILES['file'])
+        try:
+            if 'file' not in request.FILES:
+                raise ValidationError("No file uploaded")
+            file = request.FILES['file']
+            kind = filetype.guess(file.read())
+            if kind is None or kind.mime not in ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']:
+                return JsonResponse({'error': "The uploaded file is not a valid Excel file"}, status=400)
+
+            data = pd.read_excel(file)
+            if data.empty:
+                return JsonResponse({'error': "The uploaded file is empty"}, status=400)
+            count = 0
             for i, row in data.iterrows():
-                product_code_ir = row["Product Number IR"]
-                if Products.objects.filter(product_code_ir=product_code_ir).exists():
-                    continue
-                product = Products(
-                    group=row["Group"],
-                    subgroup=row["Subgroup"],
-                    feature=row["Feature"],
-                    product_code_ir=product_code_ir,
-                    product_code_tr=row["Product Number TR"],
-                    description_tr=row["Description TR"],
-                    description_ir=row["Description IR"],
-                    unit=row["Unit"],
-                    unit_secondary=row["Unit Secondary"],
-                    weight = row["Weight"],
-                    currency = row["Currency"],
-                    price= row["Price"]
-                )
-                product.save()
-            return render(request, 'success.html', {})
-        return render(request, 'upload.html', {})
+                try:
+                    product_code_ir = row["Product Number IR"]
+                    if Products.objects.filter(product_code_ir=product_code_ir).exists():
+                        continue
+                    count+=1
+                    product = Products(
+                        group=row["Group"],
+                        subgroup=row["Subgroup"],
+                        feature=row["Feature"],
+                        product_code_ir=product_code_ir,
+                        product_code_tr=row["Product Number TR"],
+                        description_tr=row["Description TR"],
+                        description_ir=row["Description IR"],
+                        unit=row["Unit"],
+                        unit_secondary=row["Unit Secondary"],
+                        weight = row["Weight"],
+                        currency = row["Currency"],
+                        price= row["Price"]
+                    )
+                    product.save()
+                except KeyError as e:
+                    return JsonResponse({'error': f"Column '{e}' not found in the uploaded file"}, status=400)
+            return JsonResponse({'message': f"{count} Products data added successfully"}, status=200)
+        except OperationalError as e:
+            return JsonResponse({'error': f"Database error: {str(e)}"}, status=500)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
 
 class ViewProductsView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -547,25 +641,34 @@ def create_rop_for_warehouse(sender, instance, created, **kwargs):
 class AddSalerView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
+
     def post(self, request, *args, **kwargs):
-        data = json.loads(request.body)
-        print(data)
-        jalali_date = data.get("job_start_date").split("-")
-        print(jalali_date)
-        jalali_date = jdatetime.date(int(jalali_date[0]), int(jalali_date[1]), int(jalali_date[2]))
-        print(jalali_date)
-        saler = Salers(
-                    name = data.get("name"),
-                    job_start_date = jalali_date,
-                    manager_performance_rating = 1,
-                    experience_rating = calculate_experience_rating(jalali_date),
-                    monthly_total_sales_rating = 1,#will be calculated!!!!!!!!!!!!!!!!!!!!!!
-                    receipment_rating = 1,#will be calculated!!!!!!!!!!!!!!!!!!!!!!
-                    is_active =  True,
-                )
-        print(saler)
-        saler.save()
-        return HttpResponse("OK")
+        try:
+            data = json.loads(request.body)
+            jalali_date = data.get("job_start_date").split("-")
+            try:
+                jalali_date = jdatetime.date(int(jalali_date[0]), int(jalali_date[1]), int(jalali_date[2]))
+            except ValueError:
+                raise ValueError("Invalid date format, should be YYYY-MM-DD")
+
+            saler = Salers(
+                name = data.get("name"),
+                job_start_date = jalali_date,
+                manager_performance_rating = 1,
+                experience_rating = calculate_experience_rating(jalali_date),
+                monthly_total_sales_rating = 1, #will be calculated!!!!!!!!!!!!!!!!!!!!!!
+                receipment_rating = 1, #will be calculated!!!!!!!!!!!!!!!!!!!!!!
+                is_active =  True,
+            )
+            saler.save()
+            return JsonResponse({'message': "Saler added successfully"}, status=200)
+        except IndexError as e:
+            return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD' "}, status=400)
+        except ValueError as e:
+            return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD' "}, status=400)
+        except Exception as e:
+             return JsonResponse({'error': str(e)}, status=500)
+
 
 class CollapsedSalerView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -603,7 +706,6 @@ class DeleteSalerView(APIView):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
         id = data.get('id')
-        print(id)
         Salers.objects.get(id=id).delete()
         return HttpResponse('OK')
 
@@ -641,9 +743,7 @@ def update_saler_performance_with_delete_sale(sender, instance, **kwargs):
 @receiver(pre_save, sender=SalerPerformance)
 def update_month_sale_rating(sender, instance, **kwargs):
     # Calculate the sale rating based on the updated sale value
-    print(instance.sale)
     monthly_sale_rating = calculate_sale_rating(float(instance.sale)/10000000)
-    print(monthly_sale_rating)
     saler, created = SalerMonthlySaleRating.objects.get_or_create(
         name=instance.name, 
         year=instance.year,
@@ -666,7 +766,6 @@ def update_sale_summary_with_add_sale(sender, instance, created, **kwargs):
         find_month = instance.date.month
         find_year = instance.date.year
         find_day = instance.date.day
-        print(f"{find_year}, {find_month}, {find_day}")
         sale_summary, created = SaleSummary.objects.get_or_create(
             date=jdatetime.date(int(find_year), int(find_month), int(find_day)), year= find_year, month = find_month, day = find_day
         )
@@ -761,7 +860,7 @@ def update_monthly_product_sales_with_add_sale(sender, instance, created, **kwar
     if created:
 
         monthly_sale, created = MonthlyProductSales.objects.get_or_create(
-            prodct_name=instance.goods,
+            product_name=instance.goods,
             product_code=instance.good_code,
             year=instance.date.year,
             month= instance.date.month

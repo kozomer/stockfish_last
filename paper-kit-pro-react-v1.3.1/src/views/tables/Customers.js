@@ -82,29 +82,40 @@ const DataTable = () => {
     setIsLoading(true);
     const formData = new FormData();
     formData.append('file', file);
-    console.log(file)
-    const access_token = await localforage.getItem('access_token'); 
+    const access_token = await localforage.getItem('access_token');
     fetch('http://127.0.0.1:8000/add_customers/', {
       method: 'POST',
       body: formData,
-      credentials: 'include',
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': 'Bearer '+ String(access_token)
       }
     })
       .then((response) => {
+        if (!response.ok) {
+          return response.json().then(data => {
+            console.log(data.error)
+            setIsLoading(false);
+            errorUpload(data.error);
+          });
+        }
+       
+        console.log(response)
         setIsLoading(false);
         successUpload();
-        alert('File uploaded successfully');
-        fetch('http://127.0.0.1:8000/customers/')
+        
+        fetch('http://127.0.0.1:8000/customers/',{
+          headers: {
+            'Authorization': 'Bearer '+ String(access_token)
+          }
+        })
           .then((response) => response.json())
+          console.log(response)
           .then((data) => setDataTable(data));
           setShowUploadDiv(false);
       })
       .catch((error) => {
         console.error(error);
-        alert('Error uploading file');
+        
         setIsLoading(false);
         errorUpload();
        
@@ -213,7 +224,7 @@ const DataTable = () => {
     setAlert(null);
   };
 
-  const errorUpload = () => {
+  const errorUpload = (e) => {
     setAlert(
       <ReactBSAlert
         danger
@@ -224,7 +235,7 @@ const DataTable = () => {
         confirmBtnBsStyle="info"
         btnSize=""
       >
-        Error uploading file, try again. Make sure selecting correct file.
+       {e}
       </ReactBSAlert>
     );
   };

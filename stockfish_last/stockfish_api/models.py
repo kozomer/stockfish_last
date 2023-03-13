@@ -171,10 +171,10 @@ class MonthlyProductSales(models.Model):
     objects = jmodels.jManager()
     product_name = models.CharField(max_length=100)
     product_code = models.IntegerField(null=True)
-    date = jmodels.jDateField()
+    date = jmodels.jDateField(null=True)
     year = models.IntegerField(null=True)
     month = models.IntegerField(null=True)
-    piece = models.FloatField(null=True)
+    piece = models.FloatField(null=True, default=0)
     sale = models.FloatField(default=0, null=True)
 
 

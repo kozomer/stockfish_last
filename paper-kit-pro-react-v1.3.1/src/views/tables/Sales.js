@@ -114,29 +114,42 @@ const [bonus, setBonus] = useState(null);
       body: formData,
       credentials: 'include',
       headers: {
-       
         'Authorization': 'Bearer '+ String(access_token)
       }
     })
-      .then((response) => {
-
-        setIsLoading(false);
-        successUpload();
-        alert('File uploaded successfully');
-        fetch('http://127.0.0.1:8000/sales/')
+    .then((response) => {
+      if (!response.ok) {
+        return response.json().then(data => {
+          console.log(data.error)
+          setIsLoading(false);
+          errorUpload(data.error);
+        });
+      }
+      else{
+        return response.json().then(data => {
+          setIsLoading(false);
+          successUpload(data.message);
+          fetch('http://127.0.0.1:8000/sales/',{
+            headers: {
+              'Authorization': 'Bearer '+ String(access_token)
+            }
+          })
           .then((response) => response.json())
-          .then((data) => setDataTable(data));
+          .then((data) =>{
+             setDataTable(data)
+             console.log(data.message)});
           clearTimeout(timeoutId); // Clear any existing timeout
           setTimeoutId(setTimeout(() => setShowUploadDiv(false), 500));
-   
-      })
-      .catch((error) => {
-        setIsLoading(false);
-        alert('Error uploading file');
-        errorUpload()
-      });
-
+        });
+      }
+    })
+    .catch((error) => {
+      console.error(error.message); // the error message returned by the server
+      setIsLoading(false);
+      errorUpload();
+    });
   };
+  
 
   const warningWithConfirmAndCancelMessage = () => {
     
@@ -203,7 +216,7 @@ const [bonus, setBonus] = useState(null);
     setAlert(null);
   };
 
-  const successUpload = () => {
+  const successUpload = (s) => {
     setAlert(
       <ReactBSAlert
         success
@@ -214,12 +227,12 @@ const [bonus, setBonus] = useState(null);
         confirmBtnBsStyle="info"
         btnSize=""
       >
-        Your file has been successfully uploaded!
+       {s}
       </ReactBSAlert>
     );
   };
 
-  const errorUpload = () => {
+  const errorUpload = (e) => {
     setAlert(
       <ReactBSAlert
         danger
@@ -230,7 +243,7 @@ const [bonus, setBonus] = useState(null);
         confirmBtnBsStyle="info"
         btnSize=""
       >
-        Error uploading file, try again. Make sure selecting the correct file.
+        {e}
       </ReactBSAlert>
     );
   };
