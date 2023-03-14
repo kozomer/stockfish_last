@@ -14,7 +14,7 @@
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 */
-import React from "react";
+import React, {useState, useEffect} from "react";
 import classnames from "classnames";
 import { useLocation } from "react-router-dom";
 import {
@@ -34,16 +34,50 @@ import {
   NavItem,
   NavLink,
   Nav,
-  Container
+  Container,
+  Modal,
+  ModalHeader,
+  ModalBody,
 } from "reactstrap";
+
+import {notifications} from '../../views/Dashboard';
+
+import localforage from 'localforage';
 
 function AdminNavbar(props) {
   const [collapseOpen, setCollapseOpen] = React.useState(false);
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [color, setColor] = React.useState("navbar-transparent");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+   
+  const unreadCount=notifications.filter(notification => !notification.read).length;
+
+  useEffect(() => {
+    
+  }, [unreadCount]);
+  
+ /* useEffect(() => {
+    // Retrieve the notifications from localforage
+    localforage.getItem('notifications').then((data) => {
+      // If there are no notifications in localforage, set an empty array as the default value
+      const savedNotifications = data ? JSON.parse(data) : [];
+      console.log(savedNotifications)
+      setNotifications(savedNotifications);
+      
+    });
+  }, []);
+ */
+  const handleBellClick = () => {
+    setDropdownOpen(!dropdownOpen);
+    setModalOpen(true);
+  };
+
+  
   const location = useLocation();
   React.useEffect(() => {
     window.addEventListener("resize", updateColor);
+    
   });
   React.useEffect(() => {
     if (
@@ -160,45 +194,46 @@ function AdminNavbar(props) {
                   </p>
                 </NavLink>
               </NavItem>
-              <UncontrolledDropdown className="btn-rotate" nav>
-                <DropdownToggle
-                  aria-haspopup={true}
-                  caret
-                  color="default"
-                  data-toggle="dropdown"
-                  id="navbarDropdownMenuLink"
-                  nav
-                >
-                  <i className="nc-icon nc-bell-55" />
-                  <p>
-                    <span className="d-lg-none d-md-block">Some Actions</span>
-                  </p>
-                </DropdownToggle>
-                <DropdownMenu
-                  persist
-                  aria-labelledby="navbarDropdownMenuLink"
-                  right
-                >
-                  <DropdownItem
-                    href="#pablo"
-                    onClick={(e) => e.preventDefault()}
-                  >
-                    Action
-                  </DropdownItem>
-                  <DropdownItem
-                    href="#pablo"
-                    onClick={(e) => e.preventDefault()}
-                  >
-                    Another action
-                  </DropdownItem>
-                  <DropdownItem
-                    href="#pablo"
-                    onClick={(e) => e.preventDefault()}
-                  >
-                    Something else here
-                  </DropdownItem>
-                </DropdownMenu>
-              </UncontrolledDropdown>
+             
+
+<UncontrolledDropdown className="btn-rotate" nav isOpen={dropdownOpen} toggle={handleBellClick}>
+  <DropdownToggle
+    aria-haspopup={true}
+    caret
+    color="default"
+    data-toggle="dropdown"
+    id="navbarDropdownMenuLink"
+    nav
+  >
+    <i className="nc-icon nc-bell-55" />
+    <p>
+      <span className="d-lg-none d-md-block">Some Actions</span>
+    </p>
+    
+      <span className="notification-badge">{unreadCount}</span>
+    
+  </DropdownToggle>
+  <DropdownMenu persist aria-labelledby="navbarDropdownMenuLink" right  placement="bottom-left">
+    
+    {notifications.length > 0 ? (
+      notifications.map((notification, index) => (
+        <DropdownItem key={index}  onClick={() => {
+          notification.read = true;
+          
+         
+        }}>{notification.message}</DropdownItem>
+      ))
+    ) : (
+      <DropdownItem>There's no notification right now</DropdownItem>
+    )}
+    <DropdownItem divider />
+    <DropdownItem onClick={() => {notifications.length = 0}}>
+      Clear notifications
+    </DropdownItem>
+    
+  </DropdownMenu>
+</UncontrolledDropdown>
+      
               <NavItem>
                 <NavLink
                   className="btn-rotate"

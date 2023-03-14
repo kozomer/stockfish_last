@@ -62,10 +62,62 @@ var mapData = {
   RU: 300,
   US: 2920
 };
+import NotificationAlert from "react-notification-alert";
+import localforage from 'localforage';
+export const notifications = [];
+
+
 
 function Dashboard() {
+  const notificationAlert = React.useRef();
+  
+  //Notification
+  const notify = (place) => {
+    var color = Math.floor(Math.random() * 5 + 1);
+    var type;
+    switch (color) {
+      case 1:
+        type = "primary";
+        break;
+      case 2:
+        type = "success";
+        break;
+      case 3:
+        type = "danger";
+        break;
+      case 4:
+        type = "warning";
+        break;
+      case 5:
+        type = "info";
+        break;
+      default:
+        break;
+    }
+    var options = {};
+    options = {
+      place: place,
+      message: (
+        <div>
+          <div>
+            Welcome to <b>Now UI Dashboard React</b> - a beautiful premium admin
+            for every web developer.
+          </div>
+        </div>
+      ),
+      type: type,
+      icon: "now-ui-icons ui-1_bell-53",
+      autoDismiss: 7,
+      read: false
+    };
+    notifications.push(options);
+    localforage.setItem('notifications', JSON.stringify([...notifications]));
+    notificationAlert.current.notificationAlert(options);
+    console.log(notifications)
+  };
   return (
     <>
+    <NotificationAlert ref={notificationAlert} />
       <div className="content">
         <Row>
           <Col lg="3" md="6" sm="6">
@@ -924,6 +976,19 @@ function Dashboard() {
             </Card>
           </Col>
         </Row>
+        <Row>
+        <Col md="4">
+                          <Button
+                            block
+                            className="btn-round"
+                            color="default"
+                            onClick={() => notify("tr")}
+                            outline
+                          >
+                            Top Right
+                          </Button>
+                        </Col>
+                        </Row>
       </div>
     </>
   );
