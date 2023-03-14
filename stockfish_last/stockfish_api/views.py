@@ -1376,6 +1376,7 @@ class TopCustomersView(View):
         data = json.loads(request.body)
 
         report_type = data.get('report_type')
+        print(report_type)
         if report_type == 'monthly':
             top_customers_list = []
             date= current_jalali_date().month
@@ -1432,6 +1433,7 @@ class TopProductsView(APIView):
         data = json.loads(request.body)
 
         report_type = data.get('report_type')
+        print(report_type)
         if report_type == 'monthly':
             top_products_list = []
             date= current_jalali_date().month

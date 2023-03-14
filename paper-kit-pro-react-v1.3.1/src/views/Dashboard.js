@@ -14,7 +14,7 @@
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 */
-import React from "react";
+import React, { useState, useEffect } from "react";
 // react plugin used to create charts
 import { Line, Bar, Doughnut } from "react-chartjs-2";
 // react plugin for creating vector maps
@@ -70,7 +70,10 @@ export const notifications = [];
 
 function Dashboard() {
   const notificationAlert = React.useRef();
-  
+  const [filterOption, setFilterOption] = useState("monthly");
+  const [filterOptionCust, setFilterOptionCust] = useState("monthly");
+  const [topProducts, setTopProducts] = useState([]);
+  const [topCustomers, setTopCustomers] = useState([]);
   //Notification
   const notify = (place) => {
     var color = Math.floor(Math.random() * 5 + 1);
@@ -115,9 +118,52 @@ function Dashboard() {
     notificationAlert.current.notificationAlert(options);
     console.log(notifications)
   };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const access_token = await localforage.getItem('access_token');
+      console.log(filterOption)
+      const response = await fetch("http://127.0.0.1:8000/top_products/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': 'Bearer ' + String(access_token)
+        },
+        body: JSON.stringify({ report_type: filterOption }),
+      });
+      const data = await response.json();
+      console.log(data)
+      setTopProducts(data);
+    };
+
+  
+    fetchData();
+    
+  }, [filterOption]);
+
+
+  useEffect(() =>{
+    const fetchDataCustomers = async () => {
+      const access_token = await localforage.getItem('access_token');
+      console.log(filterOption)
+      const response = await fetch("http://127.0.0.1:8000/top_customers/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': 'Bearer ' + String(access_token)
+        },
+        body: JSON.stringify({ report_type: filterOptionCust }),
+      });
+      const data = await response.json();
+      console.log(data)
+      setTopCustomers(data);
+    };
+    fetchDataCustomers();
+}, [filterOptionCust])
+  
   return (
     <>
-    <NotificationAlert ref={notificationAlert} />
+      <NotificationAlert ref={notificationAlert} />
       <div className="content">
         <Row>
           <Col lg="3" md="6" sm="6">
@@ -150,36 +196,36 @@ function Dashboard() {
 
 
           <Col lg="3" md="6" sm="6">
-  <Card className="card-stats">
-    <CardBody>
-      <Row>
-        <Col md="4" xs="5">
-          <div className="icon-big text-center icon-warning">
-            <i className="nc-icon nc-calendar-60" />
-          </div>
-        </Col>
-        <Col md="8" xs="7">
-          <div className="numbers">
-            <p className="card-category">Current Date(Gregorian)</p>
-            <CardTitle tag="p">{new Date().toLocaleDateString()}</CardTitle>
-            <p />
-          </div>
-        </Col>
-      </Row>
+            <Card className="card-stats">
+              <CardBody>
+                <Row>
+                  <Col md="4" xs="5">
+                    <div className="icon-big text-center icon-warning">
+                      <i className="nc-icon nc-calendar-60" />
+                    </div>
+                  </Col>
+                  <Col md="8" xs="7">
+                    <div className="numbers">
+                      <p className="card-category">Current Date(Gregorian)</p>
+                      <CardTitle tag="p">{new Date().toLocaleDateString()}</CardTitle>
+                      <p />
+                    </div>
+                  </Col>
+                </Row>
 
-      <Row>
-    <Col md="12" xs="7">
-          <div className="numbers">
-            <p className="card-category">Current Date(Jalali)</p>
-            <CardTitle tag="p">{new Date().toLocaleDateString()}</CardTitle>
-            <p />
-          </div>
-        </Col>
-    </Row>
-    </CardBody>
-    
-  </Card>
-</Col>
+                <Row>
+                  <Col md="12" xs="7">
+                    <div className="numbers">
+                      <p className="card-category">Current Date(Jalali)</p>
+                      <CardTitle tag="p">{new Date().toLocaleDateString()}</CardTitle>
+                      <p />
+                    </div>
+                  </Col>
+                </Row>
+              </CardBody>
+
+            </Card>
+          </Col>
 
           <Col lg="3" md="6" sm="6">
             <Card className="card-stats">
@@ -381,213 +427,119 @@ function Dashboard() {
             </Card>
           </Col>
         </Row>
-        
+
         <Row>
           <Col md="6">
             <Card>
-              <CardHeader>
-                <CardTitle tag="h4">Top Customers</CardTitle>
-                <p className="card-category">All products that were shipped</p>
-              </CardHeader>
+              <Row>
+                <Col xs="5">
+                  <CardHeader>
+                    <CardTitle tag="h4">Top Five Products</CardTitle>
+
+                  </CardHeader>
+                </Col>
+                <Col xs="3"></Col>
+                <Col xs="3">
+                  <Label for="selectType">Select Type:</Label>
+                  <Input type="select" name="select" id="selectType" onChange={(e) => setFilterOption(e.target.value)}>
+                    <option value="">Select Type</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+
+                  </Input>
+                </Col>
+              </Row>
               <CardBody>
                 <Row>
-                  
+
                   <Col md="12">
+
                     <Table responsive>
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Product Name</th>
+                          <th className="text-right">Total Sales</th>
+
+                        </tr>
+                      </thead>
                       <tbody>
-                        <tr>
-                          <td>
-                            <div className="flag">
-                              <img
-                                alt="..."
-                                src={require("assets/img/flags/US.png")}
-                              />
-                            </div>
-                          </td>
-                          <td>USA</td>
-                          <td className="text-right">2.920</td>
-                          <td className="text-right">53.23%</td>
-                        </tr>
-                        <tr>
-                          <td>
-                            <div className="flag">
-                              <img
-                                alt="..."
-                                src={require("assets/img/flags/DE.png")}
-                              />
-                            </div>
-                          </td>
-                          <td>Germany</td>
-                          <td className="text-right">1.300</td>
-                          <td className="text-right">20.43%</td>
-                        </tr>
-                        <tr>
-                          <td>
-                            <div className="flag">
-                              <img
-                                alt="..."
-                                src={require("assets/img/flags/AU.png")}
-                              />
-                            </div>
-                          </td>
-                          <td>Australia</td>
-                          <td className="text-right">760</td>
-                          <td className="text-right">10.35%</td>
-                        </tr>
-                        <tr>
-                          <td>
-                            <div className="flag">
-                              <img
-                                alt="..."
-                                src={require("assets/img/flags/GB.png")}
-                              />
-                            </div>
-                          </td>
-                          <td>United Kingdom</td>
-                          <td className="text-right">690</td>
-                          <td className="text-right">7.87%</td>
-                        </tr>
-                        <tr>
-                          <td>
-                            <div className="flag">
-                              <img
-                                alt="..."
-                                src={require("assets/img/flags/RO.png")}
-                              />
-                            </div>
-                          </td>
-                          <td>Romania</td>
-                          <td className="text-right">600</td>
-                          <td className="text-right">5.94%</td>
-                        </tr>
-                        <tr>
-                          <td>
-                            <div className="flag">
-                              <img
-                                alt="..."
-                                src={require("assets/img/flags/BR.png")}
-                              />
-                            </div>
-                          </td>
-                          <td>Brasil</td>
-                          <td className="text-right">550</td>
-                          <td className="text-right">4.34%</td>
-                        </tr>
+                        {topProducts.map((product, index) => (
+                          <tr key={product[0]}>
+                            <td>{index + 1}</td>
+                            <td>{product[0]}</td>
+                            <td className="text-right">{product[1]}</td>
+
+                          </tr>
+                        ))}
                       </tbody>
                     </Table>
+
                   </Col>
-                  
-                 
+
+
 
                 </Row>
-                
+
               </CardBody>
             </Card>
           </Col>
-          
+
           <Col md="6">
-          <Card>
-          <CardHeader>
-                <CardTitle tag="h4">Top Products</CardTitle>
-                <p className="card-category">All products that were shipped</p>
-              </CardHeader>
+            <Card>
+              <Row>
+                <Col xs="5">
+                  <CardHeader>
+                    <CardTitle tag="h4">Top Five Customers</CardTitle>
+
+                  </CardHeader>
+                </Col>
+                <Col xs="3"></Col>
+                <Col xs="3">
+                  <Label for="selectType">Select Type:</Label>
+                  <Input type="select" name="select" id="selectType" onChange={(e) => setFilterOptionCust(e.target.value)}>
+                    <option value="">Select Type</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+
+                  </Input>
+                </Col>
+              </Row>
               <CardBody>
                 <Row>
-                  
+
                   <Col md="12">
                     <Table responsive>
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Customer Name</th>
+                          <th className="text-right">Total Sales</th>
+
+                        </tr>
+                      </thead>
                       <tbody>
-                        <tr>
-                          <td>
-                            <div className="flag">
-                              <img
-                                alt="..."
-                                src={require("assets/img/flags/US.png")}
-                              />
-                            </div>
-                          </td>
-                          <td>USA</td>
-                          <td className="text-right">2.920</td>
-                          <td className="text-right">53.23%</td>
-                        </tr>
-                        <tr>
-                          <td>
-                            <div className="flag">
-                              <img
-                                alt="..."
-                                src={require("assets/img/flags/DE.png")}
-                              />
-                            </div>
-                          </td>
-                          <td>Germany</td>
-                          <td className="text-right">1.300</td>
-                          <td className="text-right">20.43%</td>
-                        </tr>
-                        <tr>
-                          <td>
-                            <div className="flag">
-                              <img
-                                alt="..."
-                                src={require("assets/img/flags/AU.png")}
-                              />
-                            </div>
-                          </td>
-                          <td>Australia</td>
-                          <td className="text-right">760</td>
-                          <td className="text-right">10.35%</td>
-                        </tr>
-                        <tr>
-                          <td>
-                            <div className="flag">
-                              <img
-                                alt="..."
-                                src={require("assets/img/flags/GB.png")}
-                              />
-                            </div>
-                          </td>
-                          <td>United Kingdom</td>
-                          <td className="text-right">690</td>
-                          <td className="text-right">7.87%</td>
-                        </tr>
-                        <tr>
-                          <td>
-                            <div className="flag">
-                              <img
-                                alt="..."
-                                src={require("assets/img/flags/RO.png")}
-                              />
-                            </div>
-                          </td>
-                          <td>Romania</td>
-                          <td className="text-right">600</td>
-                          <td className="text-right">5.94%</td>
-                        </tr>
-                        <tr>
-                          <td>
-                            <div className="flag">
-                              <img
-                                alt="..."
-                                src={require("assets/img/flags/BR.png")}
-                              />
-                            </div>
-                          </td>
-                          <td>Brasil</td>
-                          <td className="text-right">550</td>
-                          <td className="text-right">4.34%</td>
-                        </tr>
+                        {topCustomers.map((customer, index) => (
+                          <tr key={customer[0]}>
+                            <td>{index + 1}</td>
+                            <td>{pustomer[0]}</td>
+                            <td className="text-right">{customer[1]}</td>
+
+                          </tr>
+                        ))}
                       </tbody>
                     </Table>
                   </Col>
-                  
-                 
+
+
 
                 </Row>
-                
+
               </CardBody>
-                  
-                
-                </Card>
-                </Col>
+
+
+            </Card>
+          </Col>
         </Row>
 
         <Row>
@@ -977,18 +929,18 @@ function Dashboard() {
           </Col>
         </Row>
         <Row>
-        <Col md="4">
-                          <Button
-                            block
-                            className="btn-round"
-                            color="default"
-                            onClick={() => notify("tr")}
-                            outline
-                          >
-                            Top Right
-                          </Button>
-                        </Col>
-                        </Row>
+          <Col md="4">
+            <Button
+              block
+              className="btn-round"
+              color="default"
+              onClick={() => notify("tr")}
+              outline
+            >
+              Top Right
+            </Button>
+          </Col>
+        </Row>
       </div>
     </>
   );
