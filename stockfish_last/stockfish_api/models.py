@@ -177,6 +177,23 @@ class MonthlyProductSales(models.Model):
     piece = models.FloatField(null=True, default=0)
     sale = models.FloatField(default=0, null=True)
 
+class CustomerPerformance(models.Model):
+    objects = jmodels.jManager()
+    customer_code = models.IntegerField(null=True)
+    customer_name = models.CharField(max_length=100)
+    year = models.IntegerField(null=True)
+    month = models.IntegerField(null=True)
+    sale = models.FloatField(default=0, null=True)
+
+class ProductPerformance(models.Model):
+    objects = jmodels.jManager()
+    product_code = models.IntegerField(null=True)
+    product_name = models.CharField(max_length=100)
+    year = models.IntegerField(null=True)
+    month = models.IntegerField(null=True)
+    sale = models.FloatField(default=0, null=True)
+
+
 
 
 

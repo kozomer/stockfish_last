@@ -19,7 +19,8 @@ from stockfish_api.views import ( AddCustomersView, AddSalesView, AddProductsVie
                                  ViewSalesView,  ViewWarehouseView, ViewProductsView, ChartView, ItemListView, ViewCustomersView, CollapsedSalerView, SalerView, SalesReportView,
                                  DeleteSaleView, DeleteCustomerView, DeleteProductView, DeleteSalerView, DeleteWarehouseView,
                                  EditProductView, EditCustomerView, EditSaleView, EditWarehouseView,
-                                 LoginView, LogoutView
+                                 LoginView, LogoutView,
+                                 TopCustomersView, TopProductsView
                                  )
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -66,5 +67,8 @@ urlpatterns = [
     path('edit_customers/', EditCustomerView.as_view(), name='edit_customer'),
     path('edit_sales/', EditSaleView.as_view(), name='edit_sale'),
     path('edit_warehouse/', EditWarehouseView.as_view(), name='edit_warehouse'),
+
+    path('top_customers/', TopCustomersView.as_view(), name= 'top_customers'),
+    path('top_products/', TopProductsView.as_view(), name= 'top_products'),
 
 ]

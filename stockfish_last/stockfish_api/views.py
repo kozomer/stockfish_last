@@ -1,17 +1,18 @@
 from django.shortcuts import render
 import pandas as pd
-from .models import Customers, Products, Sales, Warehouse, ROP, Salers, SalerPerformance, SaleSummary, SalerMonthlySaleRating, MonthlyProductSales
+from .models import Customers, Products, Sales, Warehouse, ROP, Salers, SalerPerformance, SaleSummary, SalerMonthlySaleRating, MonthlyProductSales,CustomerPerformance, ProductPerformance
 from django.views import View
 from rest_framework.views import APIView
 from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
 import json
 from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
-from .definitions import jalali_to_greg, greg_to_jalali, calculate_experience_rating, calculate_sale_rating
+from .definitions import jalali_to_greg, greg_to_jalali, calculate_experience_rating, calculate_sale_rating, current_jalali_date
 from datetime import datetime
 import datetime
 import jdatetime
 from django.db.models import Sum
+from django.views.decorators.csrf import csrf_exempt
 
 
 from django.contrib.auth import authenticate
@@ -1339,7 +1340,115 @@ def update_monthly_product_sales_with_delete_sale(sender, instance, **kwargs):
 
 # endregion
 
+# region Customer Performance
 
+@receiver(post_save, sender=Sales)
+def update_customer_performance_with_add_sale(sender, instance, created, **kwargs):
+    if created:
+        # Get or create the CustomerPerformance object
+        find_month = instance.date.month
+        find_year = instance.date.year
+        customer_performance, created = CustomerPerformance.objects.get_or_create(
+             year= find_year, month = find_month, customer_code = instance.customer_code, customer_name = instance.name
+        )
+
+        # Update the sale value for the SalerPerformance object
+        customer_performance.sale += instance.net_sales
+        customer_performance.save()
+
+@receiver(post_delete, sender=Sales)
+def update_customer_performance_with_delete_sale(sender, instance, **kwargs):
+    # Get or create the CustomerPerformance object
+    find_month = instance.date.month
+    find_year = instance.date.year
+    customer_performance = CustomerPerformance.objects.get(
+            year= find_year, month = find_month, customer_code = instance.customer_code, customer_name = instance.name
+    )
+
+    # Update the sale value for the SalerPerformance object
+    customer_performance.sale -= instance.net_sales
+    customer_performance.save()
+
+class TopCustomersView(View):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body)
+
+        report_type = data.get('report_type')
+        if report_type == 'monthly':
+            top_customers_list = []
+            date= current_jalali_date().month
+            # Get the data for the current month
+            data = CustomerPerformance.objects.filter(month=date).order_by('-sale')[:5]
+            print(data)
+            # The `order_by` method sorts the results in descending order by `sale`, and the `[:5]` limits the results to the top 5 customers
+            top_customers_list = [[d.customer_name, d.sale] for d in data]
+        elif report_type == 'yearly':
+            top_customers_list = []
+            date= current_jalali_date().year
+            # Get the data for the current month
+            data = CustomerPerformance.objects.filter(year=date).order_by('-sale')[:5]
+            # The `order_by` method sorts the results in descending order by `sale`, and the `[:5]` limits the results to the top 5 customers
+            top_customers_list = [[d.customer_name, d.sale] for d in data]
+        return JsonResponse(top_customers_list, safe=False)
+
+# endregion
+
+
+# region Product Performance
+
+@receiver(post_save, sender=Sales)
+def update_product_performance_with_add_sale(sender, instance, created, **kwargs):
+    if created:
+        # Get or create the ProductPerformance object
+        find_month = instance.date.month
+        find_year = instance.date.year
+        product_performance, created = ProductPerformance.objects.get_or_create(
+             year= find_year, month = find_month, product_code = instance.good_code, product_name = instance.goods
+        )
+
+        # Update the sale value for the ProductPerformance object
+        product_performance.sale += instance.net_sales
+        product_performance.save()
+
+@receiver(post_delete, sender=Sales)
+def update_product_performance_with_delete_sale(sender, instance, **kwargs):
+    # Get or create the ProductPerformance object
+    find_month = instance.date.month
+    find_year = instance.date.year
+    product_performance = ProductPerformance.objects.get(
+            year= find_year, month = find_month, product_code = instance.good_code, product_name = instance.goods
+    )
+
+    # Update the sale value for the ProductPerformance object
+    product_performance.sale -= instance.net_sales
+    product_performance.save()
+
+class TopProductsView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,) #! asdasdasdasdasdasdasd
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body)
+
+        report_type = data.get('report_type')
+        if report_type == 'monthly':
+            top_products_list = []
+            date= current_jalali_date().month
+            # Get the data for the current month
+            data = ProductPerformance.objects.filter(month=date).order_by('-sale')[:5]
+            # The `order_by` method sorts the results in descending order by `sale`, and the `[:5]` limits the results to the top 5 products
+            top_products_list = [[d.product_name, d.sale] for d in data]
+        elif report_type == 'yearly':
+            top_products_list = []
+            date= current_jalali_date().year
+            # Get the data for the current month
+            data = ProductPerformance.objects.filter(year=date).order_by('-sale')[:5]
+            # The `order_by` method sorts the results in descending order by `sale`, and the `[:5]` limits the results to the top 5 products
+            top_products_list = [[d.product_name, d.sale] for d in data]
+        return JsonResponse(top_products_list, safe=False)
+
+# endregion
 
 
 
