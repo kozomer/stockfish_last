@@ -8,7 +8,13 @@ def jalali_to_greg(day,month,year):
 
 def greg_to_jalali(year,month,day):
     jalili_date =  jdatetime.date.fromgregorian(day=day,month=month,year=year)
-    return jalili_date 
+    return jalili_date
+
+def current_jalali_date():
+     current_date = datetime.now().date()
+     jalali_current_date = greg_to_jalali(current_date.year,current_date.month,current_date.day)
+
+     return jalali_current_date
 
 def calculate_experience_rating(job_start_date):
     current_date = datetime.now().date()
