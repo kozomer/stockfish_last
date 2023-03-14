@@ -1369,7 +1369,7 @@ def update_customer_performance_with_delete_sale(sender, instance, **kwargs):
     customer_performance.sale -= instance.net_sales
     customer_performance.save()
 
-class TopCustomersView(View):
+class TopCustomersView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
@@ -1378,20 +1378,55 @@ class TopCustomersView(View):
         report_type = data.get('report_type')
         if report_type == 'monthly':
             top_customers_list = []
-            date= current_jalali_date().month
+            
+            # Get the current month and year using jdatetime library
+            date_month= current_jalali_date().month
+            date_year= current_jalali_date().year
+            
             # Get the data for the current month
-            data = CustomerPerformance.objects.filter(month=date).order_by('-sale')[:5]
-            print(data)
-            # The `order_by` method sorts the results in descending order by `sale`, and the `[:5]` limits the results to the top 5 customers
-            top_customers_list = [[d.customer_name, d.sale] for d in data]
+            top_5_customer_data = CustomerPerformance.objects.filter(month=date_month, year=date_year).order_by('-sale')[:5]
+            
+            # Calculate the total sales for the current month
+            total_sales = CustomerPerformance.objects.filter(month=date_month, year=date_year).aggregate(total_sales=Sum('sale'))
+            total_sales= total_sales["total_sales"]
+            
+            # Get the sales data for the top 5 customers and calculate their total sales
+            top_customers_list = [[d.customer_name, d.sale] for d in top_5_customer_data]
+            top_customers_sale_sum = [d[1] for d in top_customers_list ]
+            top_5_customer_total_sale = sum(top_customers_sale_sum)
+            
+            # Calculate the sales for the remaining customers
+            others_sales = total_sales - top_5_customer_total_sale
+            
+            # Create a list of sales data for the top 5 customers and others for the pie chart
+            top_customers_pie_chart = [[d[0], (d[1]/total_sales)*100] for d in top_customers_list]
+            top_customers_pie_chart.append(["others", (others_sales/total_sales*100)])
+        
         elif report_type == 'yearly':
             top_customers_list = []
+            
+            # Get the current year using jdatetime library
             date= current_jalali_date().year
-            # Get the data for the current month
-            data = CustomerPerformance.objects.filter(year=date).order_by('-sale')[:5]
-            # The `order_by` method sorts the results in descending order by `sale`, and the `[:5]` limits the results to the top 5 customers
-            top_customers_list = [[d.customer_name, d.sale] for d in data]
-        return JsonResponse(top_customers_list, safe=False)
+            
+            # Get the data for the current year
+            top_5_customer_data = CustomerPerformance.objects.filter(year=date).order_by('-sale')[:5]
+            
+            # Calculate the total sales for the current year
+            total_sales = CustomerPerformance.objects.filter(year=date).aggregate(total_sales=Sum('sale'))
+            total_sales= total_sales["total_sales"]
+            
+            # Get the sales data for the top 5 customers and calculate their total sales
+            top_customers_list = [[d.customer_name, d.sale] for d in top_5_customer_data]
+            top_customers_sale_sum = [d[1] for d in top_customers_list ]
+            top_5_customer_total_sale = sum(top_customers_sale_sum)
+            
+            # Calculate the sales for the remaining customers
+            others_sales = total_sales - top_5_customer_total_sale
+            
+            # Create a list of sales data for the top 5 customers and others for the pie chart
+            top_customers_pie_chart = [[d[0], (d[1]/total_sales)*100] for d in top_customers_list]
+            top_customers_pie_chart.append(["others", (others_sales/total_sales*100)])
+        return JsonResponse({"top_customers_list": top_customers_list,"top_customers_pie_chart": top_customers_pie_chart}, safe=False)
 
 # endregion
 
@@ -1427,26 +1462,49 @@ def update_product_performance_with_delete_sale(sender, instance, **kwargs):
 
 class TopProductsView(APIView):
     permission_classes = (IsAuthenticated,)
-    authentication_classes = (JWTAuthentication,) #! asdasdasdasdasdasdasd
+    authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
 
         report_type = data.get('report_type')
         if report_type == 'monthly':
             top_products_list = []
-            date= current_jalali_date().month
+            # Get the current month and year using jdatetime library
+            date_month= current_jalali_date().month
+            date_year= current_jalali_date().year
             # Get the data for the current month
-            data = ProductPerformance.objects.filter(month=date).order_by('-sale')[:5]
-            # The `order_by` method sorts the results in descending order by `sale`, and the `[:5]` limits the results to the top 5 products
-            top_products_list = [[d.product_name, d.sale] for d in data]
+            top_5_product_data = ProductPerformance.objects.filter(month=date_month, year=date_year).order_by('-sale')[:5]
+            # Calculate the total sales for the current month
+            total_sales = ProductPerformance.objects.filter(month=date_month, year=date_year).aggregate(total_sales=Sum('sale'))
+            total_sales= total_sales["total_sales"]
+            # Get the sales data for the top 5 products and calculate their total sales
+            top_products_list = [[d.product_name, d.sale] for d in top_5_product_data]
+            top_products_sale_sum = [d[1] for d in top_products_list ]
+            top_5_product_total_sale = sum(top_products_sale_sum)
+            # Calculate the sales for the remaining products
+            others_sales = total_sales - top_5_product_total_sale
+            # Create a list of sales data for the top 5 products and others for the pie chart
+            top_products_pie_chart = [[d[0], (d[1]/total_sales)*100] for d in top_products_list]
+            top_products_pie_chart.append(["others", (others_sales/total_sales*100)])
         elif report_type == 'yearly':
             top_products_list = []
+            # Get the current year using jdatetime library
             date= current_jalali_date().year
-            # Get the data for the current month
-            data = ProductPerformance.objects.filter(year=date).order_by('-sale')[:5]
-            # The `order_by` method sorts the results in descending order by `sale`, and the `[:5]` limits the results to the top 5 products
-            top_products_list = [[d.product_name, d.sale] for d in data]
-        return JsonResponse(top_products_list, safe=False)
+            # Get the data for the current year
+            top_5_product_data = ProductPerformance.objects.filter(year=date).order_by('-sale')[:5]
+            # Calculate the total sales for the current year
+            total_sales = ProductPerformance.objects.filter(year=date).aggregate(total_sales=Sum('sale'))
+            total_sales= total_sales["total_sales"]
+            # Get the sales data for the top 5 products and calculate their total sales
+            top_products_list = [[d.product_name, d.sale] for d in top_5_product_data]
+            top_products_sale_sum = [d[1] for d in top_products_list ]
+            top_5_product_total_sale = sum(top_products_sale_sum)
+            # Calculate the sales for the remaining products
+            others_sales = total_sales - top_5_product_total_sale
+            # Create a list of sales data for the top 5 products and others for the pie chart
+            top_products_pie_chart = [[d[0], (d[1]/total_sales)*100] for d in top_products_list]
+            top_products_pie_chart.append(["others", (others_sales/total_sales*100)])
+        return JsonResponse({"top_customers_list": top_products_list,"top_customers_pie_chart": top_products_pie_chart}, safe=False)
 
 # endregion
 
