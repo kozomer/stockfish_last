@@ -19,6 +19,7 @@ import React, { useState, useEffect } from "react";
 import { Line, Bar, Doughnut } from "react-chartjs-2";
 // react plugin for creating vector maps
 import { VectorMap } from "react-jvectormap";
+import { Pie } from "react-chartjs-2";
 
 // reactstrap components
 import {
@@ -73,7 +74,9 @@ function Dashboard() {
   const [filterOption, setFilterOption] = useState("monthly");
   const [filterOptionCust, setFilterOptionCust] = useState("monthly");
   const [topProducts, setTopProducts] = useState([]);
+  const [topProductsPieData, setTopProductsPieData] = useState({});
   const [topCustomers, setTopCustomers] = useState([]);
+  const [topCustomersPieData, setTopCustomersPieData] = useState({});
   //Notification
   const notify = (place) => {
     var color = Math.floor(Math.random() * 5 + 1);
@@ -119,10 +122,11 @@ function Dashboard() {
     console.log(notifications)
   };
 
+ 
+  
   useEffect(() => {
     const fetchData = async () => {
       const access_token = await localforage.getItem('access_token');
-      console.log(filterOption)
       const response = await fetch("http://127.0.0.1:8000/top_products/", {
         method: "POST",
         headers: {
@@ -133,19 +137,27 @@ function Dashboard() {
       });
       const data = await response.json();
       console.log(data)
-      setTopProducts(data);
-    };
+      setTopProducts(data.top_products_list);
+      setTopProductsPieData({
+        labels: data.top_products_pie_chart.map((item) => item[0]),
+        datasets: [
+          {
+            label: "Top Products",
+            data: data.top_products_pie_chart.map((item) => item[1]),
+            backgroundColor: ["#36A2EB", "#FF6384", "#FFCE56"],
+          },
+        ],
+      });
+      console.log(topProductsPieData.datasets[0].data);
 
-  
+    };
     fetchData();
-    
   }, [filterOption]);
 
 
   useEffect(() =>{
     const fetchDataCustomers = async () => {
       const access_token = await localforage.getItem('access_token');
-      console.log(filterOption)
       const response = await fetch("http://127.0.0.1:8000/top_customers/", {
         method: "POST",
         headers: {
@@ -155,12 +167,88 @@ function Dashboard() {
         body: JSON.stringify({ report_type: filterOptionCust }),
       });
       const data = await response.json();
-      console.log(data)
-      setTopCustomers(data);
+      setTopCustomers(data.top_customers_list);
+      setTopCustomersPieData({
+        labels: data.top_customers_pie_chart.map((item) => item[0]),
+        datasets: [
+          {
+            label: "Top Customers",
+            data: data.top_customers_pie_chart.map((item) => item[1]),
+            backgroundColor: ["#36A2EB", "#FF6384", "#FFCE56"],
+          },
+        ],
+      });
     };
     fetchDataCustomers();
 }, [filterOptionCust])
-  
+
+/*
+const doughnutOptions = {
+  data: {
+    labels: topProductsPieData.labels,
+    datasets: [
+      {
+        label: "Top Products",
+        pointRadius: 0,
+        pointHoverRadius: 0,
+        backgroundColor: ["#f17e5d", "#f4f3ef","#ddddd"],
+        borderWidth: 0,
+        barPercentage: 1.6,
+        data: topProductsPieData.datasets[0].data,
+      },
+    ],
+  },
+  options: {
+    plugins: {
+      legend: {
+        position: "right",
+        labels: {
+          font: {
+            size: 12,
+          },
+          usePointStyle: true,
+        },
+      },
+      tooltips: {
+        enabled: false,
+      },
+      title: {
+        display: true,
+        position: "bottom",
+        text: "Top Products",
+        color: "#66615c",
+        font: {
+          weight: 400,
+          size: 20,
+        },
+      },
+    },
+    maintainAspectRatio: false,
+    cutout: "90%",
+    scales: {
+      y: {
+        ticks: {
+          display: false,
+        },
+        grid: {
+          drawBorder: false,
+          display: false,
+        },
+      },
+      x: {
+        grid: {
+          drawBorder: false,
+          display: false,
+        },
+        ticks: {
+          display: false,
+        },
+      },
+    },
+  },
+};
+
+  */
   return (
     <>
       <NotificationAlert ref={notificationAlert} />
@@ -474,7 +562,65 @@ function Dashboard() {
                         ))}
                       </tbody>
                     </Table>
-
+                   
+                    <Col md="8">
+                      <Doughnut
+                    style={{marginTop:"50px"}}
+        data={topProductsPieData}
+        options= {{
+          plugins: {
+            legend: {
+              position: "right",
+              labels: {
+                font: {
+                  size: 12,
+                },
+                usePointStyle: true,
+              },
+            },
+            tooltips: {
+              enabled: false,
+            },
+            title: {
+              display: true,
+              position: "top",
+              text: "Top Products",
+              color: "#66615c",
+              font: {
+                weight: 400,
+                size: 20,
+              },
+            },
+          },
+          maintainAspectRatio:false,
+          cutout: "70%",
+          scales: {
+            y: {
+              ticks: {
+                display: false,
+              },
+              grid: {
+                drawBorder: false,
+                display: false,
+              },
+            },
+            x: {
+              grid: {
+                drawBorder: false,
+                display: false,
+              },
+              ticks: {
+                display: false,
+              },
+            },
+          },
+        }}
+      
+        
+      />
+                    
+      </Col>
+      
                   </Col>
 
 
@@ -522,13 +668,14 @@ function Dashboard() {
                         {topCustomers.map((customer, index) => (
                           <tr key={customer[0]}>
                             <td>{index + 1}</td>
-                            <td>{pustomer[0]}</td>
+                            <td>{customer[0]}</td>
                             <td className="text-right">{customer[1]}</td>
 
                           </tr>
                         ))}
                       </tbody>
                     </Table>
+                    <Pie data={topCustomersPieData} />
                   </Col>
 
 

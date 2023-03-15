@@ -1502,11 +1502,12 @@ class TopProductsView(APIView):
             top_products_sale_sum = [d[1] for d in top_products_list ]
             top_5_product_total_sale = sum(top_products_sale_sum)
             # Calculate the sales for the remaining products
+            print(top_5_product_total_sale)
             others_sales = total_sales - top_5_product_total_sale
             # Create a list of sales data for the top 5 products and others for the pie chart
             top_products_pie_chart = [[d[0], (d[1]/total_sales)*100] for d in top_products_list]
             top_products_pie_chart.append(["others", (others_sales/total_sales*100)])
-        return JsonResponse({"top_customers_list": top_products_list,"top_customers_pie_chart": top_products_pie_chart}, safe=False)
+        return JsonResponse({"top_products_list": top_products_list,"top_products_pie_chart": top_products_pie_chart}, safe=False)
 
 # endregion
 
