@@ -1562,7 +1562,7 @@ class ExchangeRateAPIView(APIView):
                 "error": "There is an error at Current IRR Exchange Rate. Please contact developer to solve it",
             }
 
-        return JsonResponse(response_data)
+        return JsonResponse(response_data,safe=False )
 
 # endregion
 

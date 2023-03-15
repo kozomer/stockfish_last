@@ -77,6 +77,9 @@ function Dashboard() {
   const [topProductsPieData, setTopProductsPieData] = useState({});
   const [topCustomers, setTopCustomers] = useState([]);
   const [topCustomersPieData, setTopCustomersPieData] = useState({});
+  const [currency, setCurrency] = useState();
+  const [currentDateTime] = useState(new Date());
+
   //Notification
   const notify = (place) => {
     var color = Math.floor(Math.random() * 5 + 1);
@@ -144,7 +147,7 @@ function Dashboard() {
           {
             label: "Top Products",
             data: data.top_products_pie_chart.map((item) => item[1]),
-            backgroundColor: ["#36A2EB", "#FF6384", "#FFCE56"],
+            backgroundColor: ["#53b100", "#61e8e1", "#f25757", "#f2a05d", "#f2e863", "#5e55ff"],
           },
         ],
       });
@@ -174,13 +177,33 @@ function Dashboard() {
           {
             label: "Top Customers",
             data: data.top_customers_pie_chart.map((item) => item[1]),
-            backgroundColor: ["#36A2EB", "#FF6384", "#FFCE56"],
+            backgroundColor: ["#53b100", "#61e8e1", "#f25757", "#f2a05d", "#f2e863", "#5e55ff"],
           },
         ],
       });
     };
     fetchDataCustomers();
 }, [filterOptionCust])
+
+
+useEffect(() => {
+  const fetchExchange= async () => {
+    const access_token = await localforage.getItem('access_token');
+    const response = await fetch("http://127.0.0.1:8000/exchange_rate/", {
+      
+      headers: {
+        
+        'Authorization': 'Bearer ' + String(access_token)
+      },
+     
+    });
+    const data = await response.json();
+    
+    setCurrency(data);
+   
+  };
+  fetchExchange();
+}, []);
 
 /*
 const doughnutOptions = {
@@ -266,7 +289,7 @@ const doughnutOptions = {
                   <Col md="8" xs="7">
                     <div className="numbers">
                       <p className="card-category">Currency</p>
-                      <CardTitle tag="p">150GB</CardTitle>
+                      <CardTitle tag="p">{currency} IRR</CardTitle>
                       <p />
                     </div>
                   </Col>
@@ -276,7 +299,7 @@ const doughnutOptions = {
                 <hr />
                 <div className="stats">
                   <i className="fa fa-refresh" />
-                  Update Now
+                  Update at {currentDateTime.toLocaleString()}
                 </div>
               </CardFooter>
             </Card>
@@ -590,9 +613,10 @@ const doughnutOptions = {
                 weight: 400,
                 size: 20,
               },
+             
             },
           },
-          maintainAspectRatio:false,
+          
           cutout: "70%",
           scales: {
             y: {
@@ -675,7 +699,62 @@ const doughnutOptions = {
                         ))}
                       </tbody>
                     </Table>
-                    <Pie data={topCustomersPieData} />
+                    <Col md="8">
+                    <Doughnut
+                    style={{marginTop:"50px"}}
+        data={topCustomersPieData}
+        options= {{
+          plugins: {
+            legend: {
+              position: "right",
+              labels: {
+                font: {
+                  size: 12,
+                },
+                usePointStyle: true,
+              },
+            },
+            tooltips: {
+              enabled: false,
+            },
+            title: {
+              display: true,
+              position: "top",
+              text: "Top Customers",
+              color: "#66615c",
+              font: {
+                weight: 400,
+                size: 20,
+              },
+            },
+          },
+          
+          cutout: "70%",
+          scales: {
+            y: {
+              ticks: {
+                display: false,
+              },
+              grid: {
+                drawBorder: false,
+                display: false,
+              },
+            },
+            x: {
+              grid: {
+                drawBorder: false,
+                display: false,
+              },
+              ticks: {
+                display: false,
+              },
+            },
+          },
+        }}
+      
+        
+      />
+      </Col>
                   </Col>
 
 
