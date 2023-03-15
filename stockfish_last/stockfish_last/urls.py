@@ -74,6 +74,8 @@ urlpatterns = [
     path('top_products/', TopProductsView.as_view(), name= 'top_products'),
 
     path('exchange_rate/', ExchangeRateAPIView.as_view(), name='exchange_rate'),
-    path('daily_report/', DailyReportView.as_view(), name='daily_report'),
+    path('daily-report/', DailyReportView.as_view({'get': 'get_saler_data'}), name='daily_report'),
+    path('total-report/', DailyReportView.as_view({'get': 'get_total_data'}), name='total_report'),
+
 
 ]

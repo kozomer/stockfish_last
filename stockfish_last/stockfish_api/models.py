@@ -19,11 +19,15 @@ class Sales(models.Model):
     psr = models.CharField(max_length=1)
     customer_code = models.PositiveIntegerField(null=True, blank=True)
     name = models.CharField(max_length=50)
+    city = models.CharField(max_length=50)
     area = models.CharField(max_length=50)
+    color_making_saler = models.CharField(max_length=50)
     group = models.CharField(max_length=50)
-    good_code = models.PositiveIntegerField(null=True, blank=True)
-    goods = models.CharField(max_length=100)
+    product_code = models.PositiveIntegerField(null=True, blank=True)
+    product_name = models.CharField(max_length=100)
     unit = models.CharField(max_length=30)
+    unit2 = models.FloatField(null=True, blank=True)
+    kg = models.FloatField(null=True, blank=True)
     original_value = models.FloatField(null=True, blank=True)
     original_output_value = models.FloatField(null=True, blank=True)
     secondary_output_value = models.FloatField(null=True, blank=True)
@@ -40,7 +44,9 @@ class Sales(models.Model):
     payment_check = models.FloatField(null=True, blank=True)
     balance = models.FloatField(null=True, blank=True)
     saler = models.CharField(max_length=100)
-    currency = models.CharField(max_length=20)
+    currency_sepidar = models.FloatField(null=True, blank=True)
+    dollar_sepidar = models.FloatField(null=True, blank=True)
+    currency = models.FloatField(null=True, blank=True)
     dollar = models.FloatField(null=True, blank=True)
     manager_rating = models.FloatField(null=True, blank=True)
     senior_saler = models.FloatField(null=True, blank=True)
@@ -146,6 +152,7 @@ class SalerPerformance(models.Model):
     month = models.IntegerField(null=True)
     day = models.IntegerField(null=True)
     sale = models.FloatField(default=0, null=True)
+    
 
 class SaleSummary(models.Model):
     objects = jmodels.jManager()
@@ -154,6 +161,9 @@ class SaleSummary(models.Model):
     month = models.IntegerField(null=True)
     day = models.IntegerField(null=True)
     sale = models.FloatField(default=0, null=True)
+    dollar_sepidar_sale = models.FloatField(default=0, null=True)
+    dollar_sale = models.FloatField(default=0, null=True)
+    kg_sale = models.FloatField(default=0, null=True)
 
 class SalerMonthlySaleRating(models.Model):
     objects = jmodels.jManager()
