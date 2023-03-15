@@ -1171,7 +1171,8 @@ def update_saler_performance_with_add_sale(sender, instance, created, **kwargs):
         saler_performance, created = SalerPerformance.objects.get_or_create(
             name=instance.saler,
             year=instance.date.year,
-            month= instance.date.month
+            month= instance.date.month,
+            day=instance.date.day
         )
 
         # Update the sale value for the SalerPerformance object
@@ -1186,7 +1187,8 @@ def update_saler_performance_with_delete_sale(sender, instance, **kwargs):
     performance, created = SalerPerformance.objects.get_or_create(
         name=instance.saler, 
         year=instance.date.year,
-        month=instance.date.month
+        month=instance.date.month,
+        day=instance.date.day
         )
 
     # Subtract the net sale amount from the sale field
@@ -1197,13 +1199,20 @@ def update_saler_performance_with_delete_sale(sender, instance, **kwargs):
 @receiver(pre_save, sender=SalerPerformance)
 def update_month_sale_rating(sender, instance, **kwargs):
     # Calculate the sale rating based on the updated sale value
-    monthly_sale_rating = calculate_sale_rating(float(instance.sale)/10000000)
+    aggregated_sales = SalerPerformance.objects.filter(
+        name=instance.name,
+        year=instance.year,
+        month=instance.month
+    ).aggregate(monthly_sale=Sum('sale'))
+    monthly_sale = float(aggregated_sales['monthly_sale'] or 0)
+    monthly_sale_rating = calculate_sale_rating(monthly_sale / 10000000)
     saler, created = SalerMonthlySaleRating.objects.get_or_create(
         name=instance.name, 
         year=instance.year,
         month=instance.month
         )
     saler.sale_rating = monthly_sale_rating
+    saler.save()
 
 
 
@@ -1216,7 +1225,7 @@ def update_month_sale_rating(sender, instance, **kwargs):
 @receiver(post_save, sender=Sales)
 def update_sale_summary_with_add_sale(sender, instance, created, **kwargs):
     if created:
-        # Get or create the SalerPerformance object
+        # Get or create the SaleSummary object
         find_month = instance.date.month
         find_year = instance.date.year
         find_day = instance.date.day
@@ -1224,13 +1233,13 @@ def update_sale_summary_with_add_sale(sender, instance, created, **kwargs):
             date=jdatetime.date(int(find_year), int(find_month), int(find_day)), year= find_year, month = find_month, day = find_day
         )
 
-        # Update the sale value for the SalerPerformance object
+        # Update the sale value for the SaleSummary object
         sale_summary.sale += instance.net_sales
         sale_summary.save()
 
 @receiver(post_delete, sender=Sales)
 def update_sale_summary_with_delete_sale(sender, instance, **kwargs):
-    # Get or create the SalerPerformance object
+    # Get or create the SaleSummary object
     find_month = instance.date.month
     find_year = instance.date.year
     find_day = instance.date.day
@@ -1239,7 +1248,7 @@ def update_sale_summary_with_delete_sale(sender, instance, **kwargs):
         date=jdatetime.date(int(find_year), int(find_month), int(find_day))
     )
 
-    # Update the sale value for the SalerPerformance object
+    # Update the sale value for the SaleSummary object
     sale_summary.sale -= instance.net_sales
     sale_summary.save()
 
@@ -1340,6 +1349,9 @@ def update_monthly_product_sales_with_delete_sale(sender, instance, **kwargs):
 
 # endregion
 
+
+# region Dashboard #!DASHBOARD PAGE START
+
 # region Customer Performance
 
 @receiver(post_save, sender=Sales)
@@ -1352,7 +1364,7 @@ def update_customer_performance_with_add_sale(sender, instance, created, **kwarg
              year= find_year, month = find_month, customer_code = instance.customer_code, customer_name = instance.name
         )
 
-        # Update the sale value for the SalerPerformance object
+        # Update the sale value for the CustomerPerformance object
         customer_performance.sale += instance.net_sales
         customer_performance.save()
 
@@ -1365,7 +1377,7 @@ def update_customer_performance_with_delete_sale(sender, instance, **kwargs):
             year= find_year, month = find_month, customer_code = instance.customer_code, customer_name = instance.name
     )
 
-    # Update the sale value for the SalerPerformance object
+    # Update the sale value for the CustomerPerformance object
     customer_performance.sale -= instance.net_sales
     customer_performance.save()
 
@@ -1541,8 +1553,56 @@ class ExchangeRateAPIView(APIView):
 
 # endregion
 
+# region Daily Report
+
+class DailyReportView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+    def get(self, request, *args, **kwargs):
+        jalali_date_now = current_jalali_date()
+        jalali_date_now_str = jalali_date_now.strftime('%Y-%m-%d')
+        
+        daily_sales = SalerPerformance.objects.filter(
+            year=jalali_date_now.year,
+            month=jalali_date_now.month,
+            day=jalali_date_now.day
+        ).values('name', 'sale')
+
+        monthly_sales = SalerPerformance.objects.filter(
+            year=jalali_date_now.year,
+            month=jalali_date_now.month
+        ).values('name').annotate(monthly_sale=Sum('sale'))
+
+        yearly_sales = SalerPerformance.objects.filter(
+            year=jalali_date_now.year
+        ).values('name').annotate(yearly_sale=Sum('sale'))
+
+        # Combine the data into a single list
+        combined_data = []
+        for daily_sale in daily_sales:
+            name = daily_sale['name']
+            is_active = Salers.objects.get(name=name).values('is_active')
+            monthly_sale = next((item['monthly_sale'] for item in monthly_sales if item['name'] == name), 0)
+            yearly_sale = next((item['yearly_sale'] for item in yearly_sales if item['name'] == name), 0)
+
+            combined_data.append([
+                name, 
+                is_active, 
+                daily_sale['sale']/10, 
+                monthly_sale/10, 
+                yearly_sale/10
+            ])
+        
+        return JsonResponse(jalali_date_now_str, combined_data, safe=False)
 
 
+
+
+
+# endregion
+
+
+# endregion #!DASHBOARD PAGE END
 
 
 

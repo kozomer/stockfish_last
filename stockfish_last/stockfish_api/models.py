@@ -144,6 +144,7 @@ class SalerPerformance(models.Model):
     name = models.CharField(max_length=100)
     year = models.IntegerField(null=True)
     month = models.IntegerField(null=True)
+    day = models.IntegerField(null=True)
     sale = models.FloatField(default=0, null=True)
 
 class SaleSummary(models.Model):
