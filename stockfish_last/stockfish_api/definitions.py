@@ -1,6 +1,8 @@
 import jdatetime
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
+import requests
+from bs4 import BeautifulSoup
 
 def jalali_to_greg(day,month,year):
     gregorian_date = jdatetime.date(year,month,day).togregorian()
@@ -43,3 +45,18 @@ def calculate_sale_rating(sale_amount):
         return 1.10
     else:
         return 1.00
+
+
+
+def get_exchange_rate():
+    url = "https://www.xe.com/currencyconverter/convert/?Amount=1&From=USD&To=IRR"
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+
+    rate_element = soup.find("p", class_="result__BigRate-sc-1bsijpp-1 iGrAod")
+    rate_text = rate_element.text
+    rate_value = rate_text.split(" ")[0].replace(",", "")
+    rate_float = float(rate_value)
+    rounded_rate = round(rate_float, 2)
+
+    return rounded_rate
