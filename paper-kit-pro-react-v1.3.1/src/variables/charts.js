@@ -481,10 +481,10 @@ const chartExample7 = {
         label: "Emails",
         pointRadius: 0,
         pointHoverRadius: 0,
-        backgroundColor: ["#f17e5d", "#f4f3ef"],
+        backgroundColor: ["#f17e5d", "#f4f3ef","#ddddd"],
         borderWidth: 0,
         barPercentage: 1.6,
-        data: [80, 20]
+        data: [80, 10, 10]
       }
     ]
   },
@@ -498,7 +498,7 @@ const chartExample7 = {
       },
       title: {
         display: true,
-        text: "80%",
+       
         position: "bottom",
         color: "#66615c",
         font: {

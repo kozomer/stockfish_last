@@ -1526,6 +1526,7 @@ class TopProductsView(APIView):
             top_5_product_total_sale = sum(top_products_sale_sum)
             
             # Calculate the sales for the remaining products
+            print(top_5_product_total_sale)
             others_sales = total_sales - top_5_product_total_sale
             
             # Create a list of sales data for the top 5 products and others for the pie chart
