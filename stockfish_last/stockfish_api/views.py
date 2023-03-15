@@ -7,7 +7,7 @@ from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
 import json
 from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
-from .definitions import jalali_to_greg, greg_to_jalali, calculate_experience_rating, calculate_sale_rating, current_jalali_date
+from .definitions import jalali_to_greg, greg_to_jalali, calculate_experience_rating, calculate_sale_rating, current_jalali_date, get_exchange_rate
 from datetime import datetime
 import datetime
 import jdatetime
@@ -1471,43 +1471,74 @@ class TopProductsView(APIView):
         print(report_type)
         if report_type == 'monthly':
             top_products_list = []
+            
             # Get the current month and year using jdatetime library
             date_month= current_jalali_date().month
             date_year= current_jalali_date().year
+            
             # Get the data for the current month
             top_5_product_data = ProductPerformance.objects.filter(month=date_month, year=date_year).order_by('-sale')[:5]
+            
             # Calculate the total sales for the current month
             total_sales = ProductPerformance.objects.filter(month=date_month, year=date_year).aggregate(total_sales=Sum('sale'))
             total_sales= total_sales["total_sales"]
+            
             # Get the sales data for the top 5 products and calculate their total sales
             top_products_list = [[d.product_name, d.sale] for d in top_5_product_data]
             top_products_sale_sum = [d[1] for d in top_products_list ]
             top_5_product_total_sale = sum(top_products_sale_sum)
+            
             # Calculate the sales for the remaining products
             others_sales = total_sales - top_5_product_total_sale
+            
             # Create a list of sales data for the top 5 products and others for the pie chart
             top_products_pie_chart = [[d[0], (d[1]/total_sales)*100] for d in top_products_list]
             top_products_pie_chart.append(["others", (others_sales/total_sales*100)])
+        
         elif report_type == 'yearly':
             top_products_list = []
+            
             # Get the current year using jdatetime library
             date= current_jalali_date().year
+            
             # Get the data for the current year
             top_5_product_data = ProductPerformance.objects.filter(year=date).order_by('-sale')[:5]
+            
             # Calculate the total sales for the current year
             total_sales = ProductPerformance.objects.filter(year=date).aggregate(total_sales=Sum('sale'))
             total_sales= total_sales["total_sales"]
+            
             # Get the sales data for the top 5 products and calculate their total sales
             top_products_list = [[d.product_name, d.sale] for d in top_5_product_data]
             top_products_sale_sum = [d[1] for d in top_products_list ]
             top_5_product_total_sale = sum(top_products_sale_sum)
+            
             # Calculate the sales for the remaining products
             print(top_5_product_total_sale)
             others_sales = total_sales - top_5_product_total_sale
+            
             # Create a list of sales data for the top 5 products and others for the pie chart
             top_products_pie_chart = [[d[0], (d[1]/total_sales)*100] for d in top_products_list]
             top_products_pie_chart.append(["others", (others_sales/total_sales*100)])
         return JsonResponse({"top_products_list": top_products_list,"top_products_pie_chart": top_products_pie_chart}, safe=False)
+
+# endregion
+
+# region Current Exchange Rate
+
+class ExchangeRateAPIView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+    def get(self, request):
+        try:
+            exchange_rate = get_exchange_rate()
+            response_data = exchange_rate
+        except Exception as e:
+            response_data = {
+                "error": "There is an error at Current IRR Exchange Rate. Please contact developer to solve it",
+            }
+
+        return JsonResponse(response_data)
 
 # endregion
 
