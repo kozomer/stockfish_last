@@ -11,8 +11,12 @@ from .definitions import jalali_to_greg, greg_to_jalali, calculate_experience_ra
 from datetime import datetime
 import datetime
 import jdatetime
-from django.db.models import Sum
+from django.db.models import Sum, Avg
+from django.db.models.functions import Coalesce
 from django.views.decorators.csrf import csrf_exempt
+import statistics
+import math
+from scipy.stats import norm
 
 
 from django.contrib.auth import authenticate
@@ -226,7 +230,7 @@ class AddSalesView(APIView):
 
                 # Check for existing good
                 if not Warehouse.objects.filter(product_code=row['Good Code']).exists():
-                    return JsonResponse({'error': f"No good found with code '{row['Good Code']}'"}, status=400)
+                    return JsonResponse({'error': f"No product found with code '{row['Good Code']}' in warehouse"}, status=400)
                     
 
                 # Check for existing customer
@@ -248,7 +252,7 @@ class AddSalesView(APIView):
                     name=row["Name"],
                     city=row["City"],
                     area=row["Area"],
-                    color_making_saler=row["Group"],
+                    color_making_saler=row["Color Making Saler"],
                     group=row["Group"],
                     product_code=row["Good Code"],
                     product_name=row["Goods"],
@@ -724,72 +728,7 @@ class ItemListView(APIView):
 
 # endregion 
 
-# region ROP
-@receiver(post_save, sender=Warehouse)
-def create_rop_for_warehouse(sender, instance, created, **kwargs):
-    if created:
-        sales = Sales.objects.filter(product_code=instance.product_code)
-        try:
-            product = Products.objects.get(product_code_ir = instance.product_code)
-            rop = ROP(
-            group = product.group,
-            subgroup = product.subgroup,
-            feature = product.feature,
-            new_or_old_product = None,
-            related = None,
-            origin = None,
-            product_code_ir = instance.product_code,
-            product_code_tr = product.product_code_tr,
-            dont_order_again = None,
-            description_tr = product.description_tr,
-            description_ir = product.description_ir,
-            unit = product.unit,
-            weight = product.weight,
-            unit_secondary = product.unit_secondary,
-            price = product.price,
-            #color_making_room_1400 = None,
-            avarage_previous_year = None,
-            month_1 = None,
-            month_2 = None,
-            month_3 = None,
-            month_4 = None,
-            month_5 = None,
-            month_6 = None,
-            month_7 = None,
-            month_8 = None,
-            month_9 = None,
-            month_10 = None,
-            month_11 = None,
-            month_12 = None,
-            total_sale = None,
-            warehouse = None,
-            goods_on_the_road = None,
-            total_stock_all = None,
-            total_month_stock = None,
-            standart_deviation = None,
-            lead_time = None,
-            product_coverage_percentage = None,
-            demand_status = None,
-            safety_stock = None,
-            rop = None,
-            monthly_mean = None,
-            new_party = None,
-            cycle_service_level = None,
-            total_stock = None,
-            need_prodcuts = None,
-            over_stock = None,
-            calculated_need = None,
-            calculated_max_stock = None,
-            calculated_min_stock = None,
-            
-            )
-            rop.save()
 
-        except Products.DoesNotExist:
-            pass
-        
-        
-# endregion
 
 # region Saler
 class AddSalerView(APIView):
@@ -1350,13 +1289,14 @@ class SalerDataView(APIView):
             ])
             response_data = { "jalali_date" : jalali_date_now_str, "sales_data" : combined_data }
         
-        return JsonResponse(jalali_date_now_str, combined_data, safe=False)
+        return JsonResponse(response_data, safe=False)
         
 
 class TotalDataView(APIView):
     @csrf_exempt
     def get(self, request, *args, **kwargs):
         jalali_date_now = current_jalali_date()
+        print(jalali_date_now)
         jalali_date_now_str = jalali_date_now.strftime('%Y-%m-%d')
         
         daily_sales = SaleSummary.objects.filter(
@@ -1366,14 +1306,14 @@ class TotalDataView(APIView):
         ).values('sale', 'dollar_sepidar_sale', 'dollar_sale', 'kg_sale')
         daily_sales_array = list(daily_sales.values_list('sale', 'dollar_sepidar_sale', 'dollar_sale', 'kg_sale')[0])
 
-        monthly_sales = SalerPerformance.objects.filter(
+        monthly_sales = SaleSummary.objects.filter(
             year=jalali_date_now.year,
             month=jalali_date_now.month
         ).annotate(monthly_sale=Sum('sale'), monthly_dollar_sepidar_sale=Sum('dollar_sepidar_sale'), monthly_dollar_sale=Sum('dollar_sale'), monthly_kg_sale=Sum('kg_sale') )
         monthly_sales_array = list(monthly_sales.values_list('monthly_sale', 'monthly_dollar_sepidar_sale', 'monthly_dollar_sale', 'monthly_kg_sale')[0])
 
 
-        yearly_sales = SalerPerformance.objects.filter(
+        yearly_sales = SaleSummary.objects.filter(
             year=jalali_date_now.year
         ).annotate(yearly_sale=Sum('sale'), yearly_dollar_sepidar_sale=Sum('dollar_sepidar_sale'), yearly_dollar_sale=Sum('dollar_sale'), yearly_kg_sale=Sum('kg_sale') )
         yearly_sales_array = list(yearly_sales.values_list('yearly_sale', 'yearly_dollar_sepidar_sale', 'yearly_dollar_sale', 'yearly_kg_sale')[0])
@@ -1424,13 +1364,203 @@ class TotalDataByMonthlyView(View):
         monthly_sales_array = monthly_sales_data if len(monthly_sales_data) == 12 else monthly_sales_data + [[0, 0, 0, 0, 0]] * (12 - len(monthly_sales_data))
         return JsonResponse(monthly_sales_array, safe=False)
 
-        #response_data = { "jalali_date" : jalali_date_now_str, "daily_sales" : daily_sales_array, "monthly_sales" : monthly_sales_array, "yearly_sales" : yearly_sales_array }
-
 
 # endregion
 
 
 # endregion #!DASHBOARD PAGE END
+
+# region ROP
+@receiver(post_save, sender=Warehouse)
+def create_rop_for_warehouse(sender, instance, created, **kwargs):
+    if created:
+        try:
+            product = Products.objects.get(product_code_ir = instance.product_code)
+            
+            rop, created = ROP.objects.get_or_create(
+            group = product.group,
+            subgroup = product.subgroup,
+            feature = product.feature,
+            new_or_old_product = 0,
+            related = None,
+            origin = None,
+            product_code_ir = instance.product_code,
+            product_code_tr = product.product_code_tr,
+            dont_order_again = None,
+            description_tr = product.description_tr,
+            description_ir = product.description_ir,
+            unit = product.unit,
+            weight = product.weight,
+            unit_secondary = product.unit_secondary,
+            price = product.price,
+            #color_making_room_1400 = None,
+            avarage_previous_year = None,
+            month_1 = None,
+            month_2 = None,
+            month_3 = None,
+            month_4 = None,
+            month_5 = None,
+            month_6 = None,
+            month_7 = None,
+            month_8 = None,
+            month_9 = None,
+            month_10 = None,
+            month_11 = None,
+            month_12 = None,
+            total_sale = None,
+            warehouse = None,
+            goods_on_the_road = None,
+            total_stock_all = None,
+            total_month_stock = None,
+            standart_deviation = None,
+            lead_time = None,
+            product_coverage_percentage = None,
+            demand_status = None,
+            safety_stock = None,
+            rop = None,
+            monthly_mean = None,
+            new_party = None,
+            cycle_service_level = None,
+            total_stock = None,
+            need_prodcuts = None,
+            over_stock = None,
+            calculated_need = None,
+            calculated_max_stock = None,
+            calculated_min_stock = None,
+            )
+
+            rop.save()
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)})
+
+@receiver(post_save, sender=Sales)
+def update_rop_for_sales(sender, instance, created, **kwargs):
+        try:
+            print("omerrrr")
+            product = Products.objects.get(product_code_ir = instance.product_code)
+            warehouse = Warehouse.objects.get(product_code=instance.product_code)
+            product_performance = ProductPerformance.objects.filter(product_code =instance.product_code )
+            jalali_date_now = current_jalali_date()
+            jalali_date_now_year = int(jalali_date_now.year)
+            jalali_date_now_month = int(jalali_date_now.month)
+            jalali_date_previous_year = jalali_date_now_year-1
+            product_performance_previous_year = product_performance.filter(year=jalali_date_previous_year)
+            # calculate the average sale amount
+            average_sale_amount_previous_year = product_performance_previous_year.aggregate(avg_sale=Avg('sale_amount'))['avg_sale']
+            
+            rop = ROP.objects.get(
+                product_code_ir = instance.product_code
+                )
+            
+            # rop.group = product.group,
+            # rop.subgroup = product.subgroup,
+            # rop.feature = product.feature,
+            # rop.new_or_old_product = 0,
+            # rop.related = None,
+            # rop.origin = None,
+            # rop.product_code_ir = instance.product_code,
+            # rop.product_code_tr = product.product_code_tr,
+            # rop.dont_order_again = None,
+            # rop.description_tr = product.description_tr,
+            # rop.description_ir = product.description_ir,
+            # rop.unit = product.unit,
+            # rop.weight = product.weight,
+            # rop.unit_secondary = product.unit_secondary,
+            # rop.price = product.price,
+            # #rop.color_making_room_1400 = None,
+            rop.avarage_previous_year = average_sale_amount_previous_year,
+            
+            # amount sales from month_1 to month_12
+            for month_number in range(1, 13):
+                # Filter the `ProductPerformance` objects by the current year and month.
+                product_performance_current_month = product_performance.filter(year=jalali_date_now_year, month=month_number)
+
+                # Calculate the total sale amount for the current month.
+                total_sale_current_month = product_performance_current_month.aggregate(total_sale=Coalesce(Sum('sale_amount'), 0))['total_sale']
+
+                # Set the total sale amount for the current month for the corresponding `ROP` month field.
+                setattr(rop, f'month_{month_number}', total_sale_current_month)
+            
+            rop.total_sale = product_performance.filter(year=jalali_date_now_year).aggregate(total_sale=Coalesce(Sum('sale_amount'), 0))['total_sale']
+            rop.warehouse = warehouse.stock,
+            rop.goods_on_the_road = 0, #! goods on road values will be updated!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            rop.total_stock_all = rop.warehouse+ rop.goods_on_the_road,
+            rop.monthly_mean = rop.total_sale/int(jalali_date_now.month)
+            try: 
+                rop.total_month_stock = rop.total_stock_all/rop.monthly_mean
+            except Exception as e:
+                rop.total_month_stock = 0
+            
+            # Get the values of `month_1` to the current month.
+            values = [getattr(rop, f'month_{i}', 0) for i in range(1, jalali_date_now_month + 1)]
+            # Calculate the standard deviation.
+            if len(values) > 0:
+                standard_deviation = statistics.stdev(values)
+            else:
+                standard_deviation = 0
+
+            # Set the `standart_deviation` field of the `ROP` instance.
+            rop.standart_deviation = standard_deviation
+            
+            rop.lead_time = 2, #! will be given by user
+            rop.product_coverage_percentage = 95, #! will be given by user
+            rop.demand_status =  rop.standart_deviation * (rop.lead_time)**0.5,
+
+            #safety stock
+            result = norm.ppf(rop.product_coverage_percentage) * rop.demand_status
+            result_rounded_up = math.ceil(result)           
+            rop.safety_stock = result_rounded_up,
+
+            rop.rop = (rop.lead_time * rop.monthly_mean) + rop.safety_stock ,
+            #rop.monthly_mean = rop.total_sale/int(jalali_date_now.month)
+            rop.new_party = rop.lead_time * rop.monthly_mean,
+            
+            # cycle_service_level
+            try:
+                # Calculate the PDF of the normal distribution.
+                pdf_value = norm.pdf(rop.rop, loc=rop.monthly_mean, scale=rop.demand_status)
+
+                # Set the result to the PDF.
+                rop.cycle_service_level = pdf_value
+            except:
+                # If an error occurs, set the result to 0.
+                rop.cycle_service_level = 0
+            rop.total_stock = rop.total_stock_all,
+            
+            # need_products
+            if rop.rop >= rop.total_stock:
+                rop.need_prodcuts = rop.rop + rop.new_party - rop.total_stock
+            else:
+                 rop.need_prodcuts = 0
+
+            # over stock
+            if rop.total_stock_all > (1.2*(rop.safety_stock + rop.new_party)):  #! Stock Over Factor will be declared and it will produced by user
+                rop.over_stock = 1
+            else:
+                rop.over_stock = 0
+            
+            rop.calculated_need = rop.need_prodcuts, #! previous year is needed??????
+            
+            # calculated max stock #! previous year is needed??????
+            try:
+                rop.calculated_max_stock = (rop.rop + rop.new_party)/rop.monthly_mean
+            except:
+                rop.calculated_max_stock = 0
+
+            # calculated min stock #! previous year is needed??????
+            try:
+                rop.calculated_min_stock = rop.rop /rop.monthly_mean
+            except:
+                rop.calculated_min_stock = 0
+            rop.save()
+        except Products.DoesNotExist:
+            pass
+        # except Exception as e:
+        #     return JsonResponse({'error': str(e)})
+        
+        
+# endregion
 
 
 
