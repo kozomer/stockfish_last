@@ -21,7 +21,7 @@ from stockfish_api.views import ( AddCustomersView, AddSalesView, AddProductsVie
                                  EditProductView, EditCustomerView, EditSaleView, EditWarehouseView,
                                  LoginView, LogoutView,
                                  TopCustomersView, TopProductsView,
-                                 ExchangeRateAPIView, DailyReportView
+                                 ExchangeRateAPIView, SalerDataView, TotalDataView, TotalDataByMonthlyView
 
                                  )
 from rest_framework_simplejwt.views import (
@@ -74,8 +74,10 @@ urlpatterns = [
     path('top_products/', TopProductsView.as_view(), name= 'top_products'),
 
     path('exchange_rate/', ExchangeRateAPIView.as_view(), name='exchange_rate'),
-    path('daily-report/', DailyReportView.as_view({'get': 'get_saler_data'}), name='daily_report'),
-    path('total-report/', DailyReportView.as_view({'get': 'get_total_data'}), name='total_report'),
+    path('daily_report/saler_data/', SalerDataView.as_view(), name='saler_data'),
+    path('daily_report/total_data/', TotalDataView.as_view(), name='total_data'),
+    path('daily_report/total_data_by_monthly/', TotalDataByMonthlyView.as_view(), name='total_data_by_monthly'),
+
 
 
 ]
