@@ -1582,7 +1582,8 @@ class DailyReportView(APIView):
         combined_data = []
         for daily_sale in daily_sales:
             name = daily_sale['name']
-            is_active = Salers.objects.get(name=name).values('is_active')
+            saler = Salers.objects.get(name=name)
+            is_active = saler.is_active
             monthly_sale = next((item['monthly_sale'] for item in monthly_sales if item['name'] == name), 0)
             yearly_sale = next((item['yearly_sale'] for item in yearly_sales if item['name'] == name), 0)
 
@@ -1593,8 +1594,9 @@ class DailyReportView(APIView):
                 monthly_sale/10, 
                 yearly_sale/10
             ])
+            response_data = { "jalali_date" : jalali_date_now_str, "sales_data" : combined_data }
         
-        return JsonResponse(jalali_date_now_str, combined_data, safe=False)
+        return JsonResponse(response_data, safe=False)
 
 
 

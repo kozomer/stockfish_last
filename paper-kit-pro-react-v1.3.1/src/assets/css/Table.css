@@ -159,3 +159,27 @@
   background-color: blue;
   }
 }
+
+
+.scrollable-table tbody {
+  display: block;
+  max-height: 1400px; /* Adjust this value to your desired height */
+  overflow-y: auto;
+}
+
+.scrollable-table thead,
+.scrollable-table tbody tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+.scrollable-table th,
+.scrollable-table td {
+  border-right: 1px solid #dee2e6; /* Adjust the color and thickness of the line as needed */
+}
+
+.scrollable-table th:last-child,
+.scrollable-table td:last-child {
+  border-right: none;
+}

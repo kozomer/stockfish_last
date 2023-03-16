@@ -79,6 +79,7 @@ function Dashboard() {
   const [topCustomersPieData, setTopCustomersPieData] = useState({});
   const [currency, setCurrency] = useState();
   const [currentDateTime] = useState(new Date());
+  const [salesData, setSalesData] = useState([]);
 
   //Notification
   const notify = (place) => {
@@ -125,8 +126,8 @@ function Dashboard() {
     console.log(notifications)
   };
 
- 
-  
+
+
   useEffect(() => {
     const fetchData = async () => {
       const access_token = await localforage.getItem('access_token');
@@ -158,7 +159,7 @@ function Dashboard() {
   }, [filterOption]);
 
 
-  useEffect(() =>{
+  useEffect(() => {
     const fetchDataCustomers = async () => {
       const access_token = await localforage.getItem('access_token');
       const response = await fetch("http://127.0.0.1:8000/top_customers/", {
@@ -183,95 +184,113 @@ function Dashboard() {
       });
     };
     fetchDataCustomers();
-}, [filterOptionCust])
+  }, [filterOptionCust])
 
 
-useEffect(() => {
-  const fetchExchange= async () => {
-    const access_token = await localforage.getItem('access_token');
-    const response = await fetch("http://127.0.0.1:8000/exchange_rate/", {
-      
-      headers: {
-        
-        'Authorization': 'Bearer ' + String(access_token)
-      },
-     
-    });
-    const data = await response.json();
-    
-    setCurrency(data);
-   
-  };
-  fetchExchange();
-}, []);
+  useEffect(() => {
+    const fetchExchange = async () => {
+      const access_token = await localforage.getItem('access_token');
+      const response = await fetch("http://127.0.0.1:8000/exchange_rate/", {
 
-/*
-const doughnutOptions = {
-  data: {
-    labels: topProductsPieData.labels,
-    datasets: [
-      {
-        label: "Top Products",
-        pointRadius: 0,
-        pointHoverRadius: 0,
-        backgroundColor: ["#f17e5d", "#f4f3ef","#ddddd"],
-        borderWidth: 0,
-        barPercentage: 1.6,
-        data: topProductsPieData.datasets[0].data,
-      },
-    ],
-  },
-  options: {
-    plugins: {
-      legend: {
-        position: "right",
-        labels: {
-          font: {
-            size: 12,
+        headers: {
+
+          'Authorization': 'Bearer ' + String(access_token)
+        },
+
+      });
+      const data = await response.json();
+
+      setCurrency(data);
+
+    };
+    fetchExchange();
+  }, []);
+
+
+  useEffect(() => {
+    const fetchDailyReport = async () => {
+      const access_token = await localforage.getItem('access_token');
+      const response = await fetch("http://127.0.0.1:8000/daily_report/", {
+
+        headers: {
+
+          'Authorization': 'Bearer ' + String(access_token)
+        },
+
+      });
+      const data = await response.json();
+      console.log(data)
+      setSalesData(data.sales_data || []);
+    };
+    fetchDailyReport();
+  }, []);
+  /*
+  const doughnutOptions = {
+    data: {
+      labels: topProductsPieData.labels,
+      datasets: [
+        {
+          label: "Top Products",
+          pointRadius: 0,
+          pointHoverRadius: 0,
+          backgroundColor: ["#f17e5d", "#f4f3ef","#ddddd"],
+          borderWidth: 0,
+          barPercentage: 1.6,
+          data: topProductsPieData.datasets[0].data,
+        },
+      ],
+    },
+    options: {
+      plugins: {
+        legend: {
+          position: "right",
+          labels: {
+            font: {
+              size: 12,
+            },
+            usePointStyle: true,
           },
-          usePointStyle: true,
+        },
+        tooltips: {
+          enabled: false,
+        },
+        title: {
+          display: true,
+          position: "bottom",
+          text: "Top Products",
+          color: "#66615c",
+          font: {
+            weight: 400,
+            size: 20,
+          },
         },
       },
-      tooltips: {
-        enabled: false,
-      },
-      title: {
-        display: true,
-        position: "bottom",
-        text: "Top Products",
-        color: "#66615c",
-        font: {
-          weight: 400,
-          size: 20,
+      maintainAspectRatio: false,
+      cutout: "90%",
+      scales: {
+        y: {
+          ticks: {
+            display: false,
+          },
+          grid: {
+            drawBorder: false,
+            display: false,
+          },
+        },
+        x: {
+          grid: {
+            drawBorder: false,
+            display: false,
+          },
+          ticks: {
+            display: false,
+          },
         },
       },
     },
-    maintainAspectRatio: false,
-    cutout: "90%",
-    scales: {
-      y: {
-        ticks: {
-          display: false,
-        },
-        grid: {
-          drawBorder: false,
-          display: false,
-        },
-      },
-      x: {
-        grid: {
-          drawBorder: false,
-          display: false,
-        },
-        ticks: {
-          display: false,
-        },
-      },
-    },
-  },
-};
-
-  */
+  };
+  
+    */
   return (
     <>
       <NotificationAlert ref={notificationAlert} />
@@ -393,8 +412,9 @@ const doughnutOptions = {
             </Card>
           </Col>
         </Row>
+
         <Row>
-          <Col lg="4" sm="6">
+          <Col md="12">
             <Card>
               <CardHeader>
                 <Row>
@@ -411,132 +431,61 @@ const doughnutOptions = {
                 </Row>
               </CardHeader>
               <CardBody>
-                <h6 className="big-title">
-                  total earnings in last ten quarters
-                </h6>
-                <Line
-                  data={chartExample1.data}
-                  options={chartExample1.options}
-                  height={380}
-                  width={826}
-                />
+                <Row><Table responsive>
+        <thead>
+          <tr>
+            <th>Experts</th>
+            <th>Status</th>
+            <th>Daily Sales</th>
+            <th>Monthly Sales</th>
+            <th>Yearly Sales</th>
+          </tr>
+        </thead>
+        <tbody>
+          {salesData.map((sale, index) => (
+            <tr key={index}>
+              <td>{sale[0]}</td>
+              <td>{sale[1] ? 'Active' : 'Inactive'}</td>
+              <td>{sale[2]}</td>
+              <td>{sale[3]}</td>
+              <td>{sale[4]}</td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+      </Row>
+      <hr style={{ marginTop: '30px', marginBottom: '30px' }} />
+      <Row>
+              <Table responsive>
+        <thead>
+          <tr>
+            <th>Experts</th>
+            <th>Status</th>
+            <th>Daily Sales</th>
+            <th>Monthly Sales</th>
+            <th>Yearly Sales</th>
+          </tr>
+        </thead>
+        <tbody>
+          {salesData.map((sale, index) => (
+            <tr key={index}>
+              <td>{sale[0]}</td>
+              <td>{sale[1] ? 'Active' : 'Inactive'}</td>
+              <td>{sale[2]}</td>
+              <td>{sale[3]}</td>
+              <td>{sale[4]}</td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+      </Row>
               </CardBody>
-              <CardFooter>
-                <hr />
-                <Row>
-                  <Col sm="7">
-                    <div className="footer-title">Financial Statistics</div>
-                  </Col>
-                  <Col sm="5">
-                    <div className="pull-right">
-                      <Button
-                        className="btn-round btn-icon"
-                        color="success"
-                        size="sm"
-                      >
-                        <i className="nc-icon nc-simple-add" />
-                      </Button>
-                    </div>
-                  </Col>
-                </Row>
-              </CardFooter>
+              
             </Card>
           </Col>
-          <Col lg="4" sm="6">
-            <Card>
-              <CardHeader>
-                <Row>
-                  <Col sm="7">
-                    <div className="numbers pull-left">169</div>
-                  </Col>
-                  <Col sm="5">
-                    <div className="pull-right">
-                      <Badge color="danger" pill>
-                        -14%
-                      </Badge>
-                    </div>
-                  </Col>
-                </Row>
-              </CardHeader>
-              <CardBody>
-                <h6 className="big-title">
-                  total subscriptions in last 7 days
-                </h6>
-                <Line
-                  data={chartExample2.data}
-                  options={chartExample2.options}
-                  height={380}
-                  width={828}
-                />
-              </CardBody>
-              <CardFooter>
-                <hr />
-                <Row>
-                  <Col sm="7">
-                    <div className="footer-title">View all members</div>
-                  </Col>
-                  <Col sm="5">
-                    <div className="pull-right">
-                      <Button
-                        className="btn-round btn-icon"
-                        color="danger"
-                        size="sm"
-                      >
-                        <i className="nc-icon nc-button-play" />
-                      </Button>
-                    </div>
-                  </Col>
-                </Row>
-              </CardFooter>
-            </Card>
-          </Col>
+          
 
-          <Col lg="4" sm="6">
-            <Card>
-              <CardHeader>
-                <Row>
-                  <Col sm="7">
-                    <div className="numbers pull-left">8,960</div>
-                  </Col>
-                  <Col sm="5">
-                    <div className="pull-right">
-                      <Badge color="warning" pill>
-                        ~51%
-                      </Badge>
-                    </div>
-                  </Col>
-                </Row>
-              </CardHeader>
-              <CardBody>
-                <h6 className="big-title">total downloads in last 6 years</h6>
-                <Line
-                  data={chartExample3.data}
-                  options={chartExample3.options}
-                  height={380}
-                  width={826}
-                />
-              </CardBody>
-              <CardFooter>
-                <hr />
-                <Row>
-                  <Col sm="7">
-                    <div className="footer-title">View more details</div>
-                  </Col>
-                  <Col sm="5">
-                    <div className="pull-right">
-                      <Button
-                        className="btn-round btn-icon"
-                        color="warning"
-                        size="sm"
-                      >
-                        <i className="nc-icon nc-alert-circle-i" />
-                      </Button>
-                    </div>
-                  </Col>
-                </Row>
-              </CardFooter>
-            </Card>
-          </Col>
+        
         </Row>
 
         <Row>
@@ -550,7 +499,7 @@ const doughnutOptions = {
                   </CardHeader>
                 </Col>
                 <Col xs="3"></Col>
-                <Col xs="3">
+                <Col xs="3" style={{marginTop:"10px"}}>
                   <Label for="selectType">Select Type:</Label>
                   <Input type="select" name="select" id="selectType" onChange={(e) => setFilterOption(e.target.value)}>
                     <option value="">Select Type</option>
@@ -585,66 +534,66 @@ const doughnutOptions = {
                         ))}
                       </tbody>
                     </Table>
-                   
+
                     <Col md="8">
                       <Doughnut
-                    style={{marginTop:"50px"}}
-        data={topProductsPieData}
-        options= {{
-          plugins: {
-            legend: {
-              position: "right",
-              labels: {
-                font: {
-                  size: 12,
-                },
-                usePointStyle: true,
-              },
-            },
-            tooltips: {
-              enabled: false,
-            },
-            title: {
-              display: true,
-              position: "top",
-              text: "Top Products",
-              color: "#66615c",
-              font: {
-                weight: 400,
-                size: 20,
-              },
-             
-            },
-          },
-          
-          cutout: "70%",
-          scales: {
-            y: {
-              ticks: {
-                display: false,
-              },
-              grid: {
-                drawBorder: false,
-                display: false,
-              },
-            },
-            x: {
-              grid: {
-                drawBorder: false,
-                display: false,
-              },
-              ticks: {
-                display: false,
-              },
-            },
-          },
-        }}
-      
-        
-      />
-                    
-      </Col>
-      
+                        style={{ marginTop: "50px" }}
+                        data={topProductsPieData}
+                        options={{
+                          plugins: {
+                            legend: {
+                              position: "right",
+                              labels: {
+                                font: {
+                                  size: 12,
+                                },
+                                usePointStyle: true,
+                              },
+                            },
+                            tooltips: {
+                              enabled: false,
+                            },
+                            title: {
+                              display: true,
+                              position: "top",
+                              text: "Top Products",
+                              color: "#66615c",
+                              font: {
+                                weight: 400,
+                                size: 20,
+                              },
+
+                            },
+                          },
+
+                          cutout: "70%",
+                          scales: {
+                            y: {
+                              ticks: {
+                                display: false,
+                              },
+                              grid: {
+                                drawBorder: false,
+                                display: false,
+                              },
+                            },
+                            x: {
+                              grid: {
+                                drawBorder: false,
+                                display: false,
+                              },
+                              ticks: {
+                                display: false,
+                              },
+                            },
+                          },
+                        }}
+
+
+                      />
+
+                    </Col>
+
                   </Col>
 
 
@@ -665,7 +614,7 @@ const doughnutOptions = {
                   </CardHeader>
                 </Col>
                 <Col xs="3"></Col>
-                <Col xs="3">
+                <Col xs="3" style={{marginTop:"10px"}}>
                   <Label for="selectType">Select Type:</Label>
                   <Input type="select" name="select" id="selectType" onChange={(e) => setFilterOptionCust(e.target.value)}>
                     <option value="">Select Type</option>
@@ -700,61 +649,64 @@ const doughnutOptions = {
                       </tbody>
                     </Table>
                     <Col md="8">
-                    <Doughnut
-                    style={{marginTop:"50px"}}
-        data={topCustomersPieData}
-        options= {{
-          plugins: {
-            legend: {
-              position: "right",
-              labels: {
-                font: {
-                  size: 12,
-                },
-                usePointStyle: true,
-              },
-            },
-            tooltips: {
-              enabled: false,
-            },
-            title: {
-              display: true,
-              position: "top",
-              text: "Top Customers",
-              color: "#66615c",
-              font: {
-                weight: 400,
-                size: 20,
-              },
-            },
-          },
-          
-          cutout: "70%",
-          scales: {
-            y: {
-              ticks: {
-                display: false,
-              },
-              grid: {
-                drawBorder: false,
-                display: false,
-              },
-            },
-            x: {
-              grid: {
-                drawBorder: false,
-                display: false,
-              },
-              ticks: {
-                display: false,
-              },
-            },
-          },
-        }}
-      
-        
-      />
-      </Col>
+                      <Doughnut
+                        style={{ marginTop: "50px" }}
+                        data={topCustomersPieData}
+                        options={{
+                          plugins: {
+                            legend: {
+                              position: "right",
+                              labels: {
+                                font: {
+                                  size: 12,
+                                },
+                                usePointStyle: true,
+                              },
+                            },
+                            tooltips: {
+                              enabled: false,
+                            },
+                            title: {
+                              display: true,
+                              position: "top",
+                              text: "Top Customers",
+                              color: "#66615c",
+                              font: {
+                                weight: 400,
+                                size: 20,
+                              },
+
+                            },
+                          },
+
+                          cutout: "70%",
+                          scales: {
+                            y: {
+                              ticks: {
+                                display: false,
+                              },
+                              grid: {
+                                drawBorder: false,
+                                display: false,
+                              },
+                            },
+                            x: {
+                              grid: {
+                                drawBorder: false,
+                                display: false,
+                              },
+                              ticks: {
+                                display: false,
+                              },
+                            },
+                          },
+                        }}
+
+
+                      />
+
+                    </Col>
+
                   </Col>
 
 
