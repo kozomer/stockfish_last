@@ -166,40 +166,6 @@ class EditCustomerView(APIView):
             return JsonResponse({'error': str(e)}, status=500)
 
 
-
-
-
-
-# class EditCustomerView(APIView):
-#     permission_classes = (IsAuthenticated,)
-#     authentication_classes = (JWTAuthentication,)
-#     def post(self, request, *args, **kwargs):
-#         data = json.loads(request.body)
-#         old_customer_code = data.get('old_customer_code')
-#         customer = Customers.objects.get(customer_code=old_customer_code)
-
-#         # Check if new customer_code value is unique
-#         new_customer_code = data.get('new_customer_code')
-#         if new_customer_code and new_customer_code != old_customer_code:
-#             if Customers.objects.filter(customer_code=new_customer_code).exists():
-#                 error_message = f"The customer code '{new_customer_code}' already exists in the database."
-#                 return HttpResponseBadRequest(error_message)
-#             else:
-#                 customer.customer_code = new_customer_code
-
-#         # Update other customer fields
-#         customer.description = data.get('new_description')
-#         customer.quantity = data.get('new_quantity')
-#         customer.area_code = data.get('new_area_code')
-#         customer.code = data.get('new_code')
-#         customer.city = data.get('new_city')
-#         customer.area = data.get('new_area')
-
-#         customer.save()
-        
-#         return HttpResponse('OK')
-
-
 # endregion
 
 # region Sales
@@ -280,11 +246,15 @@ class AddSalesView(APIView):
                     psr=row["PSR"],
                     customer_code=row["Customer Code"],
                     name=row["Name"],
+                    city=row["City"],
                     area=row["Area"],
+                    color_making_saler=row["Group"],
                     group=row["Group"],
-                    good_code=row["Good Code"],
-                    goods=row["Goods"],
+                    product_code=row["Good Code"],
+                    product_name=row["Goods"],
                     unit=row["Unit"],
+                    unit2=row["Unit2"],
+                    kg=row["KG"],
                     original_value=row["The Original Value"],
                     original_output_value=row["Original Output Value"],
                     secondary_output_value=row["Secondary Output Value"],
@@ -301,6 +271,8 @@ class AddSalesView(APIView):
                     payment_check=row["Payment Check"],
                     balance=row["Balance"],
                     saler=row["Saler"],
+                    currency_sepidar=row["Currency-Sepidar"],
+                    dollar_sepidar=row["Dollar-Sepidar"],
                     currency=row["Currency"],
                     dollar=row["Dollar"],
                     manager_rating=row["Manager Rating"],
@@ -319,7 +291,7 @@ class AddSalesView(APIView):
 
                 # Update stock in warehouse
                 try:
-                    warehouse_item = Warehouse.objects.get(product_code=sale.good_code)
+                    warehouse_item = Warehouse.objects.get(product_code=sale.product_code)
                     warehouse_item.stock -= sale.original_output_value
                     warehouse_item.save()
                 except Warehouse.DoesNotExist:
@@ -334,101 +306,20 @@ class AddSalesView(APIView):
             return JsonResponse({'error': str(e)}, status=500)
 
 
-
-# class AddSalesView(APIView):
-#     permission_classes = (IsAuthenticated,)
-#     authentication_classes = (JWTAuthentication,)
-
-#     def post(self, request, *args, **kwargs):
-#         try:
-#             if 'file' not in request.FILES:
-#                 raise ValidationError("No file uploaded")
-#             file = request.FILES['file']
-#             kind = filetype.guess(file.read())
-#             if kind is None or kind.mime not in ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']:
-#                 return JsonResponse({'error': "The uploaded file is not a valid Excel file1"}, status=400)
-
-#             data = pd.read_excel(file)
-#             if data.empty:
-#                 return JsonResponse({'error': "The uploaded file is empty"}, status=400)
-#             count = 0
-#             for i, row in data.iterrows():
-#                 no = row["No"]
-#                 if Sales.objects.filter(no=no).exists():
-#                     continue
-#                 count+=1
-#                 sale = Sales(
-#                     no=no,
-#                     bill_number=row["Bill Number"],
-#                     date=jdatetime.date(int(row["Year"]), int(row["Month"]), int(row["Day"])),
-#                     psr=row["PSR"],
-#                     customer_code=row["Customer Code"],
-#                     name=row["Name"],
-#                     area=row["Area"],
-#                     group=row["Group"],
-#                     good_code=row["Good Code"],
-#                     goods=row["Goods"],
-#                     unit=row["Unit"],
-#                     original_value=row["The Original Value"],
-#                     original_output_value=row["Original Output Value"],
-#                     secondary_output_value=row["Secondary Output Value"],
-#                     price=row["Price"],
-#                     original_price=row["Original Price"],
-#                     discount_percentage=row["Discount Percantage (%)"],
-#                     amount_sale=row["Amount Sale"],
-#                     discount=row["Discount"],
-#                     additional_sales=row["Additional Sales"],
-#                     net_sales=row["Net Sales"],
-#                     discount_percentage_2=row["Discount Percantage 2(%)"],
-#                     real_discount_percentage=row["Real Discount Percantage (%)"],
-#                     payment_cash=row["Payment Cash"],
-#                     payment_check=row["Payment Check"],
-#                     balance=row["Balance"],
-#                     saler=row["Saler"],
-#                     currency=row["Currency"],
-#                     dollar=row["Dollar"],
-#                     manager_rating=row["Manager Rating"],
-#                     senior_saler=row["Senior Saler"],
-#                     tot_monthly_sales=row["Tot Monthly Sales"],
-#                     receipment=row["Receipment"],
-#                     ct=row["CT"],
-#                     payment_type=row["Payment Type"],
-#                     customer_size=row["Customer Size"],
-#                     saler_factor=row["Saler Factor"],
-#                     prim_percentage=row["Prim Percantage"],
-#                     bonus_factor=row["Bonus Factor"],
-#                     bonus=row["Bonus"]
-#                 )
-#                 sale.save()
-
-#                 try:
-#                     warehouse_item = Warehouse.objects.get(product_code=sale.good_code)
-#                     warehouse_item.stock -= sale.original_output_value
-#                     warehouse_item.save()
-#                 except Warehouse.DoesNotExist:
-#                     pass #TODO: Further add a error message that is "this item does not exist in warehouse"
-
-#             return JsonResponse({'message': f"{count} sales data added successfully"}, status=200)
-#         except OperationalError as e:
-#             return JsonResponse({'error': f"Database error: {str(e)}"}, status=500)
-#         except Exception as e:
-#             return JsonResponse({'error': str(e)}, status=500)
-
-
 class ViewSalesView(APIView):
     permission_classes = [IsAuthenticated,]
     authentication_classes = [JWTAuthentication,]
     def get(self, request, *args, **kwargs):
         sales = Sales.objects.values().all()
         sale_list = [[sale['no'], sale['bill_number'], sale['date'].strftime('%Y-%m-%d'), sale['psr'], sale['customer_code'],
-                      sale['name'], sale['area'], sale['group'], sale['good_code'], sale['goods'], sale['unit'],
-                      sale['original_value'], sale['original_output_value'], sale['secondary_output_value'],
-                      sale['price'], sale['original_price'], sale['discount_percentage'], sale['amount_sale'],
-                      sale['discount'], sale['additional_sales'], sale['net_sales'], sale['discount_percentage_2'],
-                      sale['real_discount_percentage'], sale['payment_cash'], sale['payment_check'], sale['balance'],
-                      sale['saler'], sale['currency'], sale['dollar'], sale['manager_rating'], sale['senior_saler'],
-                      sale['tot_monthly_sales'], sale['receipment'], sale['ct'], sale['payment_type'], sale['customer_size'],
-                      sale['saler_factor'], sale['prim_percentage'], sale['bonus_factor'], sale['bonus']]
+                        sale['name'], sale['city'], sale['area'], sale['color_making_saler'], sale['group'], sale['product_code'], 
+                        sale['product_name'], sale['unit'], sale['unit2'], sale['kg'], sale['original_value'], sale['original_output_value'], 
+                        sale['secondary_output_value'], sale['price'], sale['original_price'], sale['discount_percentage'], sale['amount_sale'],
+                        sale['discount'], sale['additional_sales'], sale['net_sales'], sale['discount_percentage_2'], sale['real_discount_percentage'],
+                        sale['payment_cash'], sale['payment_check'], sale['balance'], sale['saler'], sale['currency_sepidar'], sale['dollar_sepidar'], 
+                        sale['currency'], sale['dollar'], sale['manager_rating'], sale['senior_saler'], sale['tot_monthly_sales'], sale['receipment'], 
+                        sale['ct'], sale['payment_type'], sale['customer_size'], sale['saler_factor'], sale['prim_percentage'], sale['bonus_factor'], 
+                        sale['bonus']]
                      for sale in sales]
         return JsonResponse(sale_list, safe=False)
 
@@ -437,7 +328,7 @@ class DeleteSaleView(APIView):
     authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
         no = request.POST.get('no', None)
-        product_code = request.POST.get('good_code', None)
+        product_code = request.POST.get('product_code', None)
         original_output_value = request.POST.get('original_output_value', None)
         Sales.objects.filter(no=no).delete()
         try:
@@ -458,12 +349,12 @@ class EditSaleView(APIView):
             print(data)
 
             # Check for required fields
-            for field in ['new_good_code', 'new_customer_code', 'new_original_output_value', 'new_net_sales', 'new_saler', 'new_psr', 'new_date']:
+            for field in ['new_product_code', 'new_customer_code', 'new_original_output_value', 'new_net_sales', 'new_saler', 'new_psr', 'new_date']:
                 if not data.get(field):
                     return JsonResponse({'error': f"{field} cannot be empty"}, status=400)
 
             # Check for integer fields
-            for field in ['new_good_code', 'new_customer_code']:
+            for field in ['new_product_code', 'new_customer_code']:
                 try:
                     if not isinstance(int(data.get(field)), int):
                         return JsonResponse({'error': f"{field} should be integer"}, status=400)
@@ -485,10 +376,10 @@ class EditSaleView(APIView):
                 return JsonResponse({'error': "Invalid P-S-R value. Allowed values are 'P', 'S', and 'R'."}, status=400)
 
             # Check for existing good
-            if not Warehouse.objects.filter(product_code=data.get('new_good_code')).exists():
-                return JsonResponse({'error': f"No product found with code '{data.get('new_good_code')}' in Warehouse. Please check product code. If there is a new product please add firstly to Warehouse."}, status=400)
-            if not Products.objects.filter(product_code_ir=data.get('new_good_code')).exists():
-                return JsonResponse({'error': f"No product found with code '{data.get('new_good_code')}'. Please check product code. If there is a new product please add firstly to Products."}, status=400)
+            if not Warehouse.objects.filter(product_code=data.get('new_product_code')).exists():
+                return JsonResponse({'error': f"No product found with code '{data.get('new_product_code')}' in Warehouse. Please check product code. If there is a new product please add firstly to Warehouse."}, status=400)
+            if not Products.objects.filter(product_code_ir=data.get('new_product_code')).exists():
+                return JsonResponse({'error': f"No product found with code '{data.get('new_product_code')}'. Please check product code. If there is a new product please add firstly to Products."}, status=400)
             # Check for existing customer
             if not Customers.objects.filter(customer_code=data.get('new_customer_code')).exists():
                 return JsonResponse({'error': f"No customer found with code '{data.get('new_customer_code')}'. Please check customer code. If there is a new customer please add firstly to Customers."}, status=400)
@@ -511,10 +402,14 @@ class EditSaleView(APIView):
             sale.customer_code = data.get('new_customer_code')
             sale.name = data.get('new_name')
             sale.area = data.get('new_area')
+            sale.city = data.get('new_city')
+            sale.color_making_saler = data.get('new_color_making_saler')
             sale.group = data.get('new_group')
-            sale.good_code = data.get('new_good_code')
-            sale.goods = data.get('new_goods')
+            sale.product_code = data.get('new_product_code')
+            sale.product_name = data.get('new_product_name')
             sale.unit = data.get('new_unit')
+            sale.unit2 = data.get('new_unit2')
+            sale.kg = data.get('new_kg')
             sale.original_value = data.get('new_original_value')
             sale.original_output_value = data.get('new_original_output_value')
             sale.secondary_output_value = data.get('new_secondary_output_value')
@@ -531,6 +426,8 @@ class EditSaleView(APIView):
             sale.payment_check = data.get('new_payment_check')
             sale.balance = data.get('new_balance')
             sale.saler = data.get('new_saler')
+            sale.currency_sepidar = data.get('new_currency_sepidar')
+            sale.dollar_sepidar = data.get('new_dollar_sepidar')
             sale.currency = data.get('new_currency')
             sale.dollar = data.get('new_dollar')
             sale.manager_rating = data.get('new_manager_rating')
@@ -558,83 +455,7 @@ class EditSaleView(APIView):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
-           
 
-
-# class EditSaleView(APIView):
-#     permission_classes = (IsAuthenticated,)
-#     authentication_classes = (JWTAuthentication,)
-#     def post(self, request, *args, **kwargs):
-#         data = json.loads(request.body)
-#         old_no = data.get('old_no')
-#         sale = Sales.objects.get(no=old_no)
-
-#         # Check if new customer_code value is unique
-#         new_no = data.get('new_no')
-#         new_original_output_value = data.get('new_original_output_value')
-#         old_original_output_value = data.get('old_original_output_value')
-#         new_date = data.get('new_date').split("-")
-#         if new_no and new_no != old_no:
-#             if Sales.objects.filter(no=new_no).exists():
-#                 error_message = f"The sale no '{new_no}' already exists in the database."
-#                 return HttpResponseBadRequest(error_message)
-#             else:
-#                 sale.no = new_no
-
-#         # Update other sale fields
-#         sale.bill_number = data.get('new_bill_number')
-#         sale.date = jdatetime.date(int(new_date[0]), int(new_date[1]), int(new_date[2]))
-#         sale.psr = data.get('new_psr')
-#         sale.customer_code = data.get('new_customer_code')
-#         sale.name = data.get('new_name')
-#         sale.area = data.get('new_area')
-#         sale.group = data.get('new_group')
-#         sale.good_code = data.get('new_good_code')
-#         sale.goods = data.get('new_goods')
-#         sale.unit = data.get('new_unit')
-#         sale.original_value = data.get('new_original_value')
-#         sale.original_output_value = data.get('new_original_output_value')
-#         sale.secondary_output_value = data.get('new_secondary_output_value')
-#         sale.price = data.get('new_price')
-#         sale.original_price = data.get('new_original_price')
-#         sale.discount_percentage = data.get('new_discount_percentage')
-#         sale.amount_sale = data.get('new_amount_sale')
-#         sale.discount = data.get('new_discount')
-#         sale.additional_sales = data.get('new_additional_sales')
-#         sale.net_sales = data.get('new_net_sales')
-#         sale.discount_percentage_2 = data.get('new_discount_percentage_2')
-#         sale.real_discount_percentage = data.get('new_real_discount_percentage')
-#         sale.payment_cash = data.get('new_payment_cash')
-#         sale.payment_check = data.get('new_payment_check')
-#         sale.balance = data.get('new_balance')
-#         sale.saler = data.get('new_saler')
-#         sale.currency = data.get('new_currency')
-#         sale.dollar = data.get('new_dollar')
-#         sale.manager_rating = data.get('new_manager_rating')
-#         sale.senior_saler = data.get('new_senior_saler')
-#         sale.tot_monthly_sales = data.get('new_tot_monthly_sales')
-#         sale.receipment = data.get('new_receipment')
-#         sale.ct = data.get('new_ct')
-#         sale.payment_type = data.get('new_payment_type')
-#         sale.customer_size = data.get('new_customer_size')
-#         sale.saler_factor = data.get('new_saler_factor')
-#         sale.prim_percentage = data.get('new_prim_percentage')
-#         sale.bonus_factor = data.get('new_bonus_factor')
-#         sale.bonus = data.get('new_bonus')
-
-#         sale.save()
-#         try:
-#             warehouse_item = Warehouse.objects.get(product_code=sale.good_code)
-#             output_change = old_original_output_value-new_original_output_value
-#             warehouse_item.stock += float(output_change)
-#             warehouse_item.save()
-#         except Warehouse.DoesNotExist:
-#             warehouse_item = None
-        
-        
-
-        
-#         return HttpResponse('OK')
 
 # endregion
 
@@ -738,37 +559,6 @@ class EditWarehouseView(APIView):
 
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
-
-
-
-
-
-
-# class EditWarehouseView(APIView):
-#     permission_classes = (IsAuthenticated,)
-#     authentication_classes = (JWTAuthentication,)
-#     def post(self, request, *args, **kwargs):
-#         data = json.loads(request.body)
-#         old_product_code = data.get('old_product_code')
-#         warehouse_item = Warehouse.objects.get(product_code=old_product_code)
-
-#         # Check if new product_code value is unique
-#         new_product_code = data.get('new_product_code')
-#         if new_product_code and new_product_code != old_product_code:
-#             if Warehouse.objects.filter(product_code=new_product_code).exists():
-#                 error_message = f"The product code '{new_product_code}' already exists in the warehouse."
-#                 return HttpResponseBadRequest(error_message)
-#             else:
-#                 warehouse_item.product_code = new_product_code
-
-#         # Update other warehouse_item fields
-#         warehouse_item.title = data.get('title')
-#         warehouse_item.unit = data.get('unit')
-#         warehouse_item.stock = data.get('stock')
-
-#         warehouse_item.save()
-#         return HttpResponse('OK')
-
 
 
 # endregion
@@ -886,41 +676,6 @@ class EditProductView(APIView):
 
 
 
-
-
-# class EditProductView(APIView):
-#     permission_classes = (IsAuthenticated,)
-#     authentication_classes = (JWTAuthentication,)
-#     def post(self, request, *args, **kwargs):
-#         data = json.loads(request.body)
-#         old_product_code_ir = data.get('old_product_code_ir')
-#         product = Products.objects.get(product_code_ir=old_product_code_ir)
-
-#         # Check if new product_code_ir value is unique
-#         new_product_code_ir = data.get('new_product_code_ir')
-#         if new_product_code_ir and new_product_code_ir != old_product_code_ir:
-#             if Products.objects.filter(product_code_ir=new_product_code_ir).exists():
-#                 error_message = f"The product code '{new_product_code_ir}' already exists in the database."
-#                 return HttpResponseBadRequest(error_message)
-#             else:
-#                 product.product_code_ir = new_product_code_ir
-
-#         # Update other product fields
-#         product.group = data.get('new_group')
-#         product.subgroup = data.get('new_subgroup')
-#         product.feature = data.get('new_feature')
-#         product.product_code_tr = data.get('new_product_code_tr')
-#         product.description_tr = data.get('new_description_tr')
-#         product.description_ir = data.get('new_description_ir')
-#         product.unit = data.get('new_unit')
-#         product.unit_secondary = data.get('new_unit_secondary')
-#         product.weight = data.get('new_weight')
-#         product.currency = data.get('new_currency')
-#         product.price = data.get('new_price')
-#         product.save()
-#         return HttpResponse('OK')
-
-
 # endregion
 
 # region Charts
@@ -955,7 +710,7 @@ class ItemListView(APIView):
         product_code = data.get('product_code')
 
         # Filter Sales by the product_title
-        data = Sales.objects.filter(good_code=product_code).values('date', 'original_output_value')
+        data = Sales.objects.filter(product_code=product_code).values('date', 'original_output_value')
         product_name = Products.objects.filter(product_code_ir=product_code).values('description_ir')
         # Get the original_output_value of each sale
         date_list = [obj['date'] for obj in data]
@@ -973,7 +728,7 @@ class ItemListView(APIView):
 @receiver(post_save, sender=Warehouse)
 def create_rop_for_warehouse(sender, instance, created, **kwargs):
     if created:
-        sales = Sales.objects.filter(good_code=instance.product_code)
+        sales = Sales.objects.filter(product_code=instance.product_code)
         try:
             product = Products.objects.get(product_code_ir = instance.product_code)
             rop = ROP(
@@ -1323,8 +1078,8 @@ def update_monthly_product_sales_with_add_sale(sender, instance, created, **kwar
     if created:
 
         monthly_sale, created = MonthlyProductSales.objects.get_or_create(
-            product_name=instance.goods,
-            product_code=instance.good_code,
+            product_name=instance.product_name,
+            product_code=instance.product_code,
             year=instance.date.year,
             month= instance.date.month
         )
@@ -1337,8 +1092,8 @@ def update_monthly_product_sales_with_add_sale(sender, instance, created, **kwar
 def update_monthly_product_sales_with_delete_sale(sender, instance, **kwargs):
 
     monthly_sale = MonthlyProductSales.objects.get(
-        prodct_name=instance.goods,
-        product_code=instance.good_code,
+        prodct_name=instance.product_name,
+        product_code=instance.product_code,
         year=instance.date.year,
         month= instance.date.month
         )
@@ -1453,7 +1208,7 @@ def update_product_performance_with_add_sale(sender, instance, created, **kwargs
         find_month = instance.date.month
         find_year = instance.date.year
         product_performance, created = ProductPerformance.objects.get_or_create(
-             year= find_year, month = find_month, product_code = instance.good_code, product_name = instance.goods
+             year= find_year, month = find_month, product_code = instance.product_code, product_name = instance.product_name
         )
 
         # Update the sale value for the ProductPerformance object
@@ -1466,7 +1221,7 @@ def update_product_performance_with_delete_sale(sender, instance, **kwargs):
     find_month = instance.date.month
     find_year = instance.date.year
     product_performance = ProductPerformance.objects.get(
-            year= find_year, month = find_month, product_code = instance.good_code, product_name = instance.goods
+            year= find_year, month = find_month, product_code = instance.product_code, product_name = instance.product_name
     )
 
     # Update the sale value for the ProductPerformance object
@@ -1556,9 +1311,8 @@ class ExchangeRateAPIView(APIView):
 
 # region Daily Report
 
-class DailyReportView(APIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = (JWTAuthentication,)
+class SalerDataView(APIView):
+    @csrf_exempt
     def get(self, request, *args, **kwargs):
         jalali_date_now = current_jalali_date()
         jalali_date_now_str = jalali_date_now.strftime('%Y-%m-%d')
@@ -1596,10 +1350,81 @@ class DailyReportView(APIView):
             ])
             response_data = { "jalali_date" : jalali_date_now_str, "sales_data" : combined_data }
         
+        return JsonResponse(jalali_date_now_str, combined_data, safe=False)
+        
+
+class TotalDataView(APIView):
+    @csrf_exempt
+    def get(self, request, *args, **kwargs):
+        jalali_date_now = current_jalali_date()
+        jalali_date_now_str = jalali_date_now.strftime('%Y-%m-%d')
+        
+        daily_sales = SaleSummary.objects.filter(
+            year=jalali_date_now.year,
+            month=jalali_date_now.month,
+            day=jalali_date_now.day
+        ).values('sale', 'dollar_sepidar_sale', 'dollar_sale', 'kg_sale')
+        daily_sales_array = list(daily_sales.values_list('sale', 'dollar_sepidar_sale', 'dollar_sale', 'kg_sale')[0])
+
+        monthly_sales = SalerPerformance.objects.filter(
+            year=jalali_date_now.year,
+            month=jalali_date_now.month
+        ).annotate(monthly_sale=Sum('sale'), monthly_dollar_sepidar_sale=Sum('dollar_sepidar_sale'), monthly_dollar_sale=Sum('dollar_sale'), monthly_kg_sale=Sum('kg_sale') )
+        monthly_sales_array = list(monthly_sales.values_list('monthly_sale', 'monthly_dollar_sepidar_sale', 'monthly_dollar_sale', 'monthly_kg_sale')[0])
+
+
+        yearly_sales = SalerPerformance.objects.filter(
+            year=jalali_date_now.year
+        ).annotate(yearly_sale=Sum('sale'), yearly_dollar_sepidar_sale=Sum('dollar_sepidar_sale'), yearly_dollar_sale=Sum('dollar_sale'), yearly_kg_sale=Sum('kg_sale') )
+        yearly_sales_array = list(yearly_sales.values_list('yearly_sale', 'yearly_dollar_sepidar_sale', 'yearly_dollar_sale', 'yearly_kg_sale')[0])
+
+        response_data = { "jalali_date" : jalali_date_now_str, "daily_sales" : daily_sales_array, "monthly_sales" : monthly_sales_array, "yearly_sales" : yearly_sales_array }
+
+        # Combine the data into a single list
+        
+        
         return JsonResponse(response_data, safe=False)
+        
 
+class TotalDataByMonthlyView(View):
+    @csrf_exempt
+    def get(self, request, *args, **kwargs):
+        jalali_date_now = current_jalali_date()
+        jalali_date_now_str = jalali_date_now.strftime('%Y-%m-%d')
+        
+        monthly_sales = SaleSummary.objects.filter(
+        year=jalali_date_now.year,
+        month__lte=jalali_date_now.month
+        ).values('month').annotate(monthly_sale=Sum('sale'), monthly_dollar_sepidar_sale=Sum('dollar_sepidar_sale'), monthly_dollar_sale=Sum('dollar_sale'), monthly_kg_sale=Sum('kg_sale'))
 
+        monthly_sales_dict = {}
+        for monthly_sale_obj in monthly_sales:
+            monthly_sales_dict[monthly_sale_obj['month']] = {
+                'monthly_sale': monthly_sale_obj['monthly_sale'] / 10,
+                'monthly_dollar_sepidar_sale': monthly_sale_obj['monthly_dollar_sepidar_sale'],
+                'monthly_dollar_sale': monthly_sale_obj['monthly_dollar_sale'],
+                'monthly_kg_sale': monthly_sale_obj['monthly_kg_sale']
+            }
 
+        monthly_sales_data = []
+        for i in range(1, 13):
+            monthly_sales_obj = monthly_sales_dict.get(i)
+            if monthly_sales_obj:
+                dollar_sale_per_kg = monthly_sales_obj['monthly_dollar_sale'] / monthly_sales_obj['monthly_kg_sale'] if monthly_sales_obj['monthly_kg_sale'] != 0 else 0
+                monthly_sales_data.append([
+                    monthly_sales_obj['monthly_sale'],
+                    monthly_sales_obj['monthly_dollar_sepidar_sale'],
+                    monthly_sales_obj['monthly_dollar_sale'],
+                    monthly_sales_obj['monthly_kg_sale'],
+                    dollar_sale_per_kg
+                ])
+            elif i <= jalali_date_now.month:
+                monthly_sales_data.append([0, 0, 0, 0, 0])
+
+        monthly_sales_array = monthly_sales_data if len(monthly_sales_data) == 12 else monthly_sales_data + [[0, 0, 0, 0, 0]] * (12 - len(monthly_sales_data))
+        return JsonResponse(monthly_sales_array, safe=False)
+
+        #response_data = { "jalali_date" : jalali_date_now_str, "daily_sales" : daily_sales_array, "monthly_sales" : monthly_sales_array, "yearly_sales" : yearly_sales_array }
 
 
 # endregion
