@@ -863,18 +863,17 @@ class DeleteSalerView(APIView):
 
 @receiver(post_save, sender=Sales)
 def update_saler_performance_with_add_sale(sender, instance, created, **kwargs):
-    if created:
-        # Get or create the SalerPerformance object
-        saler_performance, created = SalerPerformance.objects.get_or_create(
-            name=instance.saler,
-            year=instance.date.year,
-            month= instance.date.month,
-            day=instance.date.day
-        )
+    # Get or create the SalerPerformance object
+    saler_performance, created = SalerPerformance.objects.get_or_create(
+        name=instance.saler,
+        year=instance.date.year,
+        month= instance.date.month,
+        day=instance.date.day
+    )
 
-        # Update the sale value for the SalerPerformance object
-        saler_performance.sale += instance.net_sales/10000000
-        saler_performance.save()
+    # Update the sale value for the SalerPerformance object
+    saler_performance.sale += instance.net_sales
+    saler_performance.save()
 
 @receiver(post_delete, sender=Sales)
 def update_saler_performance_with_delete_sale(sender, instance, **kwargs):
@@ -889,7 +888,7 @@ def update_saler_performance_with_delete_sale(sender, instance, **kwargs):
         )
 
     # Subtract the net sale amount from the sale field
-    performance.sale -= instance.net_sales/10000000
+    performance.sale -= instance.net_sales
     performance.save()
 
 
@@ -1263,8 +1262,7 @@ class ExchangeRateAPIView(APIView):
     def get(self, request):
         try:
             exchange_rate = get_exchange_rate()
-            jalali_date = current_jalali_date().strftime('%Y-%m-%d')
-            response_data = {'exchange_rate': exchange_rate, 'jalali_date': jalali_date  }
+            response_data = exchange_rate
         except Exception as e:
             response_data = {
                 "error": "There is an error at Current IRR Exchange Rate. Please contact developer to solve it",
@@ -1279,10 +1277,11 @@ class ExchangeRateAPIView(APIView):
 class SalerDataView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
+
     def get(self, request, *args, **kwargs):
         jalali_date_now = current_jalali_date()
         jalali_date_now_str = jalali_date_now.strftime('%Y-%m-%d')
-        
+
         daily_sales = SalerPerformance.objects.filter(
             year=jalali_date_now.year,
             month=jalali_date_now.month,
@@ -1300,25 +1299,44 @@ class SalerDataView(APIView):
 
         # Combine the data into a single list
         combined_data = []
-        for daily_sale in daily_sales:
-            name = daily_sale['name']
-            try:
-                saler = Salers.objects.get(name=name)
-                is_active = saler.is_active
-            except:
-                is_active = "Left"
-            monthly_sale = next((item['monthly_sale'] for item in monthly_sales if item['name'] == name), 0)
-            yearly_sale = next((item['yearly_sale'] for item in yearly_sales if item['name'] == name), 0)
+        if not daily_sales:
+            # If no sales for the current day, append a dictionary with name and daily sale values set to zero
+            for monthly_sale in monthly_sales:
+                name = monthly_sale['name']
+                yearly_sale = next((item['yearly_sale'] for item in yearly_sales if item['name'] == name), 0)
+                try:
+                    saler = Salers.objects.get(name=name)
+                    is_active = saler.is_active
+                except:
+                    is_active = "Left"
+                combined_data.append([
+                    name,
+                    is_active,
+                    0,  # Set daily sale value to zero
+                    monthly_sale['monthly_sale'] / 10,
+                    yearly_sale / 10
+                ])
+        else:
+            for daily_sale in daily_sales:
+                name = daily_sale['name']
+                try:
+                    saler = Salers.objects.get(name=name)
+                    is_active = saler.is_active
+                except:
+                    is_active = "Left"
+                monthly_sale = next((item['monthly_sale'] for item in monthly_sales if item['name'] == name), 0)
+                yearly_sale = next((item['yearly_sale'] for item in yearly_sales if item['name'] == name), 0)
 
-            combined_data.append([
-                name, 
-                is_active, 
-                daily_sale['sale']/10, 
-                monthly_sale/10, 
-                yearly_sale/10
-            ])
-        response_data = { "jalali_date" : jalali_date_now_str, "sales_data" : combined_data }
-        
+                combined_data.append([
+                    name,
+                    is_active,
+                    daily_sale['sale'] / 10,
+                    monthly_sale / 10,
+                    yearly_sale / 10
+                ])
+
+        response_data = {"jalali_date": jalali_date_now_str, "sales_data": combined_data}
+
         return JsonResponse(response_data, safe=False)
         
 
@@ -1335,18 +1353,28 @@ class TotalDataView(APIView):
             day=jalali_date_now.day
         ).values('sale', 'dollar_sepidar_sale', 'dollar_sale', 'kg_sale')
         daily_sales_array = list(daily_sales.values_list('sale', 'dollar_sepidar_sale', 'dollar_sale', 'kg_sale')[0]) if daily_sales.exists() else [0, 0, 0, 0]
+        # Divide each value in daily_sales_array by 10
+        for i in range(len(daily_sales_array)):
+            daily_sales_array[i] /= 10
 
         monthly_sales = SaleSummary.objects.filter(
             year=jalali_date_now.year,
             month=jalali_date_now.month
         ).annotate(monthly_sale=Sum('sale'), monthly_dollar_sepidar_sale=Sum('dollar_sepidar_sale'), monthly_dollar_sale=Sum('dollar_sale'), monthly_kg_sale=Sum('kg_sale') )
         monthly_sales_array = list(monthly_sales.values_list('monthly_sale', 'monthly_dollar_sepidar_sale', 'monthly_dollar_sale', 'monthly_kg_sale')[0]) if monthly_sales.exists() else [0, 0, 0, 0]
+        # Divide each value in daily_sales_array by 10
+        for i in range(len(monthly_sales_array)):
+            monthly_sales_array[i] /= 10
 
 
         yearly_sales = SaleSummary.objects.filter(
             year=jalali_date_now.year
         ).annotate(yearly_sale=Sum('sale'), yearly_dollar_sepidar_sale=Sum('dollar_sepidar_sale'), yearly_dollar_sale=Sum('dollar_sale'), yearly_kg_sale=Sum('kg_sale') )
         yearly_sales_array = list(yearly_sales.values_list('yearly_sale', 'yearly_dollar_sepidar_sale', 'yearly_dollar_sale', 'yearly_kg_sale')[0]) if yearly_sales.exists() else [0, 0, 0, 0]
+        # Divide each value in daily_sales_array by 10
+        for i in range(len(yearly_sales_array)):
+            yearly_sales_array[i] /= 10
+        
 
         response_data = { "jalali_date" : jalali_date_now_str, "daily_sales" : daily_sales_array, "monthly_sales" : monthly_sales_array, "yearly_sales" : yearly_sales_array }
 

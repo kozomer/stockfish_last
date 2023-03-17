@@ -79,7 +79,9 @@ function Dashboard() {
   const [topCustomersPieData, setTopCustomersPieData] = useState({});
   const [currency, setCurrency] = useState();
   const [currentDateTime] = useState(new Date());
+  const [date, setDate] = useState([]);
   const [salesData, setSalesData] = useState([]);
+  
   const [salesTotalData, setSalesTotalData] = useState([]);
   const [salesMonthlyData, setSalesMonthlyData] = useState([]);
   //Notification
@@ -200,7 +202,7 @@ function Dashboard() {
 
       });
       const data = await response.json();
-
+      console.log(data["jalali_date"])
       setCurrency(data);
 
     };
@@ -222,7 +224,8 @@ function Dashboard() {
       const data = await response.json();
       console.log(data)
       setSalesData(data.sales_data || []);
-      console.log(salesData)
+      setDate(data.jalali_date || []);
+      
     };
     fetchDailyReportSaler();
   }, []);
@@ -330,7 +333,7 @@ function Dashboard() {
                   <Col md="12" xs="7">
                     <div className="numbers">
                       <p className="card-category">Current Date(Jalali)</p>
-                      <CardTitle tag="p">{new Date().toLocaleDateString()}</CardTitle>
+                      <CardTitle tag="p">{date}</CardTitle>
                       <p />
                     </div>
                   </Col>
