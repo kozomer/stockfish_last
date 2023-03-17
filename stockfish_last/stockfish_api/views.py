@@ -777,21 +777,24 @@ class EditSalerView(APIView):
         try:
             data = json.loads(request.body)
 
+            old_data = data.get('old_data')
+            new_data = data.get('new_data')
+
             # Check if name is provided
-            name = data.get('name')
+            name = new_data['name']
             if not name:
                 return JsonResponse({'error': "Missing required parameter: 'name'"}, status=400)
             
             # Get the saler object
-            saler = Salers.objects.get(id=data.get('id'))
+            saler = Salers.objects.get(id=old_data['id'])
 
             
             
             # Update other saler fields
-            for field in ['new_name', 'new_job_start_date', 'new_manager_performance_rating', 'new_is_active']:
-                if field == "new_job_start_date":
+            for field in ['name', 'job_start_date', 'manager_performance_rating', 'is_active']:
+                if field == "job_start_date":
                     try:
-                        new_date = data.get('new_job_start_date').split("-")
+                        new_date =new_data['job_start_date'].split("-")
                         date = jdatetime.date(int(new_date[0]), int(new_date[1]), int(new_date[2]))
                     except ValueError:
                         return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD'"}, status=400)
@@ -799,7 +802,7 @@ class EditSalerView(APIView):
                         return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD'"}, status=400)
                     except Exception as e:
                         return JsonResponse({'error': str(e)}, status=400)
-                value = data.get(f'new_{field}')
+                value = new_data[f'{field}']
 
                 if value is not None and value != '':
                     setattr(saler, field, value)
@@ -1296,7 +1299,8 @@ class SalerDataView(APIView):
                 monthly_sale/10, 
                 yearly_sale/10
             ])
-            response_data = { "jalali_date" : jalali_date_now_str, "sales_data" : combined_data }
+        response_data = { "jalali_date" : jalali_date_now_str, "sales_data" : combined_data }
+        print(response_data)
         
         return JsonResponse(response_data, safe=False)
         
@@ -1315,19 +1319,19 @@ class TotalDataView(APIView):
             day=jalali_date_now.day
         ).values('sale', 'dollar_sepidar_sale', 'dollar_sale', 'kg_sale')
         print(daily_sales)
-        daily_sales_array = list(daily_sales.values_list('sale', 'dollar_sepidar_sale', 'dollar_sale', 'kg_sale')[0])
+        daily_sales_array = list(daily_sales.values_list('sale', 'dollar_sepidar_sale', 'dollar_sale', 'kg_sale')[0]) if daily_sales.exists() else [0, 0, 0, 0]
 
         monthly_sales = SaleSummary.objects.filter(
             year=jalali_date_now.year,
             month=jalali_date_now.month
         ).annotate(monthly_sale=Sum('sale'), monthly_dollar_sepidar_sale=Sum('dollar_sepidar_sale'), monthly_dollar_sale=Sum('dollar_sale'), monthly_kg_sale=Sum('kg_sale') )
-        monthly_sales_array = list(monthly_sales.values_list('monthly_sale', 'monthly_dollar_sepidar_sale', 'monthly_dollar_sale', 'monthly_kg_sale')[0])
+        monthly_sales_array = list(monthly_sales.values_list('monthly_sale', 'monthly_dollar_sepidar_sale', 'monthly_dollar_sale', 'monthly_kg_sale')[0]) if monthly_sales.exists() else [0, 0, 0, 0]
 
 
         yearly_sales = SaleSummary.objects.filter(
             year=jalali_date_now.year
         ).annotate(yearly_sale=Sum('sale'), yearly_dollar_sepidar_sale=Sum('dollar_sepidar_sale'), yearly_dollar_sale=Sum('dollar_sale'), yearly_kg_sale=Sum('kg_sale') )
-        yearly_sales_array = list(yearly_sales.values_list('yearly_sale', 'yearly_dollar_sepidar_sale', 'yearly_dollar_sale', 'yearly_kg_sale')[0])
+        yearly_sales_array = list(yearly_sales.values_list('yearly_sale', 'yearly_dollar_sepidar_sale', 'yearly_dollar_sale', 'yearly_kg_sale')[0]) if yearly_sales.exists() else [0, 0, 0, 0]
 
         response_data = { "jalali_date" : jalali_date_now_str, "daily_sales" : daily_sales_array, "monthly_sales" : monthly_sales_array, "yearly_sales" : yearly_sales_array }
 
