@@ -17,6 +17,8 @@ from django.views.decorators.csrf import csrf_exempt
 import statistics
 import math
 from scipy.stats import norm
+import traceback
+from django.db import models
 
 
 from django.contrib.auth import authenticate
@@ -307,6 +309,7 @@ class AddSalesView(APIView):
         except OperationalError as e:
             return JsonResponse({'error': f"Database error: {str(e)}"}, status=500)
         except Exception as e:
+            traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
 
 
@@ -1151,6 +1154,7 @@ def update_product_performance_with_add_sale(sender, instance, created, **kwargs
         )
 
         # Update the sale value for the ProductPerformance object
+        product_performance.sale_amount += instance.original_output_value
         product_performance.sale += instance.net_sales
         product_performance.save()
 
@@ -1164,6 +1168,7 @@ def update_product_performance_with_delete_sale(sender, instance, **kwargs):
     )
 
     # Update the sale value for the ProductPerformance object
+    product_performance.sale_amount -= instance.original_output_value
     product_performance.sale -= instance.net_sales
     product_performance.save()
 
@@ -1251,7 +1256,8 @@ class ExchangeRateAPIView(APIView):
 # region Daily Report
 
 class SalerDataView(APIView):
-    @csrf_exempt
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
     def get(self, request, *args, **kwargs):
         jalali_date_now = current_jalali_date()
         jalali_date_now_str = jalali_date_now.strftime('%Y-%m-%d')
@@ -1275,8 +1281,11 @@ class SalerDataView(APIView):
         combined_data = []
         for daily_sale in daily_sales:
             name = daily_sale['name']
-            saler = Salers.objects.get(name=name)
-            is_active = saler.is_active
+            try:
+                saler = Salers.objects.get(name=name)
+                is_active = saler.is_active
+            except:
+                is_active = "Left"
             monthly_sale = next((item['monthly_sale'] for item in monthly_sales if item['name'] == name), 0)
             yearly_sale = next((item['yearly_sale'] for item in yearly_sales if item['name'] == name), 0)
 
@@ -1293,7 +1302,8 @@ class SalerDataView(APIView):
         
 
 class TotalDataView(APIView):
-    @csrf_exempt
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
     def get(self, request, *args, **kwargs):
         jalali_date_now = current_jalali_date()
         print(jalali_date_now)
@@ -1327,7 +1337,8 @@ class TotalDataView(APIView):
         
 
 class TotalDataByMonthlyView(View):
-    @csrf_exempt
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
     def get(self, request, *args, **kwargs):
         jalali_date_now = current_jalali_date()
         jalali_date_now_str = jalali_date_now.strftime('%Y-%m-%d')
@@ -1435,8 +1446,8 @@ def create_rop_for_warehouse(sender, instance, created, **kwargs):
             return JsonResponse({'error': str(e)})
 
 @receiver(post_save, sender=Sales)
-def update_rop_for_sales(sender, instance, created, **kwargs):
-        try:
+def update_rop_for_sales_add_or_edit(sender, instance, created, **kwargs):
+        # try:
             print("omerrrr")
             product = Products.objects.get(product_code_ir = instance.product_code)
             warehouse = Warehouse.objects.get(product_code=instance.product_code)
@@ -1469,7 +1480,7 @@ def update_rop_for_sales(sender, instance, created, **kwargs):
             # rop.unit_secondary = product.unit_secondary,
             # rop.price = product.price,
             # #rop.color_making_room_1400 = None,
-            rop.avarage_previous_year = average_sale_amount_previous_year,
+            rop.avarage_previous_year = average_sale_amount_previous_year
             
             # amount sales from month_1 to month_12
             for month_number in range(1, 13):
@@ -1477,15 +1488,16 @@ def update_rop_for_sales(sender, instance, created, **kwargs):
                 product_performance_current_month = product_performance.filter(year=jalali_date_now_year, month=month_number)
 
                 # Calculate the total sale amount for the current month.
-                total_sale_current_month = product_performance_current_month.aggregate(total_sale=Coalesce(Sum('sale_amount'), 0))['total_sale']
+                total_sale_current_month = product_performance_current_month.aggregate(total_sale=Coalesce(Sum('sale_amount', output_field=models.FloatField()), float(0)))['total_sale']
+
 
                 # Set the total sale amount for the current month for the corresponding `ROP` month field.
                 setattr(rop, f'month_{month_number}', total_sale_current_month)
-            
-            rop.total_sale = product_performance.filter(year=jalali_date_now_year).aggregate(total_sale=Coalesce(Sum('sale_amount'), 0))['total_sale']
-            rop.warehouse = warehouse.stock,
-            rop.goods_on_the_road = 0, #! goods on road values will be updated!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            rop.total_stock_all = rop.warehouse+ rop.goods_on_the_road,
+            print(rop.month_1)
+            rop.total_sale = product_performance.filter(year=jalali_date_now_year).aggregate(total_sale=Coalesce(Sum('sale_amount'), float(0)))['total_sale']
+            rop.warehouse = warehouse.stock
+            rop.goods_on_the_road = float(0) #! goods on road values will be updated!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            rop.total_stock_all = rop.warehouse+ rop.goods_on_the_road
             rop.monthly_mean = rop.total_sale/int(jalali_date_now.month)
             try: 
                 rop.total_month_stock = rop.total_stock_all/rop.monthly_mean
@@ -1503,18 +1515,21 @@ def update_rop_for_sales(sender, instance, created, **kwargs):
             # Set the `standart_deviation` field of the `ROP` instance.
             rop.standart_deviation = standard_deviation
             
-            rop.lead_time = 2, #! will be given by user
-            rop.product_coverage_percentage = 95, #! will be given by user
-            rop.demand_status =  rop.standart_deviation * (rop.lead_time)**0.5,
+            rop.lead_time = 2 #! will be given by user
+            rop.product_coverage_percentage = 95 #! will be given by user
+            rop.demand_status =  rop.standart_deviation * (rop.lead_time)**0.5
 
             #safety stock
-            result = norm.ppf(rop.product_coverage_percentage) * rop.demand_status
-            result_rounded_up = math.ceil(result)           
-            rop.safety_stock = result_rounded_up,
+            try:
+                result = norm.ppf(rop.product_coverage_percentage) * rop.demand_status
+                result_rounded_up = math.ceil(result)           
+                rop.safety_stock = result_rounded_up
+            except:
+                rop.safety_stock = float(0)
 
-            rop.rop = (rop.lead_time * rop.monthly_mean) + rop.safety_stock ,
+            rop.rop = (rop.lead_time * rop.monthly_mean) + rop.safety_stock 
             #rop.monthly_mean = rop.total_sale/int(jalali_date_now.month)
-            rop.new_party = rop.lead_time * rop.monthly_mean,
+            rop.new_party = rop.lead_time * rop.monthly_mean
             
             # cycle_service_level
             try:
@@ -1526,7 +1541,7 @@ def update_rop_for_sales(sender, instance, created, **kwargs):
             except:
                 # If an error occurs, set the result to 0.
                 rop.cycle_service_level = 0
-            rop.total_stock = rop.total_stock_all,
+            rop.total_stock = rop.total_stock_all
             
             # need_products
             if rop.rop >= rop.total_stock:
@@ -1540,7 +1555,7 @@ def update_rop_for_sales(sender, instance, created, **kwargs):
             else:
                 rop.over_stock = 0
             
-            rop.calculated_need = rop.need_prodcuts, #! previous year is needed??????
+            rop.calculated_need = rop.need_prodcuts #! previous year is needed??????
             
             # calculated max stock #! previous year is needed??????
             try:
@@ -1554,8 +1569,137 @@ def update_rop_for_sales(sender, instance, created, **kwargs):
             except:
                 rop.calculated_min_stock = 0
             rop.save()
-        except Products.DoesNotExist:
-            pass
+        # except Products.DoesNotExist:
+        #     pass
+        # except Exception as e:
+        #     return JsonResponse({'error': str(e)})
+
+@receiver(post_delete, sender=Sales)
+def update_rop_for_sales_delete(sender, instance, created, **kwargs):
+        # try:
+            print("omerrrr")
+            product = Products.objects.get(product_code_ir = instance.product_code)
+            warehouse = Warehouse.objects.get(product_code=instance.product_code)
+            product_performance = ProductPerformance.objects.filter(product_code =instance.product_code )
+            jalali_date_now = current_jalali_date()
+            jalali_date_now_year = int(jalali_date_now.year)
+            jalali_date_now_month = int(jalali_date_now.month)
+            jalali_date_previous_year = jalali_date_now_year-1
+            product_performance_previous_year = product_performance.filter(year=jalali_date_previous_year)
+            # calculate the average sale amount
+            average_sale_amount_previous_year = product_performance_previous_year.aggregate(avg_sale=Avg('sale_amount'))['avg_sale']
+            
+            rop = ROP.objects.get(
+                product_code_ir = instance.product_code
+                )
+            
+            # rop.group = product.group,
+            # rop.subgroup = product.subgroup,
+            # rop.feature = product.feature,
+            # rop.new_or_old_product = 0,
+            # rop.related = None,
+            # rop.origin = None,
+            # rop.product_code_ir = instance.product_code,
+            # rop.product_code_tr = product.product_code_tr,
+            # rop.dont_order_again = None,
+            # rop.description_tr = product.description_tr,
+            # rop.description_ir = product.description_ir,
+            # rop.unit = product.unit,
+            # rop.weight = product.weight,
+            # rop.unit_secondary = product.unit_secondary,
+            # rop.price = product.price,
+            # #rop.color_making_room_1400 = None,
+            rop.avarage_previous_year = average_sale_amount_previous_year
+            
+            # amount sales from month_1 to month_12
+            for month_number in range(1, 13):
+                # Filter the `ProductPerformance` objects by the current year and month.
+                product_performance_current_month = product_performance.filter(year=jalali_date_now_year, month=month_number)
+
+                # Calculate the total sale amount for the current month.
+                total_sale_current_month = product_performance_current_month.aggregate(total_sale=Coalesce(Sum('sale_amount', output_field=models.FloatField()), float(0)))['total_sale']
+
+
+                # Set the total sale amount for the current month for the corresponding `ROP` month field.
+                setattr(rop, f'month_{month_number}', total_sale_current_month)
+            print(rop.month_1)
+            rop.total_sale = product_performance.filter(year=jalali_date_now_year).aggregate(total_sale=Coalesce(Sum('sale_amount'), float(0)))['total_sale']
+            rop.warehouse = warehouse.stock
+            rop.goods_on_the_road = float(0) #! goods on road values will be updated!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            rop.total_stock_all = rop.warehouse+ rop.goods_on_the_road
+            rop.monthly_mean = rop.total_sale/int(jalali_date_now.month)
+            try: 
+                rop.total_month_stock = rop.total_stock_all/rop.monthly_mean
+            except Exception as e:
+                rop.total_month_stock = 0
+            
+            # Get the values of `month_1` to the current month.
+            values = [getattr(rop, f'month_{i}', 0) for i in range(1, jalali_date_now_month + 1)]
+            # Calculate the standard deviation.
+            if len(values) > 0:
+                standard_deviation = statistics.stdev(values)
+            else:
+                standard_deviation = 0
+
+            # Set the `standart_deviation` field of the `ROP` instance.
+            rop.standart_deviation = standard_deviation
+            
+            rop.lead_time = 2 #! will be given by user
+            rop.product_coverage_percentage = 95 #! will be given by user
+            rop.demand_status =  rop.standart_deviation * (rop.lead_time)**0.5
+
+            #safety stock
+            try:
+                result = norm.ppf(rop.product_coverage_percentage) * rop.demand_status
+                result_rounded_up = math.ceil(result)           
+                rop.safety_stock = result_rounded_up
+            except:
+                rop.safety_stock = float(0)
+
+            rop.rop = (rop.lead_time * rop.monthly_mean) + rop.safety_stock 
+            #rop.monthly_mean = rop.total_sale/int(jalali_date_now.month)
+            rop.new_party = rop.lead_time * rop.monthly_mean
+            
+            # cycle_service_level
+            try:
+                # Calculate the PDF of the normal distribution.
+                pdf_value = norm.pdf(rop.rop, loc=rop.monthly_mean, scale=rop.demand_status)
+
+                # Set the result to the PDF.
+                rop.cycle_service_level = pdf_value
+            except:
+                # If an error occurs, set the result to 0.
+                rop.cycle_service_level = 0
+            rop.total_stock = rop.total_stock_all
+            
+            # need_products
+            if rop.rop >= rop.total_stock:
+                rop.need_prodcuts = rop.rop + rop.new_party - rop.total_stock
+            else:
+                 rop.need_prodcuts = 0
+
+            # over stock
+            if rop.total_stock_all > (1.2*(rop.safety_stock + rop.new_party)):  #! Stock Over Factor will be declared and it will produced by user
+                rop.over_stock = 1
+            else:
+                rop.over_stock = 0
+            
+            rop.calculated_need = rop.need_prodcuts #! previous year is needed??????
+            
+            # calculated max stock #! previous year is needed??????
+            try:
+                rop.calculated_max_stock = (rop.rop + rop.new_party)/rop.monthly_mean
+            except:
+                rop.calculated_max_stock = 0
+
+            # calculated min stock #! previous year is needed??????
+            try:
+                rop.calculated_min_stock = rop.rop /rop.monthly_mean
+            except:
+                rop.calculated_min_stock = 0
+            rop.save()
+        # except Products.DoesNotExist:
+        #     pass
         # except Exception as e:
         #     return JsonResponse({'error': str(e)})
         
