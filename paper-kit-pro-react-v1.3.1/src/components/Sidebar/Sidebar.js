@@ -258,7 +258,7 @@ function Sidebar(props) {
         </div>
         <Nav>{createLinks(props.routes)}</Nav>
         <Button
-  className="my-button-class"
+  className="my-button-class d-flex justify-content-center align-items-center"
   color="primary"
   onClick={handleLogout}
   style={{
@@ -275,16 +275,9 @@ function Sidebar(props) {
     overflow: "hidden",
   }}
 >
-  <span style={{ marginRight: "10px" }}>Log Out</span>
-  <FaPowerOff
-    style={{
-      position: "absolute",
-      right: "10px",
-      top: "50%",
-      transform: "translateY(-50%)",
-    }}
-  />
+  <span>Log Out</span>
 </Button>
+
 
       </div>
     </div>
