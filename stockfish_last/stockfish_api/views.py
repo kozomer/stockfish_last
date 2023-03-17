@@ -353,7 +353,6 @@ class EditSaleView(APIView):
     def post(self, request, *args, **kwargs):
         try:
             data = json.loads(request.body)
-            print(data)
 
             # Check for required fields
             for field in ['new_product_code', 'new_customer_code', 'new_original_output_value', 'new_net_sales', 'new_saler', 'new_psr', 'new_date']:
@@ -586,7 +585,6 @@ class AddProductsView(APIView):
                 return JsonResponse({'error': "The uploaded file is not a valid Excel file"}, status=400)
 
             data = pd.read_excel(file)
-            print(data)
             if data.empty:
                 return JsonResponse({'error': "The uploaded file is empty"}, status=400)
             count = 0
@@ -610,7 +608,6 @@ class AddProductsView(APIView):
                         currency = row["Currency"],
                         price= row["Price"]
                     )
-                    print(row["Subgroup"])
                     product.save()
                 except KeyError as e:
                     return JsonResponse({'error': f"Column '{e}' not found in the uploaded file"}, status=400)
@@ -924,17 +921,37 @@ def update_month_sale_rating(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Sales)
 def update_sale_summary_with_add_sale(sender, instance, created, **kwargs):
-    if created:
-        # Get or create the SaleSummary object
-        find_month = instance.date.month
-        find_year = instance.date.year
-        find_day = instance.date.day
-        sale_summary, created = SaleSummary.objects.get_or_create(
-            date=jdatetime.date(int(find_year), int(find_month), int(find_day)), year= find_year, month = find_month, day = find_day
-        )
+    find_month = instance.date.month
+    find_year = instance.date.year
+    find_day = instance.date.day
+    sale_summary, _ = SaleSummary.objects.get_or_create(
+        date=jdatetime.date(int(find_year), int(find_month), int(find_day)),
+        year=find_year,
+        month=find_month,
+        day=find_day
+    )
 
-        # Update the sale value for the SaleSummary object
+    if created:
+        # Add the values of all relevant fields to the corresponding attributes of the SaleSummary instance
         sale_summary.sale += instance.net_sales
+        sale_summary.dollar_sepidar_sale += instance.dollar_sepidar
+        sale_summary.dollar_sale += instance.dollar
+        sale_summary.kg_sale += instance.kg
+        sale_summary.save()
+    else:
+        # Check which fields have been updated
+        dirty_fields = instance.get_dirty_fields()
+
+        # Update the corresponding attributes of the SaleSummary instance based on the updated fields
+        if 'net_sales' in dirty_fields:
+            sale_summary.sale += instance.net_sales - dirty_fields['net_sales']
+        if 'dollar_sepidar' in dirty_fields:
+            sale_summary.dollar_sepidar_sale += instance.dollar_sepidar - dirty_fields['dollar_sepidar']
+        if 'dollar' in dirty_fields:
+            sale_summary.dollar_sale += instance.dollar - dirty_fields['dollar']
+        if 'kg' in dirty_fields:
+            sale_summary.kg_sale += instance.kg - dirty_fields['kg']
+
         sale_summary.save()
 
 @receiver(post_delete, sender=Sales)
@@ -950,6 +967,9 @@ def update_sale_summary_with_delete_sale(sender, instance, **kwargs):
 
     # Update the sale value for the SaleSummary object
     sale_summary.sale -= instance.net_sales
+    sale_summary.dollar_sepidar_sale -= instance.dollar_sepidar
+    sale_summary.dollar_sale -= instance.dollar
+    sale_summary.kg_sale -= instance.kg
     sale_summary.save()
 
 class SalesReportView(APIView):
@@ -1088,7 +1108,6 @@ class TopCustomersView(APIView):
         data = json.loads(request.body)
 
         report_type = data.get('report_type')
-        print(report_type)
         if report_type == 'monthly':
             top_customers_list = []
             
@@ -1182,7 +1201,6 @@ class TopProductsView(APIView):
         data = json.loads(request.body)
 
         report_type = data.get('report_type')
-        print(report_type)
         if report_type == 'monthly':
             top_products_list = []
             
@@ -1228,7 +1246,6 @@ class TopProductsView(APIView):
             top_5_product_total_sale = sum(top_products_sale_sum)
             
             # Calculate the sales for the remaining products
-            print(top_5_product_total_sale)
             others_sales = total_sales - top_5_product_total_sale
             
             # Create a list of sales data for the top 5 products and others for the pie chart
@@ -1246,7 +1263,8 @@ class ExchangeRateAPIView(APIView):
     def get(self, request):
         try:
             exchange_rate = get_exchange_rate()
-            response_data = exchange_rate
+            jalali_date = current_jalali_date().strftime('%Y-%m-%d')
+            response_data = {'exchange_rate': exchange_rate, 'jalali_date': jalali_date  }
         except Exception as e:
             response_data = {
                 "error": "There is an error at Current IRR Exchange Rate. Please contact developer to solve it",
@@ -1300,7 +1318,6 @@ class SalerDataView(APIView):
                 yearly_sale/10
             ])
         response_data = { "jalali_date" : jalali_date_now_str, "sales_data" : combined_data }
-        print(response_data)
         
         return JsonResponse(response_data, safe=False)
         
@@ -1310,7 +1327,6 @@ class TotalDataView(APIView):
     authentication_classes = (JWTAuthentication,)
     def get(self, request, *args, **kwargs):
         jalali_date_now = current_jalali_date()
-        print(jalali_date_now)
         jalali_date_now_str = jalali_date_now.strftime('%Y-%m-%d')
         
         daily_sales = SaleSummary.objects.filter(
@@ -1318,7 +1334,6 @@ class TotalDataView(APIView):
             month=jalali_date_now.month,
             day=jalali_date_now.day
         ).values('sale', 'dollar_sepidar_sale', 'dollar_sale', 'kg_sale')
-        print(daily_sales)
         daily_sales_array = list(daily_sales.values_list('sale', 'dollar_sepidar_sale', 'dollar_sale', 'kg_sale')[0]) if daily_sales.exists() else [0, 0, 0, 0]
 
         monthly_sales = SaleSummary.objects.filter(
@@ -1452,8 +1467,7 @@ def create_rop_for_warehouse(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=Sales)
 def update_rop_for_sales_add_or_edit(sender, instance, created, **kwargs):
-        # try:
-            print("omerrrr")
+        try:
             product = Products.objects.get(product_code_ir = instance.product_code)
             warehouse = Warehouse.objects.get(product_code=instance.product_code)
             product_performance = ProductPerformance.objects.filter(product_code =instance.product_code )
@@ -1498,7 +1512,6 @@ def update_rop_for_sales_add_or_edit(sender, instance, created, **kwargs):
 
                 # Set the total sale amount for the current month for the corresponding `ROP` month field.
                 setattr(rop, f'month_{month_number}', total_sale_current_month)
-            print(rop.month_1)
             rop.total_sale = product_performance.filter(year=jalali_date_now_year).aggregate(total_sale=Coalesce(Sum('sale_amount'), float(0)))['total_sale']
             rop.warehouse = warehouse.stock
             rop.goods_on_the_road = float(0) #! goods on road values will be updated!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1574,15 +1587,14 @@ def update_rop_for_sales_add_or_edit(sender, instance, created, **kwargs):
             except:
                 rop.calculated_min_stock = 0
             rop.save()
-        # except Products.DoesNotExist:
-        #     pass
-        # except Exception as e:
-        #     return JsonResponse({'error': str(e)})
+        except Products.DoesNotExist:
+            pass
+        except Exception as e:
+            return JsonResponse({'error': str(e)})
 
 @receiver(post_delete, sender=Sales)
 def update_rop_for_sales_delete(sender, instance, created, **kwargs):
-        # try:
-            print("omerrrr")
+        try:
             product = Products.objects.get(product_code_ir = instance.product_code)
             warehouse = Warehouse.objects.get(product_code=instance.product_code)
             product_performance = ProductPerformance.objects.filter(product_code =instance.product_code )
@@ -1627,7 +1639,6 @@ def update_rop_for_sales_delete(sender, instance, created, **kwargs):
 
                 # Set the total sale amount for the current month for the corresponding `ROP` month field.
                 setattr(rop, f'month_{month_number}', total_sale_current_month)
-            print(rop.month_1)
             rop.total_sale = product_performance.filter(year=jalali_date_now_year).aggregate(total_sale=Coalesce(Sum('sale_amount'), float(0)))['total_sale']
             rop.warehouse = warehouse.stock
             rop.goods_on_the_road = float(0) #! goods on road values will be updated!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1703,10 +1714,10 @@ def update_rop_for_sales_delete(sender, instance, created, **kwargs):
             except:
                 rop.calculated_min_stock = 0
             rop.save()
-        # except Products.DoesNotExist:
-        #     pass
-        # except Exception as e:
-        #     return JsonResponse({'error': str(e)})
+        except Products.DoesNotExist:
+            pass
+        except Exception as e:
+            return JsonResponse({'error': str(e)})
         
         
 # endregion
