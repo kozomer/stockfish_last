@@ -80,7 +80,8 @@ function Dashboard() {
   const [currency, setCurrency] = useState();
   const [currentDateTime] = useState(new Date());
   const [salesData, setSalesData] = useState([]);
-
+  const [salesTotalData, setSalesTotalData] = useState([]);
+  const [salesMonthlyData, setSalesMonthlyData] = useState([]);
   //Notification
   const notify = (place) => {
     var color = Math.floor(Math.random() * 5 + 1);
@@ -152,7 +153,7 @@ function Dashboard() {
           },
         ],
       });
-      console.log(topProductsPieData.datasets[0].data);
+      
 
     };
     fetchData();
@@ -208,9 +209,9 @@ function Dashboard() {
 
 
   useEffect(() => {
-    const fetchDailyReport = async () => {
+    const fetchDailyReportSaler = async () => {
       const access_token = await localforage.getItem('access_token');
-      const response = await fetch("http://127.0.0.1:8000/daily_report/", {
+      const response = await fetch("http://127.0.0.1:8000/daily_report/saler_data/", {
 
         headers: {
 
@@ -221,76 +222,58 @@ function Dashboard() {
       const data = await response.json();
       console.log(data)
       setSalesData(data.sales_data || []);
+      console.log(salesData)
     };
-    fetchDailyReport();
+    fetchDailyReportSaler();
   }, []);
-  /*
-  const doughnutOptions = {
-    data: {
-      labels: topProductsPieData.labels,
-      datasets: [
-        {
-          label: "Top Products",
-          pointRadius: 0,
-          pointHoverRadius: 0,
-          backgroundColor: ["#f17e5d", "#f4f3ef","#ddddd"],
-          borderWidth: 0,
-          barPercentage: 1.6,
-          data: topProductsPieData.datasets[0].data,
-        },
-      ],
-    },
-    options: {
-      plugins: {
-        legend: {
-          position: "right",
-          labels: {
-            font: {
-              size: 12,
-            },
-            usePointStyle: true,
-          },
-        },
-        tooltips: {
-          enabled: false,
-        },
-        title: {
-          display: true,
-          position: "bottom",
-          text: "Top Products",
-          color: "#66615c",
-          font: {
-            weight: 400,
-            size: 20,
-          },
-        },
-      },
-      maintainAspectRatio: false,
-      cutout: "90%",
-      scales: {
-        y: {
-          ticks: {
-            display: false,
-          },
-          grid: {
-            drawBorder: false,
-            display: false,
-          },
-        },
-        x: {
-          grid: {
-            drawBorder: false,
-            display: false,
-          },
-          ticks: {
-            display: false,
-          },
-        },
-      },
-    },
-  };
   
-    */
+  useEffect(() => {
+    const fetchDailyReportTotal = async () => {
+      const access_token = await localforage.getItem('access_token');
+      const response = await fetch("http://127.0.0.1:8000/daily_report/total_data/", {
+
+        headers: {
+
+          'Authorization': 'Bearer ' + String(access_token)
+        },
+
+      });
+      const data = await response.json();
+      
+      setSalesTotalData(data);
+      console.log(salesTotalData)
+    };
+    fetchDailyReportTotal();
+  }, []);
+
+  useEffect(() => {
+    const fetchDailyReportMotnhly = async () => {
+      const access_token = await localforage.getItem('access_token');
+      const response = await fetch("http://127.0.0.1:8000/daily_report/total_data_by_monthly/", {
+
+        headers: {
+
+          'Authorization': 'Bearer ' + String(access_token)
+        },
+
+      });
+      const data = await response.json();
+      
+      setSalesMonthlyData(data);
+      console.log(data)
+    };
+    fetchDailyReportMotnhly();
+  }, []);
+
+  
+  const rowHeaders = [
+    'Current Sales (Toman)',
+    'Current Sales ($) (Sepidar)',
+    'Current Sales ($) (Tablo)',
+    'Current Sales (KG)',
+  ];
+  
+    
   return (
     <>
       <NotificationAlert ref={notificationAlert} />
@@ -419,19 +402,39 @@ function Dashboard() {
               <CardHeader>
                 <Row>
                   <Col sm="7">
-                    <div className="numbers pull-left">$34,657</div>
+                    <div className="numbers pull-left">Daily Reports</div>
                   </Col>
-                  <Col sm="5">
-                    <div className="pull-right">
-                      <Badge color="success" pill>
-                        +18%
-                      </Badge>
-                    </div>
-                  </Col>
+                  
                 </Row>
               </CardHeader>
               <CardBody>
-                <Row><Table responsive>
+                <Row>
+                <Table>
+         <thead>
+        <tr>
+          <th scope="col"></th>
+          <th scope="col">Daily Sales</th>
+          <th scope="col">Monthly Sales</th>
+          <th scope="col">Yearly Sales</th>
+        </tr>
+      </thead>
+      <tbody>
+        {salesTotalData.daily_sales &&
+          salesTotalData.daily_sales.map((_, rowIndex) => (
+            <tr key={rowIndex}>
+              <th scope="row">{rowHeaders[rowIndex]}</th>
+              <td>{salesTotalData.daily_sales[rowIndex]}</td>
+              <td>{salesTotalData.monthly_sales[rowIndex]}</td>
+              <td>{salesTotalData.yearly_sales[rowIndex]}</td>
+            </tr>
+          ))}
+      </tbody>
+      </Table>
+      </Row>
+      <hr style={{ marginTop: '30px', marginBottom: '30px', borderWidth: '3px' }} />
+
+      <Row>
+      <Table responsive>
         <thead>
           <tr>
             <th>Experts</th>
@@ -453,30 +456,33 @@ function Dashboard() {
           ))}
         </tbody>
       </Table>
+      
+
       </Row>
-      <hr style={{ marginTop: '30px', marginBottom: '30px' }} />
+      <hr style={{ marginTop: '30px', marginBottom: '30px', borderWidth: '3px' }} />
+
       <Row>
-              <Table responsive>
-        <thead>
-          <tr>
-            <th>Experts</th>
-            <th>Status</th>
-            <th>Daily Sales</th>
-            <th>Monthly Sales</th>
-            <th>Yearly Sales</th>
+              <Table>
+              <thead>
+        <tr>
+          <th>Month</th>
+          <th>Toman</th>
+          <th>USD</th>
+          <th>KG</th>
+          <th>Sepidar</th>
+        </tr>
+      </thead>
+      <tbody>
+        {salesMonthlyData.map((sale, index) => (
+          <tr key={index}>
+            <td>{index + 1}</td>
+            <td>{sale[0]}</td>
+            <td>{sale[1]}</td>
+            <td>{sale[2]}</td>
+            <td>{sale[3]}</td>
           </tr>
-        </thead>
-        <tbody>
-          {salesData.map((sale, index) => (
-            <tr key={index}>
-              <td>{sale[0]}</td>
-              <td>{sale[1] ? 'Active' : 'Inactive'}</td>
-              <td>{sale[2]}</td>
-              <td>{sale[3]}</td>
-              <td>{sale[4]}</td>
-            </tr>
-          ))}
-        </tbody>
+        ))}
+      </tbody>
       </Table>
       </Row>
               </CardBody>

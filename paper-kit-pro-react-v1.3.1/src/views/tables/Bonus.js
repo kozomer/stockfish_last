@@ -53,6 +53,7 @@ function UserProfile() {
   const [originalData, setOriginalData] = useState({});
 
   const [alert, setAlert] = useState(null);
+  const [isSwitchOn, setIsSwitchOn] = useState(false);
 
   const handleSelectMember = async(member) => {
 
@@ -90,6 +91,7 @@ function UserProfile() {
     const newSaler = {
       name: newSalerName,
       job_start_date: newSalerStatus,
+      
     };
     console.log(newSaler)
     fetch("http://127.0.0.1:8000/add_salers/", {
@@ -163,7 +165,7 @@ function UserProfile() {
     // Do something with the new data, e.g. send it to the server
     // ...
     const newData = { ...originalData, ...formData };
-    console.log(newData);
+    console.log('New data:',newData);
     console.log('Old data:', salersWholeData);
     
   };
@@ -293,6 +295,11 @@ function UserProfile() {
     const hideAlert = () => {
       setAlert(null);
     };
+
+    const handleSwitchChange = (checked) => {
+      setIsSwitchOn(checked);
+    };
+  
   return (
     <>
       <div className="content">
@@ -440,6 +447,8 @@ function UserProfile() {
                           offText={<i className="nc-icon nc-simple-remove" />}
                           onColor="success"
                           onText={<i className="nc-icon nc-check-2" />}
+                          checked={isSwitchOn}
+                          onChange={handleInputChange}
                         />{" "}
                       </FormGroup>
                     </Col>

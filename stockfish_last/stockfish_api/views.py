@@ -1314,6 +1314,7 @@ class TotalDataView(APIView):
             month=jalali_date_now.month,
             day=jalali_date_now.day
         ).values('sale', 'dollar_sepidar_sale', 'dollar_sale', 'kg_sale')
+        print(daily_sales)
         daily_sales_array = list(daily_sales.values_list('sale', 'dollar_sepidar_sale', 'dollar_sale', 'kg_sale')[0])
 
         monthly_sales = SaleSummary.objects.filter(
