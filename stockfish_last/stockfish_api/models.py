@@ -91,7 +91,7 @@ class ROP(models.Model):
     origin = models.CharField(max_length=100, null=True, blank=True)
     product_code_ir = models.CharField(max_length=100)
     product_code_tr = models.CharField(max_length=100)
-    dont_order_again = models.CharField(max_length=100, null=True, blank=True)
+    dont_order_again = models.IntegerField(default=0, null=True, blank= True)
     description_tr = models.CharField(max_length=100, null=True, blank=True)
     description_ir = models.CharField(max_length=100, null=True, blank=True)
     unit = models.CharField(max_length=100)
@@ -203,6 +203,7 @@ class ProductPerformance(models.Model):
     year = models.IntegerField(null=True)
     month = models.IntegerField(null=True)
     sale = models.FloatField(default=0, null=True)
+    sale_amount = models.FloatField(default=0, null=True)
 
 
 
