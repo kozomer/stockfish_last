@@ -24,6 +24,7 @@ import avatar from "assets/img/faces/ayo-ogunseinde-2.jpg";
 import logo from "assets/img/react-logo.png";
 import localforage from 'localforage';
 import { useHistory } from 'react-router-dom';
+import { FaPowerOff } from 'react-icons/fa';
 var ps;
 
 function Sidebar(props) {
@@ -256,7 +257,35 @@ function Sidebar(props) {
           </div>
         </div>
         <Nav>{createLinks(props.routes)}</Nav>
-        <Button  className="my-button-class" color="primary" onClick={handleLogout} style={{marginLeft:"30px", marginTop:"100px"}}>Log Out<i className="fa fa-times" /></Button>
+        <Button
+  className="my-button-class"
+  color="primary"
+  onClick={handleLogout}
+  style={{
+    display: "block",
+    margin: "auto",
+    marginTop: "120px",
+    width: "120px",
+    height: "40px",
+    borderRadius: "20px",
+    padding: "0 10px",
+    fontSize: "16px",
+    fontWeight: "bold",
+    position: "relative",
+    overflow: "hidden",
+  }}
+>
+  <span style={{ marginRight: "10px" }}>Log Out</span>
+  <FaPowerOff
+    style={{
+      position: "absolute",
+      right: "10px",
+      top: "50%",
+      transform: "translateY(-50%)",
+    }}
+  />
+</Button>
+
       </div>
     </div>
   );

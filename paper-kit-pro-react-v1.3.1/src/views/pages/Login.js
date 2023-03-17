@@ -131,13 +131,19 @@ function Login({ history }) {
       borderLeft:"1px solid #dedede",
       borderRight:"1px solid #dedede"
     }}
+    onKeyPress={(event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        handleSubmit();
+      }
+    }}
   />
                   </InputGroup>
                   {error && <p style={{ color: 'red' }}>{error}</p>}
                   <br />
                 
                 </CardBody>
-                <CardFooter>
+                <CardFooter  className="d-flex justify-content-center">
                   <Button onClick={handleSubmit}  className="my-button-class" color="primary">
                     LOGIN
                   </Button>
