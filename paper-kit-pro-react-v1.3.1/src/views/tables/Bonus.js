@@ -501,12 +501,13 @@ function UserProfile() {
                         <Input
   name="activity"
   type="select"
-  defaultValue={salersWholeData["is_active"] ? "Active" : "Inactive"}
+  value={salersWholeData["is_active"] ? "Active" : "Inactive"}
   onChange={(e) => {
     const value = e.target.value === "Active";
     setIsActive(value);
   }}
 >
+  
   <option value="Active">Active</option>
   <option value="Inactive">Inactive</option>
 </Input>

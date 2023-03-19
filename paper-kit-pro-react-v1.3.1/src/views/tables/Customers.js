@@ -349,8 +349,13 @@ const DataTable = () => {
       });
     
       // Create a link to download the file and simulate a click to download it
-      const filename = 'customers.csv';
+      const contentDisposition = response.headers.get('content-disposition');
+      console.log(response)
+  const filenameMatch = contentDisposition && contentDisposition.match(/filename="(.+)"/);
+  const filename = filenameMatch && filenameMatch[1];
+  console.log(filename)
       const blob = await response.blob();
+      
       const link = document.createElement('a');
       link.href = window.URL.createObjectURL(blob);
       link.download = filename;
