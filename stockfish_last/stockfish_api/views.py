@@ -3,7 +3,7 @@ import pandas as pd
 from .models import Customers, Products, Sales, Warehouse, ROP, Salers, SalerPerformance, SaleSummary, SalerMonthlySaleRating, MonthlyProductSales,CustomerPerformance, ProductPerformance
 from django.views import View
 from rest_framework.views import APIView
-from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
+from django.http import JsonResponse, HttpResponse
 import json
 from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
@@ -19,11 +19,10 @@ import math
 from scipy.stats import norm
 import traceback
 from django.db import models
+import csv
 
-
+# Authentications
 from django.contrib.auth import authenticate
-
-
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -48,6 +47,12 @@ class LoginView(TokenObtainPairView):
         user = authenticate(request, username=username, password=password)
         if user is not None and user.is_active:
             response = super().post(request, *args, **kwargs)
+            # Convert the first name and last name to uppercase
+            first_name = user.first_name.upper()
+            last_name = user.last_name.upper()
+            # Add the uppercase names to the response
+            response.data['first_name'] = first_name
+            response.data['last_name'] = last_name
             return response
         else:
             return JsonResponse({'error': 'Invalid credentials'}, status=401)
@@ -170,6 +175,26 @@ class EditCustomerView(APIView):
 
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
+
+class ExportCustomersView(View):
+    # permission_classes = (IsAuthenticated,)
+    # authentication_classes = (JWTAuthentication,)
+    @csrf_exempt
+    def get(self, request, *args, **kwargs):
+        customers = Customers.objects.all().values()
+        # Set the response headers to indicate that we are returning a CSV file
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="customers.csv"'
+        # Create a CSV writer and write the header row
+        writer = csv.writer(response)
+        header = ['Customer Code', 'Description', 'Quantity', 'Area Code', 'Code', 'City', 'Area']
+        writer.writerow(header)
+        # Write the data rows
+        for customer in customers:
+            row = [customer['customer_code'], customer['description'], customer['quantity'],
+                   customer['area_code'], customer['code'], customer['city'], customer['area']]
+            writer.writerow(row)
+        return response
 
 
 # endregion
