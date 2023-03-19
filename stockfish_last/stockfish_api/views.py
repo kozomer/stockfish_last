@@ -801,6 +801,8 @@ class EditSalerView(APIView):
 
             old_data = data.get('old_data')
             new_data = data.get('new_data')
+            print('new_data',new_data)
+            print('old_data',old_data)
 
             # Check if name is provided
             name = new_data['name']

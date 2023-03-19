@@ -53,8 +53,9 @@ function UserProfile() {
   const [originalData, setOriginalData] = useState({});
 
   const [alert, setAlert] = useState(null);
-  const [isSwitchOn, setIsSwitchOn] = useState(false);
-
+  
+  const [isActive, setIsActive] = useState("");
+  const [activity, setActivity] = useState(false);
   const handleSelectMember = async (member) => {
 
     setSelectedSaler(member);
@@ -80,7 +81,7 @@ function UserProfile() {
         console.log(data);
 
         setSalersWholeData(data)
-        console.log(salersWholeData["id"])
+        console.log(salersWholeData["is_active"])
       })
 
 
@@ -154,30 +155,51 @@ function UserProfile() {
   const handleInputChange = (event) => {
 
 
-    const { name, value, checked, type } = event.target;
-    console.log(type);
-    const newValue = type === "checkbox" ? checked : value;
+    const { name, value } = event.target;
+    console.log(name, value);
+    const newValue = parseFloat(value);
+   
 
-    if (name === "activity") {
-      setIsSwitchOn(checked);
-      console.log("Switch value:", value);
-      setFormData((prevFormData) => ({
-        ...prevFormData,
-        activity: checked,
-      }));
-    } else {
-      setFormData((prevFormData) => ({ ...prevFormData, [name]: newValue }));
-    }
+    setFormData((prevFormData) => ({ ...prevFormData, [name]: newValue }));
+
   };
 
 
   const handleSave = () => {
     // Create an object with the new data
-
-
+    console.log(isActive)
+    if (isActive === "") {
+      console.log("asdadasdas")
+      setIsActive(salersWholeData["is_active"]);
+      console.log(salersWholeData["is_active"])
+    }
     // Do something with the new data, e.g. send it to the server
     // ...
-    const newData = { ...originalData, ...formData };
+    const newData = { ...formData, is_active: isActive };
+    editSalers()
+    async function editSalers() {
+
+      const all_data = {
+        new_data: newData,
+        old_data: salersWholeData
+      }
+      const access_token = await localforage.getItem('access_token');
+      fetch('http://127.0.0.1:8000/edit_salers/', {
+        method: "POST",
+        body: JSON.stringify(all_data),
+        credentials: "include",
+        headers: {
+          'Authorization': 'Bearer ' + String(access_token)
+        },
+      })
+        .then((response) => {
+          if (response.ok) {
+            setSalersWholeData(newData);
+          }
+        })
+
+        .catch(error => console.log(error));
+    }
     console.log('New data:', newData);
     console.log('Old data:', salersWholeData);
 
@@ -262,6 +284,8 @@ function UserProfile() {
   useEffect(() => {
     // Create a copy of the original data to use as default values
     setOriginalData(salersWholeData);
+    setActivity(salersWholeData["is_active"])
+    console.log(activity)
     setFormData(salersWholeData);
   }, [salersWholeData]);
 
@@ -474,15 +498,21 @@ function UserProfile() {
                       <FormGroup>
                         <label>Activity</label>
                         <br></br>
-                        <Switch
-                          name="activity"
-                          offColor="success"
-                          offText={<i className="nc-icon nc-simple-remove" />}
-                          onColor="success"
-                          onText={<i className="nc-icon nc-check-2" />}
-                          checked={isSwitchOn}
-                          onChange={(el, value) => handleInputChange({ target: { name: el.props.name, checked: value } })}
-                        />
+                        <Input
+  name="activity"
+  type="select"
+  defaultValue={salersWholeData["is_active"] ? "Active" : "Inactive"}
+  onChange={(e) => {
+    const value = e.target.value === "Active";
+    setIsActive(value);
+  }}
+>
+  <option value="Active">Active</option>
+  <option value="Inactive">Inactive</option>
+</Input>
+
+
+
 
                       </FormGroup>
                     </Col>
@@ -536,8 +566,10 @@ function UserProfile() {
                           defaultValue={salersWholeData["manager_performance_rating"]}
                           onChange={handleInputChange}
                           placeholder="M.P.R"
-                          type="text"
+                          type="number"
+                          step="0.01"
                         />
+
                       </FormGroup>
                     </Col>
                   </Row>
