@@ -19,7 +19,10 @@ import math
 from scipy.stats import norm
 import traceback
 from django.db import models
-import csv
+import openpyxl
+import base64
+from io import BytesIO
+
 
 # Authentications
 from django.contrib.auth import authenticate
@@ -176,26 +179,70 @@ class EditCustomerView(APIView):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
-class ExportCustomersView(View):
-    # permission_classes = (IsAuthenticated,)
-    # authentication_classes = (JWTAuthentication,)
-    @csrf_exempt
+class ExportCustomersView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
     def get(self, request, *args, **kwargs):
+        def set_column_widths(worksheet):
+            for column_cells in worksheet.columns:
+                length = max(len(str(cell.value)) for cell in column_cells)
+                worksheet.column_dimensions[column_cells[0].column_letter].width = length + 2
         customers = Customers.objects.all().values()
-        # Set the response headers to indicate that we are returning a CSV file
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="customers.csv"'
-        # Create a CSV writer and write the header row
-        writer = csv.writer(response)
+        # Create a new workbook and add a worksheet
+        jalali_date= current_jalali_date().strftime('%Y-%m-%d')
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = f"Customers {jalali_date}"
+        # Write the header row
         header = ['Customer Code', 'Description', 'Quantity', 'Area Code', 'Code', 'City', 'Area']
-        writer.writerow(header)
+        for col_num, column_title in enumerate(header, 1):
+            cell = ws.cell(row=1, column=col_num)
+            cell.value = column_title
+            cell.font = openpyxl.styles.Font(bold=True)
+            cell.fill = openpyxl.styles.PatternFill(start_color='BFEFFF', end_color='BFEFFF', fill_type='solid')
+            cell.border = openpyxl.styles.Border(top=openpyxl.styles.Side(style='medium'),
+                                                 bottom=openpyxl.styles.Side(style='medium'),
+                                                 left=openpyxl.styles.Side(style='medium'),
+                                                 right=openpyxl.styles.Side(style='medium'))
         # Write the data rows
-        for customer in customers:
+        for row_num, customer in enumerate(customers, 2):
             row = [customer['customer_code'], customer['description'], customer['quantity'],
                    customer['area_code'], customer['code'], customer['city'], customer['area']]
-            writer.writerow(row)
-        return response
+            for col_num, cell_value in enumerate(row, 1):
+                cell = ws.cell(row=row_num, column=col_num)
+                cell.value = cell_value
+        # Apply some styling to the Excel file
+        for row in ws.iter_rows(min_row=1, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
+            for cell in row:
+                cell.border = openpyxl.styles.Border(top=openpyxl.styles.Side(style='thin'),
+                                                     bottom=openpyxl.styles.Side(style='thin'),
+                                                     left=openpyxl.styles.Side(style='thin'),
+                                                     right=openpyxl.styles.Side(style='thin'))
+                cell.alignment = openpyxl.styles.Alignment(horizontal='center')
+        # Set the column widths
+        set_column_widths(ws)
 
+        # Apply auto filter
+        ws.auto_filter.ref = f"A1:G{ws.max_row}"
+
+
+        # Set the response headers for an Excel file
+        buffer = BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        content = buffer.read()
+
+        # Encode the content in base64
+        base64_content = base64.b64encode(content).decode()
+
+
+        # Send the content and filename in the JSON response
+        return JsonResponse({'filename': f'customers({jalali_date}).xlsx', 'content': base64_content})
+
+
+        
+    
 
 # endregion
 
@@ -486,6 +533,81 @@ class EditSaleView(APIView):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
+class ExportSalesView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def get(self, request, *args, **kwargs):
+        def set_column_widths(worksheet):
+            for column_cells in worksheet.columns:
+                length = max(len(str(cell.value)) for cell in column_cells)
+                worksheet.column_dimensions[column_cells[0].column_letter].width = length + 2
+
+        sales = Sales.objects.all().values()
+        # Create a new workbook and add a worksheet
+        jalali_date= current_jalali_date().strftime('%Y-%m-%d')
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = f"Sales {jalali_date}"
+        # Write the header row
+        header = ['No', 'Bill Number', 'Date', 'PSR', 'Customer Code', 'Name', 'City', 'Area', 'Color Making Saler', 'Group',
+                  'Product Code', 'Product Name', 'Unit', 'Unit2', 'Kg', 'Original Value', 'Original Output Value', 'Secondary Output Value',
+                  'Price', 'Original Price', 'Discount Percentage', 'Amount Sale', 'Discount', 'Additional Sales', 'Net Sales',
+                  'Discount Percentage 2', 'Real Discount Percentage', 'Payment Cash', 'Payment Check', 'Balance', 'Saler', 'Currency Sepidar',
+                  'Dollar Sepidar', 'Currency', 'Dollar', 'Manager Rating', 'Senior Saler', 'Total Monthly Sales', 'Receipment', 'CT',
+                  'Payment Type', 'Customer Size', 'Saler Factor', 'Prim Percentage', 'Bonus Factor', 'Bonus']
+        for col_num, column_title in enumerate(header, 1):
+            cell = ws.cell(row=1, column=col_num)
+            cell.value = column_title
+            cell.font = openpyxl.styles.Font(bold=True)
+            cell.fill = openpyxl.styles.PatternFill(start_color='BFEFFF', end_color='BFEFFF', fill_type='solid')
+            cell.border = openpyxl.styles.Border(top=openpyxl.styles.Side(style='medium'),
+                                                 bottom=openpyxl.styles.Side(style='medium'),
+                                                 left=openpyxl.styles.Side(style='medium'),
+                                                 right=openpyxl.styles.Side(style='medium'))
+        ## Write the data rows
+        for row_num, sale in enumerate(sales, 2):
+            row = [sale['no'], sale['bill_number'], sale['date'].strftime('%Y-%m-%d'), sale['psr'], sale['customer_code'],
+                   sale['name'], sale['city'], sale['area'], sale['color_making_saler'], sale['group'], sale['product_code'], 
+                   sale['product_name'], sale['unit'], sale['unit2'], sale['kg'], sale['original_value'], sale['original_output_value'], 
+                   sale['secondary_output_value'], sale['price'], sale['original_price'], sale['discount_percentage'], sale['amount_sale'],
+                   sale['discount'], sale['additional_sales'], sale['net_sales'], sale['discount_percentage_2'], sale['real_discount_percentage'],
+                   sale['payment_cash'], sale['payment_check'], sale['balance'], sale['saler'], sale['currency_sepidar'], sale['dollar_sepidar'], 
+                   sale['currency'], sale['dollar'], sale['manager_rating'], sale['senior_saler'], sale['tot_monthly_sales'], sale['receipment'], 
+                   sale['ct'], sale['payment_type'], sale['customer_size'], sale['saler_factor'], sale['prim_percentage'], sale['bonus_factor'], 
+                   sale['bonus']]
+            for col_num, cell_value in enumerate(row, 1):
+                cell = ws.cell(row=row_num, column=col_num)
+                cell.value = cell_value
+        # Apply some styling to the Excel file
+        for row in ws.iter_rows(min_row=1, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
+            for cell in row:
+                cell.border = openpyxl.styles.Border(top=openpyxl.styles.Side(style='thin'),
+                                                     bottom=openpyxl.styles.Side(style='thin'),
+                                                     left=openpyxl.styles.Side(style='thin'),
+                                                     right=openpyxl.styles.Side(style='thin'))
+                cell.alignment = openpyxl.styles.Alignment(horizontal='center')
+        # Set the column widths
+        set_column_widths(ws)
+
+        # Apply auto filter
+        ws.auto_filter.ref = f"A1:AT{ws.max_row}"
+
+
+        # Set the response headers for an Excel file
+        buffer = BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        content = buffer.read()
+
+        # Encode the content in base64
+        base64_content = base64.b64encode(content).decode()
+
+
+        # Send the content and filename in the JSON response
+        return JsonResponse({'filename': f'sales({jalali_date}).xlsx', 'content': base64_content})
+
+
 
 
 # endregion
@@ -590,6 +712,66 @@ class EditWarehouseView(APIView):
 
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
+
+class ExportWarehouseView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def get(self, request, *args, **kwargs):
+        def set_column_widths(worksheet):
+            for column_cells in worksheet.columns:
+                length = max(len(str(cell.value)) for cell in column_cells)
+                worksheet.column_dimensions[column_cells[0].column_letter].width = length + 2
+
+        warehouse_items = Warehouse.objects.all().values()
+        # Create a new workbook and add a worksheet
+        jalali_date = current_jalali_date().strftime('%Y-%m-%d')
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = f"Warehouse {jalali_date}"
+        # Write the header row
+        header = ['Product Code', 'Title', 'Unit', 'Stock']
+        for col_num, column_title in enumerate(header, 1):
+            cell = ws.cell(row=1, column=col_num)
+            cell.value = column_title
+            cell.font = openpyxl.styles.Font(bold=True)
+            cell.fill = openpyxl.styles.PatternFill(start_color='BFEFFF', end_color='BFEFFF', fill_type='solid')
+            cell.border = openpyxl.styles.Border(top=openpyxl.styles.Side(style='medium'),
+                                                 bottom=openpyxl.styles.Side(style='medium'),
+                                                 left=openpyxl.styles.Side(style='medium'),
+                                                 right=openpyxl.styles.Side(style='medium'))
+        # Write the data rows
+        for row_num, item in enumerate(warehouse_items, 2):
+            row = [item['product_code'], item['title'], item['unit'], item['stock']]
+            for col_num, cell_value in enumerate(row, 1):
+                cell = ws.cell(row=row_num, column=col_num)
+                cell.value = cell_value
+        # Apply some styling to the Excel file
+        for row in ws.iter_rows(min_row=1, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
+            for cell in row:
+                cell.border = openpyxl.styles.Border(top=openpyxl.styles.Side(style='thin'),
+                                                     bottom=openpyxl.styles.Side(style='thin'),
+                                                     left=openpyxl.styles.Side(style='thin'),
+                                                     right=openpyxl.styles.Side(style='thin'))
+                cell.alignment = openpyxl.styles.Alignment(horizontal='center')
+        # Set the column widths
+        set_column_widths(ws)
+
+        # Apply auto filter
+        ws.auto_filter.ref = f"A1:D{ws.max_row}"
+
+        # Set the response headers for an Excel file
+        buffer = BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        content = buffer.read()
+
+        # Encode the content in base64
+        base64_content = base64.b64encode(content).decode()
+
+        # Send the content and filename in the JSON response
+        return JsonResponse({'filename': f'warehouse({jalali_date}).xlsx', 'content': base64_content})
+
 
 
 # endregion
@@ -702,6 +884,69 @@ class EditProductView(APIView):
 
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
+
+class ExportProductsView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def get(self, request, *args, **kwargs):
+        def set_column_widths(worksheet):
+            for column_cells in worksheet.columns:
+                length = max(len(str(cell.value)) for cell in column_cells)
+                worksheet.column_dimensions[column_cells[0].column_letter].width = length + 2
+
+        products = Products.objects.all().values()
+        # Create a new workbook and add a worksheet
+        jalali_date = current_jalali_date().strftime('%Y-%m-%d')
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = f"Products {jalali_date}"
+        # Write the header row
+        header = ['Group', 'Subgroup', 'Feature', 'Product Code (IR)', 'Product Code (TR)', 'Description (TR)', 
+                  'Description (IR)', 'Unit', 'Secondary Unit', 'Weight', 'Currency', 'Price']
+        for col_num, column_title in enumerate(header, 1):
+            cell = ws.cell(row=1, column=col_num)
+            cell.value = column_title
+            cell.font = openpyxl.styles.Font(bold=True)
+            cell.fill = openpyxl.styles.PatternFill(start_color='BFEFFF', end_color='BFEFFF', fill_type='solid')
+            cell.border = openpyxl.styles.Border(top=openpyxl.styles.Side(style='medium'),
+                                                 bottom=openpyxl.styles.Side(style='medium'),
+                                                 left=openpyxl.styles.Side(style='medium'),
+                                                 right=openpyxl.styles.Side(style='medium'))
+        # Write the data rows
+        for row_num, product in enumerate(products, 2):
+            row = [product['group'], product['subgroup'], product['feature'], product['product_code_ir'], 
+                   product['product_code_tr'], product['description_tr'], product['description_ir'], product['unit'], 
+                   product['unit_secondary'], product['weight'], product['currency'], product['price']]
+            for col_num, cell_value in enumerate(row, 1):
+                cell = ws.cell(row=row_num, column=col_num)
+                cell.value = cell_value
+        # Apply some styling to the Excel file
+        for row in ws.iter_rows(min_row=1, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
+            for cell in row:
+                cell.border = openpyxl.styles.Border(top=openpyxl.styles.Side(style='thin'),
+                                                     bottom=openpyxl.styles.Side(style='thin'),
+                                                     left=openpyxl.styles.Side(style='thin'),
+                                                     right=openpyxl.styles.Side(style='thin'))
+                cell.alignment = openpyxl.styles.Alignment(horizontal='center')
+        # Set the column widths
+        set_column_widths(ws)
+
+        # Apply auto filter
+        ws.auto_filter.ref = f"A1:L{ws.max_row}"
+
+        # Set the response headers for an Excel file
+        buffer = BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        content = buffer.read()
+
+        # Encode the content in base64
+        base64_content = base64.b64encode(content).decode()
+
+        # Send the content and filename in the JSON response
+        return JsonResponse({'filename': f'products({jalali_date}).xlsx', 'content': base64_content})
+
 
 
 

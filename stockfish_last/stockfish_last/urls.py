@@ -22,7 +22,7 @@ from stockfish_api.views import ( AddCustomersView, AddSalesView, AddProductsVie
                                  LoginView, LogoutView,
                                  TopCustomersView, TopProductsView,
                                  ExchangeRateAPIView, SalerDataView, TotalDataView, TotalDataByMonthlyView,
-                                 ExportCustomersView
+                                 ExportCustomersView, ExportSalesView, ExportWarehouseView, ExportProductsView
 
 
                                  )
@@ -82,6 +82,9 @@ urlpatterns = [
     path('daily_report/total_data_by_monthly/', TotalDataByMonthlyView.as_view(), name='total_data_by_monthly'),
 
     path('export_customers/', ExportCustomersView.as_view(), name= 'export_customers'),
+    path('export_sales/', ExportSalesView.as_view(), name= 'export_sales'),
+    path('export_warehouse/', ExportWarehouseView.as_view(), name= 'export_warehouse'),
+    path('export_products/', ExportProductsView.as_view(), name= 'export_products'),
 
 
 
