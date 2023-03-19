@@ -348,9 +348,23 @@ const DataTable = () => {
         },
       });
     
+      // Parse the JSON response
+      const data = await response.json();
+    
+      // Extract the filename and content from the JSON response
+      const filename = data.filename;
+      const base64Content = data.content;
+    
+      // Convert the base64 content to a Blob
+      const binaryContent = atob(base64Content);
+      const byteNumbers = new Array(binaryContent.length);
+      for (let i = 0; i < binaryContent.length; i++) {
+        byteNumbers[i] = binaryContent.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    
       // Create a link to download the file and simulate a click to download it
-      const filename = 'customers.csv';
-      const blob = await response.blob();
       const link = document.createElement('a');
       link.href = window.URL.createObjectURL(blob);
       link.download = filename;
