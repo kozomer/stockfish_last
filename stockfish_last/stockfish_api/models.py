@@ -195,6 +195,7 @@ class CustomerPerformance(models.Model):
     year = models.IntegerField(null=True)
     month = models.IntegerField(null=True)
     sale = models.FloatField(default=0, null=True)
+    sale_amount = models.FloatField(default=0, null=True)
 
 class ProductPerformance(models.Model):
     objects = jmodels.jManager()

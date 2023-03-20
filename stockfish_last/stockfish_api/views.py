@@ -1314,12 +1314,12 @@ def update_monthly_product_sales_with_add_sale(sender, instance, created, **kwar
     if created:
 
         monthly_sale, created = MonthlyProductSales.objects.get_or_create(
-            product_name=instance.product_name,
             product_code=instance.product_code,
             year=instance.date.year,
             month= instance.date.month
         )
 
+        monthly_sale.product_name = instance.product_name,
         monthly_sale.piece+= instance.original_output_value
         monthly_sale.sale += instance.net_sales
         monthly_sale.save()
@@ -1328,12 +1328,12 @@ def update_monthly_product_sales_with_add_sale(sender, instance, created, **kwar
 def update_monthly_product_sales_with_delete_sale(sender, instance, **kwargs):
 
     monthly_sale = MonthlyProductSales.objects.get(
-        prodct_name=instance.product_name,
         product_code=instance.product_code,
         year=instance.date.year,
         month= instance.date.month
         )
 
+    monthly_sale.product_name = instance.product_name,
     monthly_sale.piece -= instance.original_output_value
     monthly_sale.sale -= instance.net_sales
     monthly_sale.save()
@@ -1352,10 +1352,11 @@ def update_customer_performance_with_add_sale(sender, instance, created, **kwarg
         find_month = instance.date.month
         find_year = instance.date.year
         customer_performance, created = CustomerPerformance.objects.get_or_create(
-             year= find_year, month = find_month, customer_code = instance.customer_code, customer_name = instance.name
+             year= find_year, month = find_month, customer_code = instance.customer_code
         )
 
         # Update the sale value for the CustomerPerformance object
+        customer_performance.customer_name = instance.name
         customer_performance.sale += instance.net_sales
         customer_performance.save()
 
@@ -1365,10 +1366,11 @@ def update_customer_performance_with_delete_sale(sender, instance, **kwargs):
     find_month = instance.date.month
     find_year = instance.date.year
     customer_performance = CustomerPerformance.objects.get(
-            year= find_year, month = find_month, customer_code = instance.customer_code, customer_name = instance.name
+            year= find_year, month = find_month, customer_code = instance.customer_code
     )
 
     # Update the sale value for the CustomerPerformance object
+    customer_performance.customer_name = instance.name
     customer_performance.sale -= instance.net_sales
     customer_performance.save()
 
@@ -1390,20 +1392,20 @@ class TopCustomersView(APIView):
             top_5_customer_data = CustomerPerformance.objects.filter(month=date_month, year=date_year).order_by('-sale')[:5]
             
             # Calculate the total sales for the current month
-            total_sales = CustomerPerformance.objects.filter(month=date_month, year=date_year).aggregate(total_sales=Sum('sale'))
-            total_sales= total_sales["total_sales"]
-            
-            # Get the sales data for the top 5 customers and calculate their total sales
-            top_customers_list = [[d.customer_name, d.sale] for d in top_5_customer_data]
-            top_customers_sale_sum = [d[1] for d in top_customers_list ]
-            top_5_customer_total_sale = sum(top_customers_sale_sum)
-            
-            # Calculate the sales for the remaining customers
-            others_sales = total_sales - top_5_customer_total_sale
-            
-            # Create a list of sales data for the top 5 customers and others for the pie chart
-            top_customers_pie_chart = [[d[0], (d[1]/total_sales)*100] for d in top_customers_list]
-            top_customers_pie_chart.append(["others", (others_sales/total_sales*100)])
+            total_sales = CustomerPerformance.objects.filter(month=date_month, year=date_year).aggregate(total_sales=Sum('sale'))['total_sales']
+            if total_sales is not None:
+                # Calculate the sales data for the top 5 customers and others
+                top_customers_list = [[d.customer_name, d.sale] for d in top_5_customer_data]
+                top_customers_sale_sum = [d[1] for d in top_customers_list]
+                top_5_customer_total_sale = sum(top_customers_sale_sum)
+                others_sales = total_sales - top_5_customer_total_sale
+
+                # Create a list of sales data for the top 5 customers and others for the pie chart
+                top_customers_pie_chart = [[d[0], (d[1]/total_sales)*100] for d in top_customers_list]
+                top_customers_pie_chart.append(["others", (others_sales/total_sales*100)])
+            else:
+                # Handle the case when there is no sales data available
+                top_customers_pie_chart = [["No data available", 100]]
         
         elif report_type == 'yearly':
             top_customers_list = []
@@ -1415,20 +1417,21 @@ class TopCustomersView(APIView):
             top_5_customer_data = CustomerPerformance.objects.filter(year=date).order_by('-sale')[:5]
             
             # Calculate the total sales for the current year
-            total_sales = CustomerPerformance.objects.filter(year=date).aggregate(total_sales=Sum('sale'))
-            total_sales= total_sales["total_sales"]
-            
-            # Get the sales data for the top 5 customers and calculate their total sales
-            top_customers_list = [[d.customer_name, d.sale] for d in top_5_customer_data]
-            top_customers_sale_sum = [d[1] for d in top_customers_list ]
-            top_5_customer_total_sale = sum(top_customers_sale_sum)
-            
-            # Calculate the sales for the remaining customers
-            others_sales = total_sales - top_5_customer_total_sale
-            
-            # Create a list of sales data for the top 5 customers and others for the pie chart
-            top_customers_pie_chart = [[d[0], (d[1]/total_sales)*100] for d in top_customers_list]
-            top_customers_pie_chart.append(["others", (others_sales/total_sales*100)])
+            total_sales = CustomerPerformance.objects.filter(year=date).aggregate(total_sales=Sum('sale'))['total_sales']
+            if total_sales is not None:
+                # Calculate the sales data for the top 5 customers and others
+                top_customers_list = [[d.customer_name, d.sale] for d in top_5_customer_data]
+                top_customers_sale_sum = [d[1] for d in top_customers_list ]
+                top_5_customer_total_sale = sum(top_customers_sale_sum)
+                others_sales = total_sales - top_5_customer_total_sale
+                
+                # Create a list of sales data for the top 5 customers and others for the pie chart
+                top_customers_pie_chart = [[d[0], (d[1]/total_sales)*100] for d in top_customers_list]
+                top_customers_pie_chart.append(["others", (others_sales/total_sales*100)])
+            else:
+                # Handle the case when there is no sales data available
+                top_customers_pie_chart = [["No data available", 100]]
+        
         return JsonResponse({"top_customers_list": top_customers_list,"top_customers_pie_chart": top_customers_pie_chart}, safe=False)
 
 # endregion
@@ -1443,10 +1446,11 @@ def update_product_performance_with_add_sale(sender, instance, created, **kwargs
         find_month = instance.date.month
         find_year = instance.date.year
         product_performance, created = ProductPerformance.objects.get_or_create(
-             year= find_year, month = find_month, product_code = instance.product_code, product_name = instance.product_name
+             year= find_year, month = find_month, product_code = instance.product_code
         )
 
         # Update the sale value for the ProductPerformance object
+        product_performance.product_name = instance.product_name
         product_performance.sale_amount += instance.original_output_value
         product_performance.sale += instance.net_sales
         product_performance.save()
@@ -1457,10 +1461,11 @@ def update_product_performance_with_delete_sale(sender, instance, **kwargs):
     find_month = instance.date.month
     find_year = instance.date.year
     product_performance = ProductPerformance.objects.get(
-            year= find_year, month = find_month, product_code = instance.product_code, product_name = instance.product_name
+            year= find_year, month = find_month, product_code = instance.product_code
     )
 
     # Update the sale value for the ProductPerformance object
+    product_performance.product_name = instance.product_name
     product_performance.sale_amount -= instance.original_output_value
     product_performance.sale -= instance.net_sales
     product_performance.save()
@@ -1483,20 +1488,20 @@ class TopProductsView(APIView):
             top_5_product_data = ProductPerformance.objects.filter(month=date_month, year=date_year).order_by('-sale')[:5]
             
             # Calculate the total sales for the current month
-            total_sales = ProductPerformance.objects.filter(month=date_month, year=date_year).aggregate(total_sales=Sum('sale'))
-            total_sales= total_sales["total_sales"]
-            
-            # Get the sales data for the top 5 products and calculate their total sales
-            top_products_list = [[d.product_name, d.sale] for d in top_5_product_data]
-            top_products_sale_sum = [d[1] for d in top_products_list ]
-            top_5_product_total_sale = sum(top_products_sale_sum)
-            
-            # Calculate the sales for the remaining products
-            others_sales = total_sales - top_5_product_total_sale
-            
-            # Create a list of sales data for the top 5 products and others for the pie chart
-            top_products_pie_chart = [[d[0], (d[1]/total_sales)*100] for d in top_products_list]
-            top_products_pie_chart.append(["others", (others_sales/total_sales*100)])
+            total_sales = ProductPerformance.objects.filter(month=date_month, year=date_year).aggregate(total_sales=Sum('sale'))['total_sales']
+            if total_sales is not None:
+                # Calculate the sales data for the top 5 products and others
+                top_products_list = [[d.product_name, d.sale] for d in top_5_product_data]
+                top_products_sale_sum = [d[1] for d in top_products_list ]
+                top_5_product_total_sale = sum(top_products_sale_sum)
+                others_sales = total_sales - top_5_product_total_sale
+
+                # Create a list of sales data for the top 5 products and others for the pie chart
+                top_products_pie_chart = [[d[0], (d[1]/total_sales)*100] for d in top_products_list]
+                top_products_pie_chart.append(["others", (others_sales/total_sales*100)])
+            else:
+                # Handle the case when there is no sales data available
+                top_products_pie_chart = [["No data available", 100]]
         
         elif report_type == 'yearly':
             top_products_list = []
@@ -1508,20 +1513,21 @@ class TopProductsView(APIView):
             top_5_product_data = ProductPerformance.objects.filter(year=date).order_by('-sale')[:5]
             
             # Calculate the total sales for the current year
-            total_sales = ProductPerformance.objects.filter(year=date).aggregate(total_sales=Sum('sale'))
-            total_sales= total_sales["total_sales"]
-            
-            # Get the sales data for the top 5 products and calculate their total sales
-            top_products_list = [[d.product_name, d.sale] for d in top_5_product_data]
-            top_products_sale_sum = [d[1] for d in top_products_list ]
-            top_5_product_total_sale = sum(top_products_sale_sum)
-            
-            # Calculate the sales for the remaining products
-            others_sales = total_sales - top_5_product_total_sale
-            
-            # Create a list of sales data for the top 5 products and others for the pie chart
-            top_products_pie_chart = [[d[0], (d[1]/total_sales)*100] for d in top_products_list]
-            top_products_pie_chart.append(["others", (others_sales/total_sales*100)])
+            total_sales = ProductPerformance.objects.filter(year=date).aggregate(total_sales=Sum('sale'))['total_sales']
+            if total_sales is not None:
+                # Calculate the sales data for the top 5 products and others
+                top_products_list = [[d.product_name, d.sale] for d in top_5_product_data]
+                top_products_sale_sum = [d[1] for d in top_products_list ]
+                top_5_product_total_sale = sum(top_products_sale_sum)
+                others_sales = total_sales - top_5_product_total_sale
+
+                # Create a list of sales data for the top 5 products and others for the pie chart
+                top_products_pie_chart = [[d[0], (d[1]/total_sales)*100] for d in top_products_list]
+                top_products_pie_chart.append(["others", (others_sales/total_sales*100)])
+            else:
+                # Handle the case when there is no sales data available
+                top_products_pie_chart = [["No data available", 100]]
+        
         return JsonResponse({"top_products_list": top_products_list,"top_products_pie_chart": top_products_pie_chart}, safe=False)
 
 # endregion
