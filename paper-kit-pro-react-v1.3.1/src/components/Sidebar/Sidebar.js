@@ -14,7 +14,7 @@
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 */
-import React from "react";
+import React,{useState, useEffect} from "react";
 import { NavLink } from "react-router-dom";
 import { Nav, Collapse, Button } from "reactstrap";
 // javascript plugin used to create scrollbars on windows
@@ -32,6 +32,8 @@ function Sidebar(props) {
   const [collapseStates, setCollapseStates] = React.useState({});
   const sidebar = React.useRef();
   const history = useHistory(); // get the history object
+  const [name, setName] = useState("");
+  const [LastName, setLastName] = useState("");
   // this creates the intial state of this component based on the collapse routes
   // that it gets through props.routes
   const getCollapseStates = (routes) => {
@@ -192,6 +194,19 @@ function Sidebar(props) {
     }
     
   }
+
+
+  useEffect(() => {
+    async function fetchData() {
+      const firstName = await localforage.getItem('first_name');
+      console.log(firstName)
+      const lastName = await localforage.getItem("last_name");
+      console.log(lastName)
+      setName(firstName);
+      setLastName(lastName)
+    }
+    fetchData();
+  }, []);
   return (
     <div
       className="sidebar"
@@ -228,7 +243,7 @@ function Sidebar(props) {
               onClick={() => setOpenAvatar(!openAvatar)}
             >
               <span>
-                Hakan Ozcan
+              {name} {LastName}
                 <b className="caret" />
               </span>
             </a>

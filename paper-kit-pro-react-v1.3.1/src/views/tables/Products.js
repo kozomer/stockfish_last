@@ -352,6 +352,41 @@ const DataTable = () => {
           setIsUpdated(true)
       }
     }, [editData])
+
+
+    async function handleExportClick() {
+      // Retrieve the access token from localForage
+      const access_token = await localforage.getItem('access_token');
+    
+      // Make an AJAX request to the backend to download the CSV file
+      const response = await fetch('http://127.0.0.1:8000/export_products/', {
+        headers: {
+          'Authorization': 'Bearer '+ String(access_token)
+        },
+      });
+    
+      // Parse the JSON response
+      const data = await response.json();
+    
+      // Extract the filename and content from the JSON response
+      const filename = data.filename;
+      const base64Content = data.content;
+    
+      // Convert the base64 content to a Blob
+      const binaryContent = atob(base64Content);
+      const byteNumbers = new Array(binaryContent.length);
+      for (let i = 0; i < binaryContent.length; i++) {
+        byteNumbers[i] = binaryContent.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    
+      // Create a link to download the file and simulate a click to download it
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+    }
     
   return (
     <>
@@ -504,22 +539,36 @@ const DataTable = () => {
               </CardHeader>
               <CardBody >
 
-                <div className='top-right'>
-                {!showUploadDiv && ( 
-                   <Button  className="my-button-class" color="primary" onClick={handleAddFileClick}>Add File</Button>
-                   )}
-                   {showUploadDiv && (
-                    <div>
-                  <input type='file' className='custom-file-upload' onChange={handleFileInputChange} />
-                  <Button color='primary' className='btn-upload' onClick={handleUploadClick} disabled={!file} active={!file}>
-                    Upload
-                  </Button>
-                  <div className="spinner-container">
-                  {isLoading && <div className="loading-spinner"></div>}
-                  </div>
-                  </div>
-                   )}
-                </div>
+              <div className="upload-container">
+  {!showUploadDiv && (
+    <div>
+      <div className="export-button-container">
+        <Button className="my-button-class" color="primary" onClick={handleExportClick}>
+          Export
+        </Button>
+      </div>
+      <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
+        Add File
+      </Button>
+    </div>
+  )}
+  {showUploadDiv && (
+    <div>
+      <div className="export-button-container">
+        <Button className="my-button-class" color="primary" onClick={handleExportClick}>
+          Export
+        </Button>
+      </div>
+      <input type="file" className="custom-file-upload" onChange={handleFileInputChange} />
+      <Button color="primary" className="btn-upload" onClick={handleUploadClick} disabled={!file} active={!file}>
+        Upload
+      </Button>
+      <div className="spinner-container">
+        {isLoading && <div className="loading-spinner"></div>}
+      </div>
+    </div>
+  )}
+</div>
                 <ReactTable
                   data={dataTable.map((row,index) => ({
                     id: row.id,

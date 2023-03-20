@@ -37,6 +37,7 @@ import {
 
 import localforage from 'localforage';
 import '../../assets/css/Table.css';
+import { FaFirstAid } from "react-icons/fa";
 
 
 function Login({ history }) {
@@ -70,8 +71,9 @@ function Login({ history }) {
       }
 
       const data = await response.json();
-      const { access, refresh } = data;
-
+      console.log(data)
+      const { access, refresh,first_name,last_name } = data;
+      console.log(first_name,last_name)
       if (response.ok) {
         // if login is successful, store the token in local storage
         console.log("sadasd"),
@@ -81,6 +83,8 @@ function Login({ history }) {
         }, 500); // wait for 2 seconds before navigating to home page
         await localforage.setItem("access_token", access);
         await localforage.setItem("refresh_token", refresh);
+        await localforage.setItem("first_name", first_name);
+        await localforage.setItem("last_name", last_name);
       }
     } catch (error) {
       console.log(error.message);
