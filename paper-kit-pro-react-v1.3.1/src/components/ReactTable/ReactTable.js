@@ -125,19 +125,19 @@ function Table({ columns, data }) {
     <>
       <div className="ReactTable -striped -highlight primary-pagination"  >
         <div className="pagination-top"  >
-          <div className="-pagination" style={{  width: "600px",marginRight:"200px"}}>
+          <div className="-pagination">
             <div className="-previous" >
               <button
                 type="button"
                 onClick={() => previousPage()}
                 disabled={!canPreviousPage}
                 className="-btn"
-                style={{ width: "100px", height: "38px" }}
+               
               >
                 Previous
               </button>
             </div>
-            <div className="-center" style={{display:"flex",marginLeft:"5px"}}>
+            <div className="-center" >
               <Container fluid >
                 <Row className="justify-content-center" >
                  <div>
@@ -163,8 +163,7 @@ function Table({ columns, data }) {
                       styles={{
                         control: (provided, state) => ({
                           ...provided,
-                          width: "150px",
-                          height: "40px"
+                        
                         })
                       }}
                     />
@@ -190,7 +189,7 @@ function Table({ columns, data }) {
                         };
                       })}
                       placeholder="Choose Rows"
-                      style={{width:"200px"}}
+                     
                     />
                   </Col>
                   </div>
@@ -203,7 +202,7 @@ function Table({ columns, data }) {
                 onClick={() => nextPage()}
                 disabled={!canNextPage}
                 className="-btn"
-                style={{ width: "100px", height: "38px" }}
+                
               >
                 Next
               </button>

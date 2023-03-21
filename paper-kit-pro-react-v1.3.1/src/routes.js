@@ -321,6 +321,7 @@ const routes = [
     component: Calendar,
     layout: "/admin"
   }
+  
 ];
 
 export default routes;

@@ -42,6 +42,7 @@ import {
 
 import {notifications} from '../../views/Dashboard';
 
+import FixedPlugin from "../FixedPlugin/FixedPlugin";
 import localforage from 'localforage';
 
 function AdminNavbar(props) {
@@ -52,7 +53,25 @@ function AdminNavbar(props) {
   const [modalOpen, setModalOpen] = useState(false);
    
   const unreadCount=notifications.filter(notification => !notification.read).length;
+  const [sidebarBgColor, setSidebarBgColor] = useState("black");
+const [sidebarActiveColor, setSidebarActiveColor] = useState("primary");
+const [sidebarMini, setSidebarMini] = useState(false);
+const [showFixedPlugin, setShowFixedPlugin] = useState(false);
+const handleBgClick = (color) => {
+  setSidebarBgColor(color);
+  };
+  
+  const handleActiveClick = (color) => {
+  setSidebarActiveColor(color);
+  };
+  
+  const handleMiniClick = (value) => {
+  setSidebarMini(value);
+  };
 
+  const toggleFixedPlugin = () => {
+    setShowFixedPlugin(!showFixedPlugin);
+  };
   useEffect(() => {
     
   }, [unreadCount]);
@@ -194,8 +213,7 @@ function AdminNavbar(props) {
                   </p>
                 </NavLink>
               </NavItem>
-             
-
+            
 <UncontrolledDropdown className="btn-rotate" nav isOpen={dropdownOpen} toggle={handleBellClick}>
   <DropdownToggle
     aria-haspopup={true}
@@ -234,18 +252,28 @@ function AdminNavbar(props) {
   </DropdownMenu>
 </UncontrolledDropdown>
       
-              <NavItem>
-                <NavLink
-                  className="btn-rotate"
-                  href="#pablo"
-                  onClick={(e) => e.preventDefault()}
-                >
-                  <i className="nc-icon nc-settings-gear-65" />
-                  <p>
-                    <span className="d-lg-none d-md-block">Account</span>
-                  </p>
-                </NavLink>
-              </NavItem>
+<NavItem>
+      <NavLink
+        className="btn-rotate"
+        href="#pablo"
+        onClick={toggleFixedPlugin}
+      >
+        <i className="nc-icon nc-settings-gear-65" />
+        <p>
+          <span className="d-lg-none d-md-block">Account</span>
+        </p>
+      </NavLink>
+      {showFixedPlugin && (
+        <FixedPlugin
+          bgColor={sidebarBgColor}
+          activeColor={sidebarActiveColor}
+          sidebarMini={sidebarMini}
+          handleBgClick={handleBgClick}
+          handleActiveClick={handleActiveClick}
+          handleMiniClick={handleMiniClick}
+        />
+      )}
+    </NavItem>
             </Nav>
           </Collapse>
         </Container>

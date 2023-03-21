@@ -110,10 +110,14 @@ const DataTable = () => {
           }
         })
           .then((response) => response.json())
-          console.log(response)
+          
           .then((data) => setDataTable(data));
-          setShowUploadDiv(false);
+          
       })
+      .finally(() => {
+        setShowUploadDiv(false);
+        
+      });
     
     }
     })
@@ -470,47 +474,61 @@ const DataTable = () => {
                 </Button>
               </CardFooter>
             </Card>
+            
             </div>
 )}
 
-      
+<Card>
+  <CardHeader>
+    <CardTitle tag='h4'>CUSTOMERS</CardTitle>
+  </CardHeader>
+  <CardBody>
+    <div className="upload-container">
+      {!showUploadDiv && (
+        <div className="d-flex justify-content-between align-items-center">
+          <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
+            <i className="fa fa-plus-circle mr-1"></i>
+            Add File
+          </Button>
+          <Button className="my-button-class" color="primary" onClick={handleExportClick}>
+            <i className="fa fa-download mr-1"></i>
+            Export
+          </Button>
+        </div>
+      )}
+      {showUploadDiv && (
+        <div>
+          <div className="d-flex justify-content-between align-items-center">
+            <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
+              <i className="fa fa-plus-circle mr-1"></i>
+              Add File
+            </Button>
+            <Button className="my-button-class" color="primary" onClick={handleExportClick}>
+              <i className="fa fa-download mr-1"></i>
+              Export
+            </Button>
+          </div>
+          <div className="mt-3">
+            <input type="file" className="custom-file-upload" onChange={handleFileInputChange} />
+            <Button color="primary" className="btn-upload" onClick={handleUploadClick} disabled={!file} active={!file}>
+              Upload
+            </Button>
+            <div className="spinner-container">
+              {isLoading && <div className="loading-spinner"></div>}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  </CardBody>
+</Card>
+
         <Row>
           <Col md='12'>
             <Card>
-              <CardHeader>
-                <CardTitle tag='h4'>CUSTOMERS</CardTitle>
-              </CardHeader>
+              
               <CardBody>
-              <div className="upload-container">
-  {!showUploadDiv && (
-    <div>
-      <div className="export-button-container">
-        <Button className="my-button-class" color="primary" onClick={handleExportClick}>
-          Export
-        </Button>
-      </div>
-      <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
-        Add File
-      </Button>
-    </div>
-  )}
-  {showUploadDiv && (
-    <div>
-      <div className="export-button-container">
-        <Button className="my-button-class" color="primary" onClick={handleExportClick}>
-          Export
-        </Button>
-      </div>
-      <input type="file" className="custom-file-upload" onChange={handleFileInputChange} />
-      <Button color="primary" className="btn-upload" onClick={handleUploadClick} disabled={!file} active={!file}>
-        Upload
-      </Button>
-      <div className="spinner-container">
-        {isLoading && <div className="loading-spinner"></div>}
-      </div>
-    </div>
-  )}
-</div>
+              
 
 
                 <ReactTable

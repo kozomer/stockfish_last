@@ -49,19 +49,6 @@
  
 }
 
-.pagination-top {
-  position: absolute;
-
-  top: -51px;
-  right: -150px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-
-  
-  padding: 0 10px;
-  box-sizing: border-box;
-}
 
 
 
@@ -148,17 +135,8 @@
 }
 
 
-.upload-container {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-}
 
-@media (max-width: 1000px) {
-  .pagination-top {
-  background-color: blue;
-  }
-}
+
 
 
 .scrollable-table tbody {

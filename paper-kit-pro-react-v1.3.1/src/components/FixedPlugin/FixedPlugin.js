@@ -1,34 +1,32 @@
-/*!
-
-=========================================================
-* Paper Dashboard PRO React - v1.3.1
-=========================================================
-
-* Product Page: https://www.creative-tim.com/product/paper-dashboard-pro-react
-* Copyright 2022 Creative Tim (https://www.creative-tim.com)
-
-* Coded by Creative Tim
-
-=========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-*/
-import React, { Component } from "react";
-// react plugin used to create switch buttons
+import React, { useState } from "react";
 import Switch from "react-bootstrap-switch";
-
-import { Button } from "reactstrap";
+import { Button, NavItem, NavLink } from "reactstrap";
 
 function FixedPlugin(props) {
-  const [classes, setClasses] = React.useState("dropdown show");
+  const [classes, setClasses] = useState("dropdown");
+  const [darkMode, setDarkMode] = useState(false);
+
   const handleClick = () => {
-    if (classes === "dropdown") {
-      setClasses("dropdown show");
+    console.log("sdadas")
+    setClasses((prevState) => {
+      return prevState === "dropdown" ? "dropdown show" : "dropdown";
+    });
+  };
+
+  const handleDarkMode = () => {
+    setDarkMode(!darkMode);
+    if (darkMode) {
+      // If dark mode is being turned off, set the colors back to the default
+      props.handleBgClick("white");
+      props.handleActiveClick("primary");
     } else {
-      setClasses("dropdown");
+      // If dark mode is being turned on, set the colors to a dark theme
+      props.handleBgClick("black");
+      props.handleActiveClick("danger");
     }
   };
+  
+
   return (
     <div className="fixed-plugin">
       <div className={classes}>
@@ -40,33 +38,21 @@ function FixedPlugin(props) {
           <li className="adjustments-line">
             <div className="badge-colors text-center">
               <span
-                className={
-                  props.bgColor === "black"
-                    ? "badge filter badge-dark active"
-                    : "badge filter badge-dark"
-                }
+                className={props.bgColor === "black" ? "badge filter badge-dark active" : "badge filter badge-dark"}
                 data-color="black"
                 onClick={() => {
                   props.handleBgClick("black");
                 }}
               />
               <span
-                className={
-                  props.bgColor === "brown"
-                    ? "badge filter badge-default active"
-                    : "badge filter badge-default"
-                }
+                className={props.bgColor === "brown" ? "badge filter badge-default active" : "badge filter badge-default"}
                 data-color="black"
                 onClick={() => {
                   props.handleBgClick("brown");
                 }}
               />
               <span
-                className={
-                  props.bgColor === "white"
-                    ? "badge filter badge-light active"
-                    : "badge filter badge-light"
-                }
+                className={props.bgColor === "white" ? "badge filter badge-light active" : "badge filter badge-light"}
                 data-color="white"
                 onClick={() => {
                   props.handleBgClick("white");
@@ -145,44 +131,22 @@ function FixedPlugin(props) {
               />
             </div>
           </li>
-          <li className="button-container">
-            <Button
-              href="https://www.creative-tim.com/product/paper-dashboard-pro-react"
-              color="primary"
-              block
-              className="btn-round"
-              target="_blank"
-            >
-              Buy now
-            </Button>
-          </li>
-          <li className="button-container">
-            <Button
-              href="https://demos.creative-tim.com/paper-dashboard-pro-react/#/documentation/tutorial"
-              color="default"
-              block
-              className="btn-round"
-              outline
-              target="_blank"
-            >
-              <i className="nc-icon nc-paper" /> Documentation
-            </Button>
-          </li>
-          <li className="button-container">
-            <Button
-              href="https://www.creative-tim.com/product/paper-dashboard-react"
-              color="info"
-              block
-              className="btn-round"
-              target="_blank"
-            >
-              Get free version
-            </Button>
+          <li className="header-title">DARK MODE</li>
+          <li className="adjustments-line">
+            <div className="togglebutton switch-change-color">
+              <Switch
+                onChange={handleDarkMode}
+                value={darkMode}
+                onColor="dark"
+                offColor="light"
+              />
+            </div>
           </li>
         </ul>
       </div>
     </div>
-  );
-}
-
-export default FixedPlugin;
+    );
+  }
+  
+  export default FixedPlugin;
+    

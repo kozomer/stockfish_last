@@ -64,39 +64,44 @@ const handleAddFileClick = () => {
       body: formData,
       credentials: 'include',
       headers: {
-        
         'Authorization': 'Bearer '+ String(access_token)
       }
     })
-      .then((response) => {
-        if (!response.ok) {
-          return response.json().then(data => {
-            console.log(data.error)
-            setIsLoading(false);
-            errorUpload(data.error);
-          });
-        }
-        console.log(response);
-        setIsLoading(false);
-        successUpload();
-
-        fetch('http://127.0.0.1:8000/warehouse/',{
-          headers: {
-            'Authorization': 'Bearer '+ String(access_token)
-          }
-        })
+    .then((response) => {
+      if (!response.ok) {
+        return response.json().then(data => {
+          console.log(data.error)
+          setIsLoading(false);
+          errorUpload(data.error);
+        });
+      }
+      else{
+        return response.json().then(data => {
+          setIsLoading(false);
+          successUpload(data.message);
+          fetch('http://127.0.0.1:8000/warehouse/',{
+            headers: {
+              'Authorization': 'Bearer '+ String(access_token)
+            }
+          })
           .then((response) => response.json())
-          .then((data) => setDataTable(data));
-          setShowUploadDiv(false)
-          
-      })
-      .catch((error) => {
-        console.error(error);
-        setIsLoading(true);
-       
-      });
-    
+          .then((data) =>{
+             setDataTable(data)
+             console.log(data.message)});
+        });
+      }
+    })
+    .catch((error) => {
+      console.error(error.message); // the error message returned by the server
+      setIsLoading(false);
+      errorUpload(e);
+    })
+    .finally(() => {
+      setShowUploadDiv(false);
+      
+    });
   };
+  
   const handleClick = (row) => {
      
     setEditData(row);
@@ -163,7 +168,7 @@ const handleAddFileClick = () => {
     );
     setRenderEdit(true)
   };
-  const successUpload = () => {
+  const successUpload = (s) => {
     setAlert(
       <ReactBSAlert
         success
@@ -174,7 +179,7 @@ const handleAddFileClick = () => {
         confirmBtnBsStyle="info"
         btnSize=""
       >
-        Your file has been successfully uploaded!
+        {s}
       </ReactBSAlert>
     );
   };
@@ -410,44 +415,57 @@ const handleAddFileClick = () => {
             </Card>
             </div>
 )}
+
+<Card>
+  <CardHeader>
+    <CardTitle tag='h4'>WAREHOUSE</CardTitle>
+  </CardHeader>
+  <CardBody>
+    <div className="upload-container">
+      {!showUploadDiv && (
+        <div className="d-flex justify-content-between align-items-center">
+          <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
+            <i className="fa fa-plus-circle mr-1"></i>
+            Add File
+          </Button>
+          <Button className="my-button-class" color="primary" onClick={handleExportClick}>
+            <i className="fa fa-download mr-1"></i>
+            Export
+          </Button>
+        </div>
+      )}
+      {showUploadDiv && (
+        <div>
+          <div className="d-flex justify-content-between align-items-center">
+            <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
+              <i className="fa fa-plus-circle mr-1"></i>
+              Add File
+            </Button>
+            <Button className="my-button-class" color="primary" onClick={handleExportClick}>
+              <i className="fa fa-download mr-1"></i>
+              Export
+            </Button>
+          </div>
+          <div className="mt-3">
+            <input type="file" className="custom-file-upload" onChange={handleFileInputChange} />
+            <Button color="primary" className="btn-upload" onClick={handleUploadClick} disabled={!file} active={!file}>
+              Upload
+            </Button>
+            <div className="spinner-container">
+              {isLoading && <div className="loading-spinner"></div>}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  </CardBody>
+</Card>
         <Row>
           <Col md='12'>
             <Card>
-              <CardHeader>
-                <CardTitle tag='h4'>WAREHOUSE</CardTitle>
-              </CardHeader>
+             
               <CardBody>
              
-              <div className="upload-container">
-  {!showUploadDiv && (
-    <div>
-      <div className="export-button-container">
-        <Button className="my-button-class" color="primary" onClick={handleExportClick}>
-          Export
-        </Button>
-      </div>
-      <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
-        Add File
-      </Button>
-    </div>
-  )}
-  {showUploadDiv && (
-    <div>
-      <div className="export-button-container">
-        <Button className="my-button-class" color="primary" onClick={handleExportClick}>
-          Export
-        </Button>
-      </div>
-      <input type="file" className="custom-file-upload" onChange={handleFileInputChange} />
-      <Button color="primary" className="btn-upload" onClick={handleUploadClick} disabled={!file} active={!file}>
-        Upload
-      </Button>
-      <div className="spinner-container">
-        {isLoading && <div className="loading-spinner"></div>}
-      </div>
-    </div>
-  )}
-</div>
                 <ReactTable
                   data={dataTable.map((row, key) => ({
                     id: key,

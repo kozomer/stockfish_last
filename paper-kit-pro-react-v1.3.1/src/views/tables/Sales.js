@@ -146,7 +146,11 @@ const [bonus, setBonus] = useState(null);
     .catch((error) => {
       console.error(error.message); // the error message returned by the server
       setIsLoading(false);
-      errorUpload();
+      errorUpload(e);
+    })
+    .finally(() => {
+      setShowUploadDiv(false);
+      
     });
   };
   
@@ -928,42 +932,54 @@ const [bonus, setBonus] = useState(null);
             </Card>
             </div>
 )}
+<Card>
+  <CardHeader>
+    <CardTitle tag='h4'>SALES</CardTitle>
+  </CardHeader>
+  <CardBody>
+    <div className="upload-container">
+      {!showUploadDiv && (
+        <div className="d-flex justify-content-between align-items-center">
+          <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
+            <i className="fa fa-plus-circle mr-1"></i>
+            Add File
+          </Button>
+          <Button className="my-button-class" color="primary" onClick={handleExportClick}>
+            <i className="fa fa-download mr-1"></i>
+            Export
+          </Button>
+        </div>
+      )}
+      {showUploadDiv && (
+        <div>
+          <div className="d-flex justify-content-between align-items-center">
+            <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
+              <i className="fa fa-plus-circle mr-1"></i>
+              Add File
+            </Button>
+            <Button className="my-button-class" color="primary" onClick={handleExportClick}>
+              <i className="fa fa-download mr-1"></i>
+              Export
+            </Button>
+          </div>
+          <div className="mt-3">
+            <input type="file" className="custom-file-upload" onChange={handleFileInputChange} />
+            <Button color="primary" className="btn-upload" onClick={handleUploadClick} disabled={!file} active={!file}>
+              Upload
+            </Button>
+            <div className="spinner-container">
+              {isLoading && <div className="loading-spinner"></div>}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  </CardBody>
+</Card>
             <Card >
-              <CardHeader>
-                <CardTitle tag='h4'>SALES</CardTitle>
-              </CardHeader>
+             
               <CardBody >
 
-              <div className="upload-container">
-  {!showUploadDiv && (
-    <div>
-      <div className="export-button-container">
-        <Button className="my-button-class" color="primary" onClick={handleExportClick}>
-          Export
-        </Button>
-      </div>
-      <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
-        Add File
-      </Button>
-    </div>
-  )}
-  {showUploadDiv && (
-    <div>
-      <div className="export-button-container">
-        <Button className="my-button-class" color="primary" onClick={handleExportClick}>
-          Export
-        </Button>
-      </div>
-      <input type="file" className="custom-file-upload" onChange={handleFileInputChange} />
-      <Button color="primary" className="btn-upload" onClick={handleUploadClick} disabled={!file} active={!file}>
-        Upload
-      </Button>
-      <div className="spinner-container">
-        {isLoading && <div className="loading-spinner"></div>}
-      </div>
-    </div>
-  )}
-</div>
                 <ReactTable
                   data={dataTable.map((row,index) => ({
                     id: row.id,
@@ -973,41 +989,46 @@ const [bonus, setBonus] = useState(null);
                     psr: row[3],
                     customer_code: row[4],
                     name: row[5],
-                    area: row[6],
-                    group: row[7],
-                    good_code: row[8],
-                    goods: row[9],
-                    unit: row[10],
-                    original_value: row[11],
-                    original_output_value: row[12],
-                    secondary_output_value: row[13],
-                    price: row[14],
-                    original_price: row[15],
-                    discount_percentage: row[16],
-                    amount_sale: row[17],
-                    discount: row[18],
-                    additional_sales: row[19],
-                    net_sales: row[20],
-                    discount_percentage_2: row[21],
-                    real_discount_percentage: row[22],
-                    payment_cash: row[23],
-                    payment_check: row[24],
-                    balance: row[25],
-                    saler: row[26],
-                    currency: row[27],
-                    dollar: row[28],
-                    manager_rating: row[29],
-                    senior_saler: row[30],
-                    tot_monthly_sales: row[31],
-                    receipment: row[32],
-                    ct: row[33],
-                    payment_type: row[34],
-                    costumer_size: row[35],
-                    saler_factor: row[35],
-                    prim_percentage: row[36],
-                    bonus_factor: row[37],
-                    bonus: row[38],
-                    
+                    city: row[6],
+                    area: row[7],
+                    color_making_saler: row[8],
+                    group: row[9],
+                    good_code: row[10],
+                    goods: row[11],
+                    unit: row[12],
+                    unit2: row[13],
+                    kg: row[14],
+                    original_value: row[15],
+                    original_output_value: row[16],
+                    secondary_output_value: row[17],
+                    price: row[18],
+                    original_price: row[19],
+                    discount_percentage: row[20],
+                    amount_sale: row[21],
+                    discount: row[22],
+                    additional_sales: row[23],
+                    net_sales: row[24],
+                    discount_percentage_2: row[25],
+                    real_discount_percentage: row[26],
+                    payment_cash: row[27],
+                    payment_check: row[28],
+                    balance: row[29],
+                    saler: row[30],
+                    currency_sepidar: row[31],
+                    dollar_sepidar: row[32],
+                    currency: row[33],
+                    dollar: row[34],
+                    manager_rating: row[35],
+                    senior_saler: row[36],
+                    tot_monthly_sales: row[37],
+                    receipment: row[38],
+                    ct: row[39],
+                    payment_type: row[40],
+                    costumer_size: row[41],
+                    saler_factor: row[42],
+                    prim_percentage: row[43],
+                    bonus_factor: row[44],
+                    bonus: row[45],
 
                     actions: (
                       <div className='actions-left'>
@@ -1117,8 +1138,16 @@ const [bonus, setBonus] = useState(null);
                       accessor: 'name'
                     },
                     {
+                      Header: 'City',
+                      accessor: 'city'
+                    },
+                    {
                       Header: 'Area',
                       accessor: 'area'
+                    },
+                    {
+                      Header: 'Color Making Saler',
+                      accessor: 'color_making_saler'
                     },
                     {
                       Header: 'Group',
@@ -1135,6 +1164,14 @@ const [bonus, setBonus] = useState(null);
                     {
                       Header: 'Unit',
                       accessor: 'unit'
+                    },
+                    {
+                      Header: 'Unit2',
+                      accessor: 'unit2'
+                    },
+                    {
+                      Header: 'KG',
+                      accessor: 'kg'
                     },
                     {
                       Header: 'Original Value',
@@ -1199,6 +1236,14 @@ const [bonus, setBonus] = useState(null);
                     {
                       Header: 'Saler',
                       accessor: 'saler'
+                    },
+                    {
+                      Header: 'Currency-Sepidar',
+                      accessor: 'currency_sepidar'
+                    },
+                    {
+                      Header: 'Dollar-Sepidar',
+                      accessor: 'dollar_sepidar'
                     },
                     {
                       Header: 'Currency',
