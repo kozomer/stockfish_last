@@ -7,7 +7,7 @@ from django.http import JsonResponse, HttpResponse
 import json
 from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
-from .definitions import jalali_to_greg, greg_to_jalali, calculate_experience_rating, calculate_sale_rating, current_jalali_date, get_exchange_rate
+from .definitions import jalali_to_greg, greg_to_jalali, calculate_experience_rating, calculate_sale_rating, current_jalali_date, get_exchange_rate, get_model
 from datetime import datetime
 import datetime
 import jdatetime
@@ -74,6 +74,11 @@ class LogoutView(APIView):
             return JsonResponse({'error': 'BAD REQUEST'}, status=400)
 
 
+class MahmutView(View):
+    @csrf_exempt
+    def get(self, request):
+        product = get_model()
+        return JsonResponse(product, safe=False)
 
 # endregion
 
@@ -315,7 +320,14 @@ class AddSalesView(APIView):
                 if not Salers.objects.filter(name=row['Saler']).exists():
                     return JsonResponse({'error': f"No saler found with name '{row['Saler']}'"}, status=400)
 
-
+                try:
+                    customer = Customers.objects.filter(customer_code= row["Customer Code"] )
+                except Exception as e:
+                    return JsonResponse({'error': "No customer found"}, status=400)
+                try:
+                    product = Products.objects.filter(product_code_ir= row["Good Code"] )
+                except Exception as e:
+                    return JsonResponse({'error': "No product found"}, status=400)
                 # Save the Sale object
                 sale = Sales(
                     no=no,
@@ -323,17 +335,17 @@ class AddSalesView(APIView):
                     date=date,
                     psr=row["PSR"],
                     customer_code=row["Customer Code"],
-                    name=row["Name"],
-                    city=row["City"],
-                    area=row["Area"],
+                    name= customer.description,
+                    city= customer.city,
+                    area= customer.area,
                     color_making_saler=row["Color Making Saler"],
-                    group=row["Group"],
+                    group= product.group,
                     product_code=row["Good Code"],
-                    product_name=row["Goods"],
-                    unit=row["Unit"],
-                    unit2=row["Unit2"],
-                    kg=row["KG"],
+                    product_name=product.description_ir,
+                    unit=product.unit,
+                    unit2=product.unit_secondary,
                     original_value=row["The Original Value"],
+                    kg = row['KG'],
                     original_output_value=row["Original Output Value"],
                     secondary_output_value=row["Secondary Output Value"],
                     price=row["Price"],
@@ -2024,6 +2036,67 @@ def update_rop_for_sales_delete(sender, instance, created, **kwargs):
             pass
         except Exception as e:
             return JsonResponse({'error': str(e)})
+
+class ROPView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+    def get(self, request, *args, **kwargs):
+        rop_items = ROP.objects.values().all()
+        rop_list = [
+    [
+        item['group'],
+        item['subgroup'],
+        item['feature'],
+        item['new_or_old_product'],
+        item['related'],
+        item['origin'],
+        item['product_code_ir'],
+        item['product_code_tr'],
+        item['dont_order_again'],
+        item['description_tr'],
+        item['description_ir'],
+        item['unit'],
+        item['weight'],
+        item['unit_secondary'],
+        item['price'],
+        item['avarage_previous_year'],
+        item['month_1'],
+        item['month_2'],
+        item['month_3'],
+        item['month_4'],
+        item['month_5'],
+        item['month_6'],
+        item['month_7'],
+        item['month_8'],
+        item['month_9'],
+        item['month_10'],
+        item['month_11'],
+        item['month_12'],
+        item['total_sale'],
+        item['warehouse'],
+        item['goods_on_the_road'],
+        item['total_stock_all'],
+        item['total_month_stock'],
+        item['standart_deviation'],
+        item['lead_time'],
+        item['product_coverage_percentage'],
+        item['demand_status'],
+        item['safety_stock'],
+        item['rop'],
+        item['monthly_mean'],
+        item['new_party'],
+        item['cycle_service_level'],
+        item['total_stock'],
+        item['need_prodcuts'],
+        item['over_stock'],
+        item['calculated_need'],
+        item['calculated_max_stock'],
+        item['calculated_min_stock'],
+    ]
+    for item in rop_items
+]
+        return JsonResponse(rop_list, safe=False)
+
         
         
 # endregion
