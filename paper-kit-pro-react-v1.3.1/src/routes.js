@@ -48,7 +48,7 @@ import ValidationForms from "views/forms/ValidationForms.js";
 import VectorMap from "views/maps/VectorMap.js";
 import Widgets from "views/Widgets.js";
 import Wizard from "views/forms/Wizard.js";
-
+import '../src/assets/css/Table.css';
 const routes = [
   {
     path: "/dashboard",
@@ -57,270 +57,70 @@ const routes = [
     component: Dashboard,
     layout: "/admin"
   },
+  
+ 
+  
+
   {
-    collapse: true,
-    name: "Pages",
-    icon: "nc-icon nc-book-bookmark",
-    state: "pagesCollapse",
-    views: [
-      {
-        path: "/timeline",
-        name: "Timeline",
-        mini: "T",
-        component: Timeline,
-        layout: "/admin"
-      },
-      {
-        path: "/login",
-        name: "Login",
-        mini: "L",
-        component: Login,
-        layout: "/auth"
-      },
-      {
-        path: "/register",
-        name: "Register",
-        mini: "R",
-        component: Register,
-        layout: "/auth"
-      },
-      {
-        path: "/lock-screen",
-        name: "LockScreen",
-        mini: "LS",
-        component: LockScreen,
-        layout: "/auth"
-      },
-      {
-        path: "/user-profile",
-        name: "UserProfile",
-        mini: "UP",
-        component: UserProfile,
-        layout: "/admin"
-      }
-    ]
+    path: "/products-tables",
+    name: "Products",
+    icon:"nc-icon nc-tag-content",
+    component: Products,
+    layout: "/admin"
   },
+ 
   {
-    collapse: true,
-    name: "Components",
-    icon: "nc-icon nc-layout-11",
-    state: "componentsCollapse",
-    views: [
-      {
-        path: "/buttons",
-        name: "Buttons",
-        mini: "B",
-        component: Buttons,
-        layout: "/admin"
-      },
-      {
-        path: "/grid-system",
-        name: "Grid System",
-        mini: "GS",
-        component: GridSystem,
-        layout: "/admin"
-      },
-      {
-        path: "/panels",
-        name: "Panels",
-        mini: "P",
-        component: Panels,
-        layout: "/admin"
-      },
-      {
-        path: "/sweet-alert",
-        name: "Sweet Alert",
-        mini: "SA",
-        component: SweetAlert,
-        layout: "/admin"
-      },
-      {
-        path: "/notifications",
-        name: "Notifications",
-        mini: "N",
-        component: Notifications,
-        layout: "/admin"
-      },
-      {
-        path: "/icons",
-        name: "Icons",
-        mini: "I",
-        component: Icons,
-        layout: "/admin"
-      },
-      {
-        path: "/typography",
-        name: "Typography",
-        mini: "T",
-        component: Typography,
-        layout: "/admin"
-      }
-    ]
-  },
-  {
-    collapse: true,
-    name: "Forms",
-    icon: "nc-icon nc-ruler-pencil",
-    state: "formsCollapse",
-    views: [
-      {
-        path: "/regular-forms",
-        name: "Regular Forms",
-        mini: "RF",
-        component: RegularForms,
-        layout: "/admin"
-      },
-      {
-        path: "/extended-forms",
-        name: "Extended Forms",
-        mini: "EF",
-        component: ExtendedForms,
-        layout: "/admin"
-      },
-      {
-        path: "/validation-forms",
-        name: "Validation Forms",
-        mini: "VF",
-        component: ValidationForms,
-        layout: "/admin"
-      },
-      {
-        path: "/wizard",
-        name: "Wizard",
-        mini: "W",
-        component: Wizard,
-        layout: "/admin"
-      }
-    ]
-  },
-  {
-    collapse: true,
-    name: "Tables",
-    icon: "nc-icon nc-single-copy-04",
-    state: "tablesCollapse",
-    views: [
-      {
-        path: "/regular-tables",
-        name: "Regular Tables",
-        mini: "RT",
-        component: RegularTables,
-        layout: "/admin"
-      },
-      {
-        path: "/extended-tables",
-        name: "Extended Tables",
-        mini: "ET",
-        component: ExtendedTables,
-        layout: "/admin"
-      },
-      {
-        path: "/react-tables",
-        name: "React Tables",
-        mini: "RT",
-        component: ReactTables,
-        layout: "/admin"
-      },
-      {
-        path: "/customer-tables",
-        name: "Customer Table",
-        mini: "CT",
-        component: CustomerTables,
-        layout: "/admin"
-      },
-      {
-        path: "/bonus-tables",
-        name: "Bonus",
-        mini: "B",
-        component:Bonus,
-        layout: "/admin"
-      },
-      {
-        path: "/sales-tables",
-        name: "Sales Table",
-        mini: "ST",
-        component: Sales,
-        layout: "/admin"
-      },
-      {
-        path: "/warehouse-tables",
-        name: "Warehouse Table",
-        mini: "WT",
-        component: Warehouse,
-        layout: "/admin"
-      },
-      {
-        path: "/products-tables",
-        name: "Products Table",
-        mini: "PT",
-        component: Products,
-        layout: "/admin"
-      },
-      {
-        path: "/sales-report",
-        name: "Sales Report",
-        mini: "SR",
-        component: SalesReport,
-        layout: "/admin"
-      },
-      {
-        path: "/rop",
-        name: "Reorder Points",
-        mini: "RP",
-        component: ReorderPoints,
-        layout: "/admin"
-      },
-    ]
-  },
-  {
-    collapse: true,
-    name: "Maps",
-    icon: "nc-icon nc-pin-3",
-    state: "mapsCollapse",
-    views: [
-      {
-        path: "/google-maps",
-        name: "Google Maps",
-        mini: "GM",
-        component: GoogleMaps,
-        layout: "/admin"
-      },
-      {
-        path: "/full-screen-map",
-        name: "Full Screen Map",
-        mini: "FSM",
-        component: FullScreenMap,
-        layout: "/admin"
-      },
-      {
-        path: "/vector-map",
-        name: "Vector Map",
-        mini: "VM",
-        component: VectorMap,
-        layout: "/admin"
-      }
-    ]
-  },
-  {
-    path: "/widgets",
-    name: "Widgets",
-    icon: "nc-icon nc-box",
-    component: Widgets,
+    path: "/customer-tables",
+    name: "Customers",
+    icon:"nc-icon nc-briefcase-24",
+    component: CustomerTables,
     layout: "/admin"
   },
   {
-    path: "/charts",
-    name: "Charts",
-    icon: "nc-icon nc-chart-bar-32",
-    component: Charts,
+    path: "/warehouse-tables",
+    name: "Warehouse",
+    icon:"nc-icon nc-box",
+    component: Warehouse,
+    layout: "/admin"
+  },
+  
+  {
+    path: "/bonus-tables",
+    name: "Staff",
+    icon:"nc-icon nc-badge",
+    component:Bonus,
     layout: "/admin"
   },
   {
-    path: "/calendar",
-    name: "Calendar",
-    icon: "nc-icon nc-calendar-60",
-    component: Calendar,
+    path: "/sales-tables",
+    name: "Sales",
+    icon:"nc-icon nc-cart-simple",
+    component: Sales,
     layout: "/admin"
-  }
+  },
+  
+  {
+    path: "/sales-report",
+    name: "Sales Report",
+    icon:"nc-icon nc-single-copy-04",
+    component: SalesReport,
+    layout: "/admin"
+  },
+  {
+    path: "/rop",
+    name: "Reorder Points",
+    icon:"nc-icon nc-bullet-list-67",
+    component: ReorderPoints,
+    layout: "/admin"
+  },
+  {
+    path: "/login",
+    name: "Login",
+    icon: "nc-icon nc-bank",
+    component: Login,
+    layout: "/auth",
+    navbar: false  // Add this field to indicate that the Login link should not be displayed in the navbar
+  },
   
 ];
 

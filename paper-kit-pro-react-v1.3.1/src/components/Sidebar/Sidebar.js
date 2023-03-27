@@ -15,7 +15,7 @@
 
 */
 import React,{useState, useEffect} from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink,  useLocation } from "react-router-dom";
 import { Nav, Collapse, Button } from "reactstrap";
 // javascript plugin used to create scrollbars on windows
 import PerfectScrollbar from "perfect-scrollbar";
@@ -34,6 +34,8 @@ function Sidebar(props) {
   const history = useHistory(); // get the history object
   const [name, setName] = useState("");
   const [LastName, setLastName] = useState("");
+
+  const location = useLocation();
   // this creates the intial state of this component based on the collapse routes
   // that it gets through props.routes
   const getCollapseStates = (routes) => {
@@ -182,7 +184,7 @@ function Sidebar(props) {
           
            
             setTimeout(() => {
-              history.push('/auth/login');
+              history.push('/login');
             }, 500); // wait for 2 seconds before navigating to login page
            // navigation.navigate("Login")
         }
@@ -213,90 +215,55 @@ function Sidebar(props) {
       data-color={props.bgColor}
       data-active-color={props.activeColor}
     >
-      <div className="logo">
-        <a
-          href="https://www.creative-tim.com"
-          className="simple-text logo-mini"
-        >
-          <div className="logo-img">\admin\sales-report
-            <img src={logo} alt="react-logo" />
-          </div>
-        </a>
-        <a
-          href="https://www.creative-tim.com"
-          className="simple-text logo-normal"
-        >
-          MOONSOFT
-        </a>
+      <div className="logo" style={{ textAlign: "center", fontSize: "1.5rem", color: "white" }}>
+        MOONSOFT
       </div>
-
+  
       <div className="sidebar-wrapper" ref={sidebar}>
         <div className="user">
-          <div className="photo">
-            <img src={avatar} alt="Avatar" />
-          </div>
+          <div className="photo"></div>
           <div className="info">
             <a
-              href="<#pablo>"
               data-toggle="collapse"
               aria-expanded={openAvatar}
               onClick={() => setOpenAvatar(!openAvatar)}
             >
               <span>
-              {name} {LastName}
+                {name} {LastName}
                 <b className="caret" />
               </span>
             </a>
-            <Collapse isOpen={openAvatar}>
-              <ul className="nav">
-                <li>
-                  <NavLink to="/admin/user-profile" activeClassName="">
-                    <span className="sidebar-mini-icon">MP</span>
-                    <span className="sidebar-normal">My Profile</span>
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink to="/admin/user-profile" activeClassName="">
-                    <span className="sidebar-mini-icon">EP</span>
-                    <span className="sidebar-normal">Edit Profile</span>
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink to="/admin/user-profile" activeClassName="">
-                    <span className="sidebar-mini-icon">S</span>
-                    <span className="sidebar-normal">Settings</span>
-                  </NavLink>
-                </li>
-              </ul>
-            </Collapse>
           </div>
         </div>
-        <Nav>{createLinks(props.routes)}</Nav>
-        <Button
-  className="my-button-class d-flex justify-content-center align-items-center"
-  color="primary"
-  onClick={handleLogout}
-  style={{
-    display: "block",
-    margin: "auto",
-    marginTop: "120px",
-    width: "120px",
-    height: "40px",
-    borderRadius: "20px",
-    padding: "0 10px",
-    fontSize: "16px",
-    fontWeight: "bold",
-    position: "relative",
-    overflow: "hidden",
-  }}
->
-  <span>Log Out</span>
-</Button>
-
-
+        {location.pathname !== "/auth/login" && (
+          <>
+            <Nav>{createLinks(props.routes)}</Nav>
+            <Button
+              className="my-button-class d-flex justify-content-center align-items-center"
+              color="primary"
+              onClick={handleLogout}
+              style={{
+                display: "block",
+                margin: "auto",
+                marginTop: "120px",
+                width: "120px",
+                height: "40px",
+                borderRadius: "20px",
+                padding: "0 10px",
+                fontSize: "16px",
+                fontWeight: "bold",
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              <span>Log Out</span>
+            </Button>
+          </>
+        )}
       </div>
     </div>
   );
+  
 }
 
 export default Sidebar;

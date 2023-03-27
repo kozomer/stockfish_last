@@ -38,6 +38,7 @@ import {
 import localforage from 'localforage';
 import '../../assets/css/Table.css';
 import { FaFirstAid } from "react-icons/fa";
+import "../../assets/css/paper-dashboard.css";
 
 
 function Login({ history }) {

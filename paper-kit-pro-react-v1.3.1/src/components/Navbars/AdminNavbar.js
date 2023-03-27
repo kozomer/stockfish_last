@@ -130,6 +130,9 @@ const handleBgClick = (color) => {
     }
     setCollapseOpen(!collapseOpen);
   };
+
+
+  
   return (
     <>
       <Navbar
