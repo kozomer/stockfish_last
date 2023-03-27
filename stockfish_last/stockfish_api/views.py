@@ -2041,7 +2041,9 @@ class ROPView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
     def get(self, request, *args, **kwargs):
-        rop_items = ROP.objects.values().all()
+        data = json.loads(request.body)
+        product_code = data.get('product_code')
+        rop_items = ROP.objects.get(product_code_ir = product_code)
         rop_list = [
     [
         item['group'],
