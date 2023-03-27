@@ -85,7 +85,7 @@ function Dashboard() {
   const [salesTotalData, setSalesTotalData] = useState([]);
   const [salesMonthlyData, setSalesMonthlyData] = useState([]);
   //Notification
-  const notify = (place) => {
+  const notify = (place, productCode) => {
     var color = Math.floor(Math.random() * 5 + 1);
     var type;
     switch (color) {
@@ -114,7 +114,7 @@ function Dashboard() {
         <div>
           <div>
             Welcome to <b>Now UI Dashboard React</b> - a beautiful premium admin
-            for every web developer.
+            for every web developer. Click <a href={`/admin/rop?productCode=${productCode}`}>here</a> to reorder points for product {productCode}.
           </div>
         </div>
       ),
@@ -128,7 +128,8 @@ function Dashboard() {
     notificationAlert.current.notificationAlert(options);
     console.log(notifications)
   };
-
+  
+  
 
 
   useEffect(() => {
@@ -729,6 +730,8 @@ function Dashboard() {
           </Col>
         </Row>
 
+
+{/* 
         <Row>
           <Col md="6">
             <Card className="card-tasks">
@@ -1115,6 +1118,7 @@ function Dashboard() {
             </Card>
           </Col>
         </Row>
+        */}
         <Row>
           <Col md="4">
             <Button
@@ -1128,6 +1132,7 @@ function Dashboard() {
             </Button>
           </Col>
         </Row>
+        
       </div>
     </>
   );
