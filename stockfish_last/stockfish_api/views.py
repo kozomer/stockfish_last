@@ -2040,7 +2040,7 @@ def update_rop_for_sales_delete(sender, instance, created, **kwargs):
 class ROPView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
-    def get(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
         product_code = data.get('product_code')
         rop_items = ROP.objects.get(product_code_ir = product_code)
