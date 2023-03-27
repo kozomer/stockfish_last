@@ -26,7 +26,7 @@ class Sales(models.Model):
     product_code = models.PositiveIntegerField(null=True, blank=True)
     product_name = models.CharField(max_length=100)
     unit = models.CharField(max_length=30)
-    unit2 = models.FloatField(null=True, blank=True)
+    unit2 = models.CharField(max_length=30)
     kg = models.FloatField(null=True, blank=True)
     original_value = models.FloatField(null=True, blank=True)
     original_output_value = models.FloatField(null=True, blank=True)

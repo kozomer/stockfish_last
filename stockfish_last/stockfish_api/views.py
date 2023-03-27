@@ -269,6 +269,7 @@ class AddSalesView(APIView):
                 return JsonResponse({'error': "The uploaded file is not a valid Excel file"}, status=400)
 
             data = pd.read_excel(file)
+            print(data)
             if data.empty:
                 return JsonResponse({'error': "The uploaded file is empty"}, status=400)
 
@@ -321,11 +322,11 @@ class AddSalesView(APIView):
                     return JsonResponse({'error': f"No saler found with name '{row['Saler']}'"}, status=400)
 
                 try:
-                    customer = Customers.objects.filter(customer_code= row["Customer Code"] )
+                    customer = Customers.objects.get(customer_code= row["Customer Code"] )
                 except Exception as e:
                     return JsonResponse({'error': "No customer found"}, status=400)
                 try:
-                    product = Products.objects.filter(product_code_ir= row["Good Code"] )
+                    product = Products.objects.get(product_code_ir= row["Good Code"] )
                 except Exception as e:
                     return JsonResponse({'error': "No product found"}, status=400)
                 # Save the Sale object
