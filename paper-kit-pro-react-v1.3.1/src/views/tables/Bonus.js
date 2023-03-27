@@ -125,8 +125,9 @@ function UserProfile() {
 
 
   async function fetchSalersData() {
-    console.log("aaaaaaaaa")
+    
     const access_token = await localforage.getItem('access_token');
+    console.log(access_token)
     fetch('http://127.0.0.1:8000/collapsed_salers/', {
       headers: {
         'Content-Type': 'application/json',

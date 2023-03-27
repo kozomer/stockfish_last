@@ -54,7 +54,57 @@ function Charts() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [result, setResult] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-
+  const [tableData, setTableData] = useState({
+    group: "",
+    subgroup: "",
+    feature: "",
+    new_or_old_product: "",
+    related: "",
+    origin: "",
+    product_code_ir: "",
+    product_code_tr: "",
+    dont_order_again: "",
+    description_tr: "",
+    description_ir: "",
+    unit: "",
+    weight: "",
+    unit_secondary: "",
+    price: "",
+    avarage_previous_year: "",
+    month_1: "",
+    month_2: "",
+    month_3: "",
+    month_4: "",
+    month_5: "",
+    month_6: "",
+    month_7: "",
+    month_8: "",
+    month_9: "",
+    month_10: "",
+    month_11: "",
+    month_12: "",
+    total_sale: "",
+    warehouse: "",
+    goods_on_the_road: "",
+    total_stock_all: "",
+    total_month_stock: "",
+    standart_deviation: "",
+    lead_time: "",
+    product_coverage_percentage: "",
+    demand_status: "",
+    safety_stock: "",
+    rop: "",
+    monthly_mean: "",
+    new_party: "",
+    cycle_service_level: "",
+    total_stock: "",
+    need_prodcuts: "",
+    over_stock: "",
+    calculated_need: "",
+    calculated_max_stock: "",
+    calculated_min_stock: "",
+  });
+  
   useEffect(() => {
     async function fetchData() {
       const access_token = await localforage.getItem('access_token');
@@ -78,6 +128,7 @@ function Charts() {
   useEffect(() => {
     async function fetchItems() {
       const access_token = await localforage.getItem('access_token');
+     
       fetch('http://127.0.0.1:8000/item_list/', {
         headers: {
 
@@ -98,21 +149,21 @@ function Charts() {
 
   const handleSelect = async (selectedOption) => {
     setSelectedItem(selectedOption);
-    const access_token = localforage.getItem('access_token');
+    const access_token = await localforage.getItem('access_token');
+    
     const selectData = { product_code: selectedOption.value };
     // post the selected option to Django
-    fetch('http://127.0.0.1:8000/item_list_filter/', {
+    fetch('http://127.0.0.1:8000/rop/', {
       method: 'POST',
-
+    headers: { "Content-Type": "application/json", 
+    'Authorization': 'Bearer '+ String(access_token)},
+      
       body: JSON.stringify(selectData),
-      headers: {
-
-        'Authorization': 'Bearer ' + String(access_token)
-      }
+     
     })
       .then(response => response.json())
       .then(data => {
-        setResult(data);
+        setTableData(data);
       })
 
   }
@@ -213,204 +264,202 @@ function Charts() {
           <Row style={{ marginTop: "100px" }}>
             <Col md="6">
               <Card>
-              <Table  className="scrollable-table">
-
+              <Table className="scrollable-table">
   <tbody>
     <tr>
       <th>Group</th>
-      <td>ssda</td>
+      <td>{tableData.group}</td>
     </tr>
     <tr>
       <th>Subgroup</th>
-      <td>dasdas</td>
+      <td>{tableData.subgroup}</td>
     </tr>
     <tr>
       <th>Feature</th>
-      <td>123</td>
+      <td>{tableData.feature}</td>
     </tr>
     <tr>
       <th>New or Old Product</th>
-      <td></td>
+      <td>{tableData.new_or_old_product}</td>
     </tr>
     <tr>
       <th>Related</th>
-      <td></td>
+      <td>{tableData.related}</td>
     </tr>
     <tr>
       <th>Origin</th>
-      <td></td>
+      <td>{tableData.origin}</td>
     </tr>
     <tr>
       <th>Product Code IR</th>
-      <td></td>
+      <td>{tableData.product_code_ir}</td>
     </tr>
     <tr>
       <th>Product Code TR</th>
-      <td></td>
+      <td>{tableData.product_code_tr}</td>
     </tr>
     <tr>
       <th>Dont Order Again</th>
-      <td></td>
+      <td>{tableData.dont_order_again}</td>
     </tr>
     <tr>
       <th>Description TR</th>
-      <td></td>
+      <td>{tableData.description_tr}</td>
     </tr>
     <tr>
       <th>Description IR</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Unit</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Weight</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Unit Secondary</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Price</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Avarage Previous Year</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Month 1</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Month 2</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Month 3</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Month 4</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Month 5</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Month 6</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Month 7</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Month 8</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Month 9</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Month 10</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Month 11</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Month 12</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Total Sale</th>
-      <td></td>
-      </tr>
-    <tr>
-      <th>Warehouse</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Goods on the Road</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Total Stock All</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Total Month Stock</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Standart Deviation</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Lead Time</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Product Coverage Percentage</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Demand Status</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Safety Stock</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Rop</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Monthly Mean</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>New Party</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Cycle Service Level</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Total Stock</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Need Products</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Over Stock</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Calculated Need</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Calculated Max Stock</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Calculated Min Stock</th>
-      <td></td>
-    </tr>
-  </tbody>
+      <td>{tableData.description_ir}</td>
+</tr>
+<tr>
+  <th>Unit</th>
+  <td>{tableData.unit}</td>
+</tr>
+<tr>
+  <th>Weight</th>
+  <td>{tableData.weight}</td>
+</tr>
+<tr>
+  <th>Unit Secondary</th>
+  <td>{tableData.unit_secondary}</td>
+</tr>
+<tr>
+  <th>Price</th>
+  <td>{tableData.price}</td>
+</tr>
+<tr>
+  <th>Avarage Previous Year</th>
+  <td>{tableData.avarage_previous_year}</td>
+</tr>
+<tr>
+  <th>Month 1</th>
+  <td>{tableData.month_1}</td>
+</tr>
+<tr>
+  <th>Month 2</th>
+  <td>{tableData.month_2}</td>
+</tr>
+<tr>
+  <th>Month 3</th>
+  <td>{tableData.month_3}</td>
+</tr>
+<tr>
+  <th>Month 4</th>
+  <td>{tableData.month_4}</td>
+</tr>
+<tr>
+  <th>Month 5</th>
+  <td>{tableData.month_5}</td>
+</tr>
+<tr>
+  <th>Month 6</th>
+  <td>{tableData.month_6}</td>
+</tr>
+<tr>
+  <th>Month 7</th>
+  <td>{tableData.month_7}</td>
+</tr>
+<tr>
+  <th>Month 8</th>
+  <td>{tableData.month_8}</td>
+</tr>
+<tr>
+  <th>Month 9</th>
+  <td>{tableData.month_9}</td>
+</tr>
+<tr>
+  <th>Month 10</th>
+  <td>{tableData.month_10}</td>
+</tr>
+<tr>
+  <th>Month 11</th>
+  <td>{tableData.month_11}</td>
+</tr>
+<tr>
+  <th>Month 12</th>
+  <td>{tableData.month_12}</td>
+</tr>
+<tr>
+  <th>Total Sale</th>
+  <td>{tableData.total_sale}</td>
+</tr>
+<tr>
+  <th>Warehouse</th>
+  <td>{tableData.warehouse}</td>
+</tr>
+<tr>
+  <th>Goods on the Road</th>
+  <td>{tableData.goods_on_the_road}</td>
+</tr>
+<tr>
+  <th>Total Stock All</th>
+  <td>{tableData.total_stock_all}</td>
+</tr>
+<tr>
+  <th>Total Month Stock</th>
+  <td>{tableData.total_month_stock}</td>
+</tr>
+<tr>
+  <th>Standart Deviation</th>
+  <td>{tableData.standart_deviation}</td>
+</tr>
+<tr>
+  <th>Lead Time</th>
+  <td>{tableData.lead_time}</td>
+</tr>
+<tr>
+  <th>Product Coverage Percentage</th>
+  <td>{tableData.product_coverage_percentage}</td>
+</tr>
+<tr>
+  <th>Demand Status</th>
+  <td>{tableData.demand_status}</td>
+</tr>
+<tr>
+  <th>Safety Stock</th>
+  <td>{tableData.safety_stock}</td>
+</tr>
+<tr>
+  <th>Rop</th>
+  <td>{tableData.rop}</td>
+</tr>
+<tr>
+  <th>Monthly Mean</th>
+  <td>{tableData.monthly_mean}</td>
+</tr>
+<tr>
+  <th>New Party</th>
+  <td>{tableData.new_party}</td>
+</tr>
+<tr>
+  <th>Cycle Service Level</th>
+  <td>{tableData.cycle_service_level}</td>
+</tr>
+<tr>
+  <th>Total Stock</th>
+  <td>{tableData.total_stock}</td>
+</tr>
+<tr>
+  <th>Need Products</th>
+  <td>{tableData.need_prodcuts}</td>
+</tr>
+<tr>
+  <th>Over Stock</th>
+  <td>{tableData.over_stock}</td>
+</tr>
+<tr>
+  <th>Calculated Need</th>
+  <td>{tableData.calculated_need}</td>
+</tr>
+<tr>
+  <th>Calculated Max Stock</th>
+  <td>{tableData.calculated_max_stock}</td>
+</tr>
+<tr>
+  <th>Calculated Min Stock</th>
+  <td>{tableData.calculated_min_stock}</td>
+</tr>
+</tbody>
 </Table>
-
 
               </Card>
             </Col>
