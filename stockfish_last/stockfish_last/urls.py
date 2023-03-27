@@ -16,13 +16,13 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from stockfish_api.views import ( AddCustomersView, AddSalesView, AddProductsView, AddWarehouseView, AddSalerView,
-                                 ViewSalesView,  ViewWarehouseView, ViewProductsView, ChartView, ItemListView, ViewCustomersView, CollapsedSalerView, SalerView, SalesReportView,
+                                 ViewSalesView,  ViewWarehouseView, ViewProductsView, ChartView, ItemListView, ViewCustomersView, CollapsedSalerView, SalerView, SalesReportView, ROPView,
                                  DeleteSaleView, DeleteCustomerView, DeleteProductView, DeleteSalerView, DeleteWarehouseView,
                                  EditProductView, EditCustomerView, EditSaleView, EditWarehouseView,  EditSalerView,
                                  LoginView, LogoutView,
                                  TopCustomersView, TopProductsView,
                                  ExchangeRateAPIView, SalerDataView, TotalDataView, TotalDataByMonthlyView,
-                                 ExportCustomersView, ExportSalesView, ExportWarehouseView, ExportProductsView
+                                 ExportCustomersView, ExportSalesView, ExportWarehouseView, ExportProductsView, MahmutView
 
 
                                  )
@@ -56,6 +56,8 @@ urlpatterns = [
     path('products/', ViewProductsView.as_view(), name='view_pricelists'),
     path('salers/', SalerView.as_view(), name='view_saler'),
     path('collapsed_salers/', CollapsedSalerView.as_view(), name='view_saler_collapsed'),
+    path('rop/', ROPView.as_view(), name='view_rop'),
+
 
     path('delete_sales/',  DeleteSaleView.as_view(), name='delete_sales'),
     path('delete_customers/',  DeleteCustomerView.as_view(), name='delete_customers'),
@@ -85,6 +87,7 @@ urlpatterns = [
     path('export_sales/', ExportSalesView.as_view(), name= 'export_sales'),
     path('export_warehouse/', ExportWarehouseView.as_view(), name= 'export_warehouse'),
     path('export_products/', ExportProductsView.as_view(), name= 'export_products'),
+    path('mahmut/', MahmutView.as_view(), name= 'mahmut'),
 
 
 
