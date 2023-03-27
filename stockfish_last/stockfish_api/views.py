@@ -2043,10 +2043,8 @@ class ROPView(APIView):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
         product_code = data.get('product_code')
-        rop_items = ROP.objects.get(product_code_ir = product_code)
-        rop_list = [
-    [
-        item['group'],
+        item = ROP.objects.get(product_code_ir = product_code)
+        rop_list = [item['group'],
         item['subgroup'],
         item['feature'],
         item['new_or_old_product'],
@@ -2093,10 +2091,8 @@ class ROPView(APIView):
         item['over_stock'],
         item['calculated_need'],
         item['calculated_max_stock'],
-        item['calculated_min_stock'],
-    ]
-    for item in rop_items
-]
+        item['calculated_min_stock']] 
+        
         return JsonResponse(rop_list, safe=False)
 
         
