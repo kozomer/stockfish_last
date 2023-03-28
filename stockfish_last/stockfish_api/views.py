@@ -1743,9 +1743,7 @@ class CustomerAreaPieChartView(View):
         else:  # default is 'yearly'
             data = CustomerPerformance.objects.filter(year=date_year).values('customer_area').annotate(total_dollar=Sum('dollar'))
 
-        if not data:
-            return JsonResponse({'message': 'No data available'})
-
+        
         total_dollar = sum([item['total_dollar'] for item in data])
         if total_dollar is not None:
             table_data = [[item['customer_area'], item['total_dollar']] for item in data]
@@ -1755,7 +1753,7 @@ class CustomerAreaPieChartView(View):
             # Handle the case when there is no sales data available
             chart_data_percent = [["No data available", 100]]
         
-        return JsonResponse({"table_data": table_data,"chart_data_percent": chart_data_percent}, safe=False)
+        return JsonResponse({"table_data": table_data, "chart_data_percent": chart_data_percent}, safe=False)
 
 # endregion
 
