@@ -1370,7 +1370,11 @@ def update_customer_performance_with_add_sale(sender, instance, created, **kwarg
 
         # Update the sale value for the CustomerPerformance object
         customer_performance.customer_name = instance.name
+        customer_performance.customer_area = instance.area
         customer_performance.sale += instance.net_sales
+        customer_performance.sale_amount += instance.original_output_value
+        customer_performance.dollar += instance.dollar
+        customer_performance.dollar_sepidar += instance.dollar_sepidar
         customer_performance.save()
 
 @receiver(post_delete, sender=Sales)
@@ -1384,7 +1388,11 @@ def update_customer_performance_with_delete_sale(sender, instance, **kwargs):
 
     # Update the sale value for the CustomerPerformance object
     customer_performance.customer_name = instance.name
+    customer_performance.customer_area = instance.area
     customer_performance.sale -= instance.net_sales
+    customer_performance.sale_amount -= instance.original_output_value
+    customer_performance.dollar -= instance.dollar
+    customer_performance.dollar_sepidar -= instance.dollar_sepidar
     customer_performance.save()
 
 class TopCustomersView(APIView):
@@ -1717,6 +1725,39 @@ class TotalDataByMonthlyView(View):
 
 # endregion
 
+# region Customer Area 
+
+class CustomerAreaPieChartView(View):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body)
+
+        report_type = data.get('report_type')
+        date_month= current_jalali_date().month
+        date_year= current_jalali_date().year
+        
+        chart_data = []
+        if report_type == 'monthly':
+            data = CustomerPerformance.objects.filter(year=date_year, month=date_month).values('customer_area').annotate(total_dollar=Sum('dollar'))
+        else:  # default is 'yearly'
+            data = CustomerPerformance.objects.filter(year=date_year).values('customer_area').annotate(total_dollar=Sum('dollar'))
+
+        if not data:
+            return JsonResponse({'message': 'No data available'})
+
+        total_dollar = sum([item['total_dollar'] for item in data])
+        if total_dollar is not None:
+            table_data = [[item['customer_area'], item['total_dollar']] for item in data]
+            chart_data_percent = [[item['customer_area'], item['total_dollar'] / total_dollar * 100] for item in data]
+            
+        else:
+            # Handle the case when there is no sales data available
+            chart_data_percent = [["No data available", 100]]
+        
+        return JsonResponse({"table_data": table_data,"chart_data_percent": chart_data_percent}, safe=False)
+
+# endregion
 
 # endregion #!DASHBOARD PAGE END
 
