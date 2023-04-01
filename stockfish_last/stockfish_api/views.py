@@ -329,6 +329,11 @@ class AddSalesView(APIView):
                     product = Products.objects.get(product_code_ir= row["Good Code"] )
                 except Exception as e:
                     return JsonResponse({'error': "No product found"}, status=400)
+                try:
+                    saler = Salers.objects.get(name= row["Saler"] )
+                except Exception as e:
+                    return JsonResponse({'error': "No saler found"}, status=400)
+                
                 # Save the Sale object
                 sale = Sales(
                     no=no,
@@ -2083,6 +2088,10 @@ class ROPView(APIView):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
         product_code = data.get('product_code')
+        product_values = ProductPerformance.objects.filter(product_code=product_code)
+        product_values = [[item['month'], item['year'], item['product_code'],item['sale_amount']] for item in product_values]
+        print(product_values)
+
         item = ROP.objects.get(product_code_ir = product_code)
         rop_list = rop_list = [
                 item.group,
@@ -2136,6 +2145,9 @@ class ROPView(APIView):
             ]
         
         return JsonResponse(rop_list, safe=False)
+
+
+
 
         
         
