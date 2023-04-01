@@ -269,7 +269,6 @@ class AddSalesView(APIView):
                 return JsonResponse({'error': "The uploaded file is not a valid Excel file"}, status=400)
 
             data = pd.read_excel(file)
-            print(data)
             if data.empty:
                 return JsonResponse({'error': "The uploaded file is empty"}, status=400)
 
@@ -1064,8 +1063,6 @@ class EditSalerView(APIView):
 
             old_data = data.get('old_data')
             new_data = data.get('new_data')
-            print('new_data',new_data)
-            print('old_data',old_data)
 
             # Check if name is provided
             name = new_data['name']
@@ -1128,10 +1125,9 @@ class SalerView(APIView):
         data = json.loads(request.body)
         id = data.get('id')
         saler = Salers.objects.get(id=id)
-        current_date = datetime.date.today()
-        jalali_current_date = jdatetime.date(current_date.year, current_date.month, current_date.day)
+        current_jalali_date= current_jalali_date()
         try:
-            saler_monthly_ratings = SalerMonthlySaleRating.objects.get(name=saler.name, month = jalali_current_date.month, year= jalali_current_date.year )
+            saler_monthly_ratings = SalerMonthlySaleRating.objects.get(name=saler.name, month = current_jalali_date.month, year= current_jalali_date.year )
             monthly_sale_rating = saler_monthly_ratings.sale_rating
         except SalerMonthlySaleRating.DoesNotExist:
             monthly_sale_rating = 1
@@ -1336,8 +1332,9 @@ def update_monthly_product_sales_with_add_sale(sender, instance, created, **kwar
             year=instance.date.year,
             month= instance.date.month
         )
-
-        monthly_sale.product_name = instance.product_name,
+        monthly_sale.date = instance.date
+        
+        monthly_sale.product_name = instance.product_name
         monthly_sale.piece+= instance.original_output_value
         monthly_sale.sale += instance.net_sales
         monthly_sale.save()
@@ -1742,7 +1739,7 @@ class CustomerAreaPieChartView(View):
         date_month= current_jalali_date().month
         date_year= current_jalali_date().year
         
-        chart_data = []
+        table_data = []
         if report_type == 'monthly':
             data = CustomerPerformance.objects.filter(year=date_year, month=date_month).values('customer_area').annotate(total_dollar=Sum('dollar'))
         else:  # default is 'yearly'
@@ -1750,7 +1747,7 @@ class CustomerAreaPieChartView(View):
 
         
         total_dollar = sum([item['total_dollar'] for item in data])
-        if total_dollar is not None or total_dollar != 0:
+        if total_dollar is not None and total_dollar != 0:
             table_data = [[item['customer_area'], item['total_dollar']] for item in data]
             chart_data_percent = [[item['customer_area'], item['total_dollar'] / total_dollar * 100] for item in data]
             
@@ -2088,11 +2085,28 @@ class ROPView(APIView):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
         product_code = data.get('product_code')
+        lead_time = data.get('lead_time')
+        service_level = data.get('service_level')
         product_values = ProductPerformance.objects.filter(product_code=product_code)
-        print(product_values)
-        product_values = [[item.month, item.year, item.product_code, item.sale_amount] for item in product_values]
-        print(product_values)
-
+        try:
+            last_sales = MonthlyProductSales.objects.filter(product_code=product_code).values("date").latest("date")
+            last_sale_date = last_sales["date"].strftime('%Y-%m-%d')
+            jalali_date= current_jalali_date().strftime('%Y-%m-%d').split("-")
+        except MonthlyProductSales.DoesNotExist:
+            return JsonResponse({"error" : f"There is no product sales data with product code: {product_code} "})
+        try: 
+            warehouse = Warehouse.objects.get(product_code = product_code)
+            stock = warehouse.stock
+        except Warehouse.DoesNotExist:
+            return JsonResponse({"error" : f"There is no product in warehouse with product code: {product_code} "})
+        
+        product_values = [[1, item.month, item.year, item.product_code, item.sale_amount] for item in product_values]
+        
+        #all_sales, prev_sales, future_sales, future_stocks, order_flag, safety_stock, rop, order = get_model()
+        holt_model = get_model("holt", True, jalali_date, product_code, product_values, stock, lead_time, service_level, 12, 3 )
+        print(holt_model)
+        exp_model = get_model("exp", True, jalali_date, product_code, product_values, stock, lead_time, service_level, 12, 3 )
+        average_model = get_model("average", True, jalali_date, product_code, product_values, stock, lead_time, service_level, 12, 3 )
         item = ROP.objects.get(product_code_ir = product_code)
         rop_list = rop_list = [
                 item.group,
