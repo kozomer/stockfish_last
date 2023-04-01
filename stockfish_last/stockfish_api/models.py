@@ -26,7 +26,7 @@ class Sales(models.Model):
     product_code = models.PositiveIntegerField(null=True, blank=True)
     product_name = models.CharField(max_length=100)
     unit = models.CharField(max_length=30)
-    unit2 = models.FloatField(null=True, blank=True)
+    unit2 = models.CharField(max_length=30)
     kg = models.FloatField(null=True, blank=True)
     original_value = models.FloatField(null=True, blank=True)
     original_output_value = models.FloatField(null=True, blank=True)
@@ -192,10 +192,13 @@ class CustomerPerformance(models.Model):
     objects = jmodels.jManager()
     customer_code = models.IntegerField(null=True)
     customer_name = models.CharField(max_length=100)
+    customer_area = models.CharField(max_length=100)
     year = models.IntegerField(null=True)
     month = models.IntegerField(null=True)
     sale = models.FloatField(default=0, null=True)
     sale_amount = models.FloatField(default=0, null=True)
+    dollar = models.FloatField(default=0, null=True)
+    dollar_sepidar = models.FloatField(default=0, null=True)
 
 class ProductPerformance(models.Model):
     objects = jmodels.jManager()

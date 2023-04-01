@@ -269,6 +269,7 @@ class AddSalesView(APIView):
                 return JsonResponse({'error': "The uploaded file is not a valid Excel file"}, status=400)
 
             data = pd.read_excel(file)
+            print(data)
             if data.empty:
                 return JsonResponse({'error': "The uploaded file is empty"}, status=400)
 
@@ -321,11 +322,11 @@ class AddSalesView(APIView):
                     return JsonResponse({'error': f"No saler found with name '{row['Saler']}'"}, status=400)
 
                 try:
-                    customer = Customers.objects.filter(customer_code= row["Customer Code"] )
+                    customer = Customers.objects.get(customer_code= row["Customer Code"] )
                 except Exception as e:
                     return JsonResponse({'error': "No customer found"}, status=400)
                 try:
-                    product = Products.objects.filter(product_code_ir= row["Good Code"] )
+                    product = Products.objects.get(product_code_ir= row["Good Code"] )
                 except Exception as e:
                     return JsonResponse({'error': "No product found"}, status=400)
                 # Save the Sale object
@@ -1369,7 +1370,11 @@ def update_customer_performance_with_add_sale(sender, instance, created, **kwarg
 
         # Update the sale value for the CustomerPerformance object
         customer_performance.customer_name = instance.name
+        customer_performance.customer_area = instance.area
         customer_performance.sale += instance.net_sales
+        customer_performance.sale_amount += instance.original_output_value
+        customer_performance.dollar += instance.dollar
+        customer_performance.dollar_sepidar += instance.dollar_sepidar
         customer_performance.save()
 
 @receiver(post_delete, sender=Sales)
@@ -1383,7 +1388,11 @@ def update_customer_performance_with_delete_sale(sender, instance, **kwargs):
 
     # Update the sale value for the CustomerPerformance object
     customer_performance.customer_name = instance.name
+    customer_performance.customer_area = instance.area
     customer_performance.sale -= instance.net_sales
+    customer_performance.sale_amount -= instance.original_output_value
+    customer_performance.dollar -= instance.dollar
+    customer_performance.dollar_sepidar -= instance.dollar_sepidar
     customer_performance.save()
 
 class TopCustomersView(APIView):
@@ -1716,6 +1725,37 @@ class TotalDataByMonthlyView(View):
 
 # endregion
 
+# region Customer Area 
+
+class CustomerAreaPieChartView(View):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body)
+
+        report_type = data.get('report_type')
+        date_month= current_jalali_date().month
+        date_year= current_jalali_date().year
+        
+        chart_data = []
+        if report_type == 'monthly':
+            data = CustomerPerformance.objects.filter(year=date_year, month=date_month).values('customer_area').annotate(total_dollar=Sum('dollar'))
+        else:  # default is 'yearly'
+            data = CustomerPerformance.objects.filter(year=date_year).values('customer_area').annotate(total_dollar=Sum('dollar'))
+
+        
+        total_dollar = sum([item['total_dollar'] for item in data])
+        if total_dollar is not None:
+            table_data = [[item['customer_area'], item['total_dollar']] for item in data]
+            chart_data_percent = [[item['customer_area'], item['total_dollar'] / total_dollar * 100] for item in data]
+            
+        else:
+            # Handle the case when there is no sales data available
+            chart_data_percent = [["No data available", 100]]
+        
+        return JsonResponse({"table_data": table_data, "chart_data_percent": chart_data_percent}, safe=False)
+
+# endregion
 
 # endregion #!DASHBOARD PAGE END
 
