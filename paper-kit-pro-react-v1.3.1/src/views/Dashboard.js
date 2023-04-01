@@ -114,7 +114,7 @@ function Dashboard() {
         <div>
           <div>
             Welcome to <b>Now UI Dashboard React</b> - a beautiful premium admin
-            for every web developer. Click <a href={`/admin/rop?productCode=${productCode}`}>here</a> to reorder points for product {productCode}.
+            for every web developer. Click <a href={`/admin/rop?productCode=${1}`}>here</a> to reorder points for product {1}.
           </div>
         </div>
       ),
@@ -613,7 +613,7 @@ function Dashboard() {
               </CardBody>
             </Card>
           </Col>
-
+        
           <Col md="6">
             <Card>
               <Row>

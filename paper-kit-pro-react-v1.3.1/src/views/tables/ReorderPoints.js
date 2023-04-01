@@ -15,7 +15,7 @@
 
 */
 import { data } from "jquery";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState,useMemo} from "react";
 // react plugin used to create charts
 import { Line, Bar, Pie } from "react-chartjs-2";
 import Select from "react-select";
@@ -47,7 +47,7 @@ import {
 } from "variables/charts.js";
 
 import localforage from 'localforage';
-
+import { useLocation } from 'react-router-dom';
 function Charts() {
   const [dataTable, setDataTable] = useState([]);
   const [items, setItems] = useState([]);
@@ -104,7 +104,70 @@ function Charts() {
     calculated_max_stock: "",
     calculated_min_stock: "",
   });
-  
+  const tableHeaders = [
+    'Group',
+    'Subgroup',
+    'Feature',
+    'New or Old Product',
+    'Related',
+    'Origin',
+    'Product Code IR',
+    'Product Code TR',
+    "Dont Order Again",
+    "Description TR",
+    "Description IR",
+    "Unit",
+    "Weight",
+    "Unit Secondary",
+    "Price",
+    "Avarage Previous Year",
+    "Month 1",
+    "Month 2",
+    "Month 3",
+    "Month 4",
+    "Month 5",
+    "Month 6",
+    "Month 7",
+    "Month 8",
+    "Month 9",
+    "Month 10",
+    "Month 11",
+    "Month 12",
+    "Total Sale",
+    "Warehouse",
+    "Goods on the Road",
+    "Total Stock All",
+    "Total Month Stock",
+    "Standart Deviation",
+    "Lead Time",
+    "Product Coverage Percentage",
+    "Demand Status",
+    "Safety Stock",
+    "Rop",
+    "Monthly Mean",
+    "New Party",
+    "Cycle Service Level",
+    "Total Stock",
+    "Need Products",
+    "Over Stock",
+    "Calculated Need",
+    "Calculated Max Stock",
+    "Calculated Min Stock",
+  ];
+
+  const parsedTableData = useMemo(() => {
+    if (Array.isArray(tableData) && tableData.length > 0) {
+      return tableData;
+    }
+    return [];
+  }, [tableData]);
+
+
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const productCode = queryParams.get('productCode');
+  console.log(productCode)
+
   useEffect(() => {
     async function fetchData() {
       const access_token = await localforage.getItem('access_token');
@@ -147,7 +210,15 @@ function Charts() {
   }, []);
 
 
+  useEffect(() => {
+    if (productCode) {
+      
+      handleSelect({ value: productCode });
+    }
+  }, [productCode]);
+
   const handleSelect = async (selectedOption) => {
+   
     setSelectedItem(selectedOption);
     const access_token = await localforage.getItem('access_token');
     
@@ -163,10 +234,17 @@ function Charts() {
     })
       .then(response => response.json())
       .then(data => {
+        
         setTableData(data);
-      })
+        console.log(dataTable);
+      }) 
 
   }
+  useEffect(() => {
+    console.log(tableData);
+  }, [tableData,productCode]);
+
+
 
   const options = items.map((item) => ({
     value: item,
@@ -229,6 +307,8 @@ function Charts() {
     };
   }
 
+ 
+
   return (
     <>
 
@@ -246,6 +326,7 @@ function Charts() {
 
 
                   name="singleSelect"
+                  value={selectedItem}
                   onChange={(value) => {
                     setSelectedItem(value);
                     handleSelect(value);
@@ -265,201 +346,15 @@ function Charts() {
             <Col md="6">
               <Card>
               <Table className="scrollable-table">
-  <tbody>
-    <tr>
-      <th>Group</th>
-      <td>{tableData.group}</td>
-    </tr>
-    <tr>
-      <th>Subgroup</th>
-      <td>{tableData.subgroup}</td>
-    </tr>
-    <tr>
-      <th>Feature</th>
-      <td>{tableData.feature}</td>
-    </tr>
-    <tr>
-      <th>New or Old Product</th>
-      <td>{tableData.new_or_old_product}</td>
-    </tr>
-    <tr>
-      <th>Related</th>
-      <td>{tableData.related}</td>
-    </tr>
-    <tr>
-      <th>Origin</th>
-      <td>{tableData.origin}</td>
-    </tr>
-    <tr>
-      <th>Product Code IR</th>
-      <td>{tableData.product_code_ir}</td>
-    </tr>
-    <tr>
-      <th>Product Code TR</th>
-      <td>{tableData.product_code_tr}</td>
-    </tr>
-    <tr>
-      <th>Dont Order Again</th>
-      <td>{tableData.dont_order_again}</td>
-    </tr>
-    <tr>
-      <th>Description TR</th>
-      <td>{tableData.description_tr}</td>
-    </tr>
-    <tr>
-      <th>Description IR</th>
-      <td>{tableData.description_ir}</td>
-</tr>
-<tr>
-  <th>Unit</th>
-  <td>{tableData.unit}</td>
-</tr>
-<tr>
-  <th>Weight</th>
-  <td>{tableData.weight}</td>
-</tr>
-<tr>
-  <th>Unit Secondary</th>
-  <td>{tableData.unit_secondary}</td>
-</tr>
-<tr>
-  <th>Price</th>
-  <td>{tableData.price}</td>
-</tr>
-<tr>
-  <th>Avarage Previous Year</th>
-  <td>{tableData.avarage_previous_year}</td>
-</tr>
-<tr>
-  <th>Month 1</th>
-  <td>{tableData.month_1}</td>
-</tr>
-<tr>
-  <th>Month 2</th>
-  <td>{tableData.month_2}</td>
-</tr>
-<tr>
-  <th>Month 3</th>
-  <td>{tableData.month_3}</td>
-</tr>
-<tr>
-  <th>Month 4</th>
-  <td>{tableData.month_4}</td>
-</tr>
-<tr>
-  <th>Month 5</th>
-  <td>{tableData.month_5}</td>
-</tr>
-<tr>
-  <th>Month 6</th>
-  <td>{tableData.month_6}</td>
-</tr>
-<tr>
-  <th>Month 7</th>
-  <td>{tableData.month_7}</td>
-</tr>
-<tr>
-  <th>Month 8</th>
-  <td>{tableData.month_8}</td>
-</tr>
-<tr>
-  <th>Month 9</th>
-  <td>{tableData.month_9}</td>
-</tr>
-<tr>
-  <th>Month 10</th>
-  <td>{tableData.month_10}</td>
-</tr>
-<tr>
-  <th>Month 11</th>
-  <td>{tableData.month_11}</td>
-</tr>
-<tr>
-  <th>Month 12</th>
-  <td>{tableData.month_12}</td>
-</tr>
-<tr>
-  <th>Total Sale</th>
-  <td>{tableData.total_sale}</td>
-</tr>
-<tr>
-  <th>Warehouse</th>
-  <td>{tableData.warehouse}</td>
-</tr>
-<tr>
-  <th>Goods on the Road</th>
-  <td>{tableData.goods_on_the_road}</td>
-</tr>
-<tr>
-  <th>Total Stock All</th>
-  <td>{tableData.total_stock_all}</td>
-</tr>
-<tr>
-  <th>Total Month Stock</th>
-  <td>{tableData.total_month_stock}</td>
-</tr>
-<tr>
-  <th>Standart Deviation</th>
-  <td>{tableData.standart_deviation}</td>
-</tr>
-<tr>
-  <th>Lead Time</th>
-  <td>{tableData.lead_time}</td>
-</tr>
-<tr>
-  <th>Product Coverage Percentage</th>
-  <td>{tableData.product_coverage_percentage}</td>
-</tr>
-<tr>
-  <th>Demand Status</th>
-  <td>{tableData.demand_status}</td>
-</tr>
-<tr>
-  <th>Safety Stock</th>
-  <td>{tableData.safety_stock}</td>
-</tr>
-<tr>
-  <th>Rop</th>
-  <td>{tableData.rop}</td>
-</tr>
-<tr>
-  <th>Monthly Mean</th>
-  <td>{tableData.monthly_mean}</td>
-</tr>
-<tr>
-  <th>New Party</th>
-  <td>{tableData.new_party}</td>
-</tr>
-<tr>
-  <th>Cycle Service Level</th>
-  <td>{tableData.cycle_service_level}</td>
-</tr>
-<tr>
-  <th>Total Stock</th>
-  <td>{tableData.total_stock}</td>
-</tr>
-<tr>
-  <th>Need Products</th>
-  <td>{tableData.need_prodcuts}</td>
-</tr>
-<tr>
-  <th>Over Stock</th>
-  <td>{tableData.over_stock}</td>
-</tr>
-<tr>
-  <th>Calculated Need</th>
-  <td>{tableData.calculated_need}</td>
-</tr>
-<tr>
-  <th>Calculated Max Stock</th>
-  <td>{tableData.calculated_max_stock}</td>
-</tr>
-<tr>
-  <th>Calculated Min Stock</th>
-  <td>{tableData.calculated_min_stock}</td>
-</tr>
-</tbody>
-</Table>
+      <tbody>
+        {tableHeaders.map((header, index) => (
+          <tr key={index}>
+            <th>{header}</th>
+            <td>{parsedTableData.length > 0 && parsedTableData[index]}</td>
+          </tr>
+        ))}
+      </tbody>
+    </Table>
 
               </Card>
             </Col>
