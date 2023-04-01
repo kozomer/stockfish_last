@@ -1750,7 +1750,7 @@ class CustomerAreaPieChartView(View):
 
         
         total_dollar = sum([item['total_dollar'] for item in data])
-        if total_dollar is not None:
+        if total_dollar is not None or total_dollar != 0:
             table_data = [[item['customer_area'], item['total_dollar']] for item in data]
             chart_data_percent = [[item['customer_area'], item['total_dollar'] / total_dollar * 100] for item in data]
             
@@ -2089,7 +2089,8 @@ class ROPView(APIView):
         data = json.loads(request.body)
         product_code = data.get('product_code')
         product_values = ProductPerformance.objects.filter(product_code=product_code)
-        product_values = [[item['month'], item['year'], item['product_code'],item['sale_amount']] for item in product_values]
+        print(product_values)
+        product_values = [[item.month, item.year, item.product_code, item.sale_amount] for item in product_values]
         print(product_values)
 
         item = ROP.objects.get(product_code_ir = product_code)
