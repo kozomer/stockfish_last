@@ -32,7 +32,9 @@ import {
   Col,
   Table,
   Label,
-  Container
+  Container,
+  Input,
+  Button
 
 } from "reactstrap";
 
@@ -54,6 +56,9 @@ function Charts() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [result, setResult] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [leadTime, setLeadTime] = useState('');
+  const [serviceLevel, setServiceLevel] = useState('');
+  const [saveDisabled, setSaveDisabled] = useState(true);
   const [tableData, setTableData] = useState({
     group: "",
     subgroup: "",
@@ -217,12 +222,23 @@ function Charts() {
     }
   }, [productCode]);
 
-  const handleSelect = async (selectedOption) => {
-   
-    setSelectedItem(selectedOption);
+  useEffect(() => {
+    if (selectedItem && leadTime && serviceLevel) {
+      setSaveDisabled(false);
+    } else {
+      setSaveDisabled(true);
+    }
+  }, [selectedItem, leadTime, serviceLevel]);
+
+  const handleSave = async () => {
+    // handle the save logic here
+    console.log('Selected Item:', selectedItem);
+    console.log('Lead Time:', leadTime);
+    console.log('Service Level:', serviceLevel);
+  
     const access_token = await localforage.getItem('access_token');
     
-    const selectData = { product_code: selectedOption.value };
+    const selectData = { product_code: selectedOption.value};
     // post the selected option to Django
     fetch('http://127.0.0.1:8000/rop/', {
       method: 'POST',
@@ -238,6 +254,12 @@ function Charts() {
         setTableData(data);
         console.log(dataTable);
       }) 
+  };
+
+  const handleSelect = async (selectedOption) => {
+   
+    setSelectedItem(selectedOption);
+   
 
   }
   useEffect(() => {
@@ -314,33 +336,61 @@ function Charts() {
 
 
       <div className="content">
-        <Card>
-          <CardHeader>
-            <CardTitle tag='h4'>REORDER POINTS</CardTitle>
-          </CardHeader>
-          <Row style={{ marginTop: "10px" }} >
-            <CardBody>
-              <Col md="4">
-              <Label for="singleSelect">Select Product:</Label>
-                <Select
-
-
-                  name="singleSelect"
-                  value={selectedItem}
-                  onChange={(value) => {
-                    setSelectedItem(value);
-                    handleSelect(value);
-                  }}
-                  options={options}
-                  placeholder="Search for an item..."
-                  isSearchable
-
-                />
-              </Col>
-            </CardBody>
-          </Row>
-
-        </Card>
+      <Card>
+      <CardHeader>
+        <CardTitle tag='h4'>REORDER POINTS</CardTitle>
+      </CardHeader>
+      <CardBody>
+        <Row>
+          <Col md="4">
+            <Label for="singleSelect">Select Product:</Label>
+            <Select
+              name="singleSelect"
+              value={selectedItem}
+              onChange={(value) => {
+                setSelectedItem(value);
+                handleSelect(value);
+              }}
+              options={options}
+              placeholder="Search for an item..."
+              isSearchable
+              styles={{
+                control: (provided) => ({
+                  ...provided,
+                  height: '15px',
+                  minHeight: '38px',
+                }),
+              }}
+            />
+          </Col>
+          <Col md="4">
+            <Label for="leadTime">Lead Time:</Label>
+            <Input
+              type="number"
+              name="leadTime"
+              value={leadTime}
+              onChange={(e) => setLeadTime(e.target.value)}
+            />
+          </Col>
+          <Col md="4">
+            <Label for="serviceLevel">Service Level:</Label>
+            <Input
+              type="number"
+              name="serviceLevel"
+              value={serviceLevel}
+              onChange={(e) => setServiceLevel(e.target.value)}
+            />
+          </Col>
+        </Row>
+        <Row>
+          <Col md="12" className="text-center">
+            <Button color="primary" className="btn-upload" onClick={handleSave} disabled={saveDisabled}>
+              SHOW RESULTS
+            </Button>
+          </Col>
+        </Row>
+      </CardBody>
+    </Card>
         <Container fluid>
           <Row style={{ marginTop: "100px" }}>
             <Col md="6">
