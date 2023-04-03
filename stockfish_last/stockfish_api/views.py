@@ -7,7 +7,7 @@ from django.http import JsonResponse, HttpResponse
 import json
 from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
-from .definitions import jalali_to_greg, greg_to_jalali, calculate_experience_rating, calculate_sale_rating, current_jalali_date, get_exchange_rate, get_model
+from .definitions import jalali_to_greg, greg_to_jalali, calculate_experience_rating, calculate_sale_rating, current_jalali_date, get_exchange_rate, get_model, generate_future_forecast_dates
 from datetime import datetime
 import datetime
 import jdatetime
@@ -22,6 +22,7 @@ from django.db import models
 import openpyxl
 import base64
 from io import BytesIO
+
 
 
 # Authentications
@@ -269,7 +270,6 @@ class AddSalesView(APIView):
                 return JsonResponse({'error': "The uploaded file is not a valid Excel file"}, status=400)
 
             data = pd.read_excel(file)
-            print(data)
             if data.empty:
                 return JsonResponse({'error': "The uploaded file is empty"}, status=400)
 
@@ -329,6 +329,11 @@ class AddSalesView(APIView):
                     product = Products.objects.get(product_code_ir= row["Good Code"] )
                 except Exception as e:
                     return JsonResponse({'error': "No product found"}, status=400)
+                try:
+                    saler = Salers.objects.get(name= row["Saler"] )
+                except Exception as e:
+                    return JsonResponse({'error': "No saler found"}, status=400)
+                
                 # Save the Sale object
                 sale = Sales(
                     no=no,
@@ -1059,8 +1064,6 @@ class EditSalerView(APIView):
 
             old_data = data.get('old_data')
             new_data = data.get('new_data')
-            print('new_data',new_data)
-            print('old_data',old_data)
 
             # Check if name is provided
             name = new_data['name']
@@ -1123,10 +1126,9 @@ class SalerView(APIView):
         data = json.loads(request.body)
         id = data.get('id')
         saler = Salers.objects.get(id=id)
-        current_date = datetime.date.today()
-        jalali_current_date = jdatetime.date(current_date.year, current_date.month, current_date.day)
+        current_jalali_date= current_jalali_date()
         try:
-            saler_monthly_ratings = SalerMonthlySaleRating.objects.get(name=saler.name, month = jalali_current_date.month, year= jalali_current_date.year )
+            saler_monthly_ratings = SalerMonthlySaleRating.objects.get(name=saler.name, month = current_jalali_date.month, year= current_jalali_date.year )
             monthly_sale_rating = saler_monthly_ratings.sale_rating
         except SalerMonthlySaleRating.DoesNotExist:
             monthly_sale_rating = 1
@@ -1331,8 +1333,9 @@ def update_monthly_product_sales_with_add_sale(sender, instance, created, **kwar
             year=instance.date.year,
             month= instance.date.month
         )
-
-        monthly_sale.product_name = instance.product_name,
+        monthly_sale.date = instance.date
+        
+        monthly_sale.product_name = instance.product_name
         monthly_sale.piece+= instance.original_output_value
         monthly_sale.sale += instance.net_sales
         monthly_sale.save()
@@ -1745,9 +1748,7 @@ class CustomerAreaPieChartView(View):
 
         
         total_dollar = sum([item['total_dollar'] for item in data])
-        print(total_dollar)
         if total_dollar is not None and total_dollar != 0:
-            print("dsadsa")
             table_data = [[item['customer_area'], item['total_dollar']] for item in data]
             chart_data_percent = [[item['customer_area'], item['total_dollar'] / total_dollar * 100] for item in data]
             
@@ -2085,6 +2086,33 @@ class ROPView(APIView):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
         product_code = data.get('product_code')
+        lead_time = data.get('lead_time')
+        service_level = data.get('service_level')
+        product_values = ProductPerformance.objects.filter(product_code=product_code)
+        try:
+            last_sales = MonthlyProductSales.objects.filter(product_code=product_code).values("date").latest("date")
+            last_sale_date = last_sales["date"].strftime('%Y-%m-%d')
+            jalali_date = current_jalali_date()
+            jalali_date_str = jalali_date.strftime('%Y-%m-%d').split("-")
+        except MonthlyProductSales.DoesNotExist:
+            return JsonResponse({"error" : f"There is no product sales data with product code: {product_code} "})
+        try: 
+            warehouse = Warehouse.objects.get(product_code = product_code)
+            stock = warehouse.stock
+        except Warehouse.DoesNotExist:
+            return JsonResponse({"error" : f"There is no product in warehouse with product code: {product_code} "})
+        
+        dates_for_sales = [jdatetime.date(item.year, item.month, 1) for item in product_values]
+        sales = [item.sale_amount for item in product_values]
+        product_values = [[1, item.month, item.year, item.product_code, item.sale_amount] for item in product_values]
+        
+        #all_sales, prev_sales, future_sales, future_stocks, order_flag, safety_stock, rop, order = get_model()
+        #holt_model = get_model("holt", True, jalali_date_str, product_code, product_values, stock, lead_time, service_level, 12, 3 )
+        
+        #exp_model = get_model("exp", True, jalali_date_str, product_code, product_values, stock, lead_time, service_level, 12, 3 )
+        avrg_all_sales, avrg_prev_sales, avrg_future_sales, avrg_future_stocks, avrg_order_flag, avrg_safety_stock, avrg_rop, avrg_order = get_model("average", True, jalali_date_str, product_code, product_values, stock, 3, 95, 12, 3 )
+        avrg_future_forecast_dates = generate_future_forecast_dates(len(avrg_future_sales))
+        print(avrg_all_sales, avrg_prev_sales, avrg_future_sales, avrg_future_stocks, avrg_order_flag, avrg_safety_stock, avrg_rop, avrg_order)
         item = ROP.objects.get(product_code_ir = product_code)
         rop_list = rop_list = [
                 item.group,
@@ -2137,7 +2165,10 @@ class ROPView(APIView):
                 item.calculated_min_stock,
             ]
         
-        return JsonResponse(rop_list, safe=False)
+        return JsonResponse({'rop_list': rop_list, 'dates_for_sales': dates_for_sales, 'sales': sales, 'avrg_future_forecast_dates': avrg_future_forecast_dates, 'avrg_future_sales': avrg_future_sales}, safe=False)
+
+
+
 
         
         
