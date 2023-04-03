@@ -36,6 +36,7 @@ function Sidebar(props) {
   const [LastName, setLastName] = useState("");
 
   const location = useLocation();
+  console.log(location)
   // this creates the intial state of this component based on the collapse routes
   // that it gets through props.routes
   const getCollapseStates = (routes) => {
@@ -67,8 +68,10 @@ function Sidebar(props) {
   };
   // this function creates the links and collapses that appear in the sidebar (left menu)
   const createLinks = (routes) => {
+    
     return routes.map((prop, key) => {
-      if (prop.redirect) {
+      console.log(prop)
+      if (prop.redirect || prop.path === "/login") {
         return null;
       }
       if (prop.collapse) {

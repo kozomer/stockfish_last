@@ -193,6 +193,8 @@ const handleBgClick = (color) => {
             navbar
             isOpen={collapseOpen}
           >
+
+            {/* Search
             <Form>
               <InputGroup className="no-border">
                 <Input defaultValue="" placeholder="Search..." type="text" />
@@ -203,7 +205,11 @@ const handleBgClick = (color) => {
                 </InputGroupAddon>
               </InputGroup>
             </Form>
+             */}
+
+            
             <Nav navbar>
+               {/*Stats 
               <NavItem>
                 <NavLink
                   className="btn-magnify"
@@ -216,6 +222,7 @@ const handleBgClick = (color) => {
                   </p>
                 </NavLink>
               </NavItem>
+              */}
             
 <UncontrolledDropdown className="btn-rotate" nav isOpen={dropdownOpen} toggle={handleBellClick}>
   <DropdownToggle

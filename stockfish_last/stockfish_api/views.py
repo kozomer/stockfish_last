@@ -1732,12 +1732,12 @@ class CustomerAreaPieChartView(View):
     authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
-
+        
         report_type = data.get('report_type')
         date_month= current_jalali_date().month
         date_year= current_jalali_date().year
         
-        chart_data = []
+        table_data = []
         if report_type == 'monthly':
             data = CustomerPerformance.objects.filter(year=date_year, month=date_month).values('customer_area').annotate(total_dollar=Sum('dollar'))
         else:  # default is 'yearly'
@@ -1745,7 +1745,9 @@ class CustomerAreaPieChartView(View):
 
         
         total_dollar = sum([item['total_dollar'] for item in data])
-        if total_dollar is not None:
+        print(total_dollar)
+        if total_dollar is not None and total_dollar != 0:
+            print("dsadsa")
             table_data = [[item['customer_area'], item['total_dollar']] for item in data]
             chart_data_percent = [[item['customer_area'], item['total_dollar'] / total_dollar * 100] for item in data]
             

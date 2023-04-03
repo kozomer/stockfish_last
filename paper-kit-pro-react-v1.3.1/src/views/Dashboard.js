@@ -73,10 +73,13 @@ function Dashboard() {
   const notificationAlert = React.useRef();
   const [filterOption, setFilterOption] = useState("monthly");
   const [filterOptionCust, setFilterOptionCust] = useState("monthly");
+  const [filterOptionArea, setFilterOptionArea] = useState("monthly");
   const [topProducts, setTopProducts] = useState([]);
   const [topProductsPieData, setTopProductsPieData] = useState({});
   const [topCustomers, setTopCustomers] = useState([]);
   const [topCustomersPieData, setTopCustomersPieData] = useState({});
+  const [topAreas, setTopAreas] = useState([]);
+  const [topAreasPieData, setTopAreasPieData] = useState({});
   const [currency, setCurrency] = useState();
   const [currentDateTime] = useState(new Date());
   const [date, setDate] = useState([]);
@@ -268,6 +271,36 @@ function Dashboard() {
     };
     fetchDailyReportMotnhly();
   }, []);
+
+  useEffect(() => {
+    const fetchDataArea = async () => {
+      const access_token = await localforage.getItem('access_token');
+      
+      const response = await fetch("http://127.0.0.1:8000/customer_area/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': 'Bearer ' + String(access_token)
+        },
+        body: JSON.stringify({ report_type: filterOptionArea }),
+      });
+      const data = await response.json();
+      
+      setTopAreas(data.table_data);
+      setTopAreasPieData({
+        labels: data.chart_data_percent.map((item) => item[0]),
+        datasets: [
+          {
+            label: "Top Customers",
+            data: data.chart_data_percent.map((item) => item[1]),
+            backgroundColor: ["#53b100", "#61e8e1", "#f25757", "#f2a05d", "#f2e863", "#5e55ff"],
+          },
+        ],
+      });
+    };
+   
+    fetchDataArea();
+  }, [filterOptionArea])
 
   
   const rowHeaders = [
@@ -730,6 +763,125 @@ function Dashboard() {
           </Col>
         </Row>
 
+
+        <Row>
+          <Col md="6" > 
+            <Card>
+              <Row>
+                <Col xs="5">
+                  <CardHeader>
+                    <CardTitle tag="h4">Top Five Products</CardTitle>
+
+                  </CardHeader>
+                </Col>
+                <Col xs="3"></Col>
+                <Col xs="3" style={{marginTop:"10px"}}>
+                  <Label for="selectType">Select Type:</Label>
+                  <Input type="select" name="select" id="selectType" onChange={(e) => setFilterOptionArea(e.target.value)}>
+                    <option value="">Select Type</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+
+                  </Input>
+                </Col>
+              </Row>
+              <CardBody>
+                <Row>
+
+                  <Col md="12">
+
+                    <Table responsive>
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Product Name</th>
+                          <th className="text-right">Total Sales</th>
+
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {topAreas.map((area, index) => (
+                          <tr key={area[0]}>
+                            <td>{index + 1}</td>
+                            <td>{area[0]}</td>
+                            <td className="text-right">{area[1]}</td>
+
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+
+                    <Col md="8">
+                      <Doughnut
+                        style={{ marginTop: "50px" }}
+                        data={topAreasPieData}
+                        options={{
+                          plugins: {
+                            legend: {
+                              position: "right",
+                              labels: {
+                                font: {
+                                  size: 12,
+                                },
+                                usePointStyle: true,
+                              },
+                            },
+                            tooltips: {
+                              enabled: false,
+                            },
+                            title: {
+                              display: true,
+                              position: "top",
+                              text: "Top Products",
+                              color: "#66615c",
+                              font: {
+                                weight: 400,
+                                size: 20,
+                              },
+
+                            },
+                          },
+
+                          cutout: "70%",
+                          scales: {
+                            y: {
+                              ticks: {
+                                display: false,
+                              },
+                              grid: {
+                                drawBorder: false,
+                                display: false,
+                              },
+                            },
+                            x: {
+                              grid: {
+                                drawBorder: false,
+                                display: false,
+                              },
+                              ticks: {
+                                display: false,
+                              },
+                            },
+                          },
+                        }}
+
+
+                      />
+
+                    </Col>
+
+                  </Col>
+
+
+
+                </Row>
+
+              </CardBody>
+            </Card>
+          </Col>
+        
+          
+        </Row>
 
 {/* 
         <Row>
