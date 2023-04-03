@@ -2165,7 +2165,7 @@ class ROPView(APIView):
                 item.calculated_min_stock,
             ]
         
-        return JsonResponse({'rop_list': rop_list, }, safe=False)
+        return JsonResponse({'rop_list': rop_list, 'dates_for_sales': dates_for_sales, 'sales': sales, 'avrg_future_forecast_dates': avrg_future_forecast_dates, 'avrg_future_sales': avrg_future_sales}, safe=False)
 
 
 
