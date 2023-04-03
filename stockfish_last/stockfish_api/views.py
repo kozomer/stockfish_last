@@ -7,7 +7,7 @@ from django.http import JsonResponse, HttpResponse
 import json
 from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
-from .definitions import jalali_to_greg, greg_to_jalali, calculate_experience_rating, calculate_sale_rating, current_jalali_date, get_exchange_rate, get_model
+from .definitions import jalali_to_greg, greg_to_jalali, calculate_experience_rating, calculate_sale_rating, current_jalali_date, get_exchange_rate, get_model, generate_future_forecast_dates
 from datetime import datetime
 import datetime
 import jdatetime
@@ -22,6 +22,7 @@ from django.db import models
 import openpyxl
 import base64
 from io import BytesIO
+
 
 
 # Authentications
@@ -2091,7 +2092,8 @@ class ROPView(APIView):
         try:
             last_sales = MonthlyProductSales.objects.filter(product_code=product_code).values("date").latest("date")
             last_sale_date = last_sales["date"].strftime('%Y-%m-%d')
-            jalali_date= current_jalali_date().strftime('%Y-%m-%d').split("-")
+            jalali_date = current_jalali_date()
+            jalali_date_str = jalali_date.strftime('%Y-%m-%d').split("-")
         except MonthlyProductSales.DoesNotExist:
             return JsonResponse({"error" : f"There is no product sales data with product code: {product_code} "})
         try: 
@@ -2100,13 +2102,17 @@ class ROPView(APIView):
         except Warehouse.DoesNotExist:
             return JsonResponse({"error" : f"There is no product in warehouse with product code: {product_code} "})
         
+        dates_for_sales = [jdatetime.date(item.year, item.month, 1) for item in product_values]
+        sales = [item.sale_amount for item in product_values]
         product_values = [[1, item.month, item.year, item.product_code, item.sale_amount] for item in product_values]
         
         #all_sales, prev_sales, future_sales, future_stocks, order_flag, safety_stock, rop, order = get_model()
-        holt_model = get_model("holt", True, jalali_date, product_code, product_values, stock, lead_time, service_level, 12, 3 )
-        print(holt_model)
-        exp_model = get_model("exp", True, jalali_date, product_code, product_values, stock, lead_time, service_level, 12, 3 )
-        average_model = get_model("average", True, jalali_date, product_code, product_values, stock, lead_time, service_level, 12, 3 )
+        #holt_model = get_model("holt", True, jalali_date_str, product_code, product_values, stock, lead_time, service_level, 12, 3 )
+        
+        #exp_model = get_model("exp", True, jalali_date_str, product_code, product_values, stock, lead_time, service_level, 12, 3 )
+        avrg_all_sales, avrg_prev_sales, avrg_future_sales, avrg_future_stocks, avrg_order_flag, avrg_safety_stock, avrg_rop, avrg_order = get_model("average", True, jalali_date_str, product_code, product_values, stock, 3, 95, 12, 3 )
+        avrg_future_forecast_dates = generate_future_forecast_dates(len(avrg_future_sales))
+        print(avrg_all_sales, avrg_prev_sales, avrg_future_sales, avrg_future_stocks, avrg_order_flag, avrg_safety_stock, avrg_rop, avrg_order)
         item = ROP.objects.get(product_code_ir = product_code)
         rop_list = rop_list = [
                 item.group,
@@ -2159,7 +2165,7 @@ class ROPView(APIView):
                 item.calculated_min_stock,
             ]
         
-        return JsonResponse(rop_list, safe=False)
+        return JsonResponse({'rop_list': rop_list, }, safe=False)
 
 
 

@@ -7,6 +7,7 @@ import numpy as np
 from itertools import product
 import matplotlib.pyplot as plt
 from statsmodels.tsa.api import ExponentialSmoothing, SimpleExpSmoothing, Holt
+from scipy.stats import norm
 
 def jalali_to_greg(day,month,year):
     gregorian_date = jdatetime.date(year,month,day).togregorian()
@@ -132,24 +133,11 @@ def simulate_future_stocks(current_stock, future_sales):
     for sls in future_sales:
         future_stocks.append(future_stocks[-1]-sls)
     return future_stocks
-def create_service_level_service_factor_dict():
-    table = dict()
-    table[50] = 0
-    table[55] = 0.13
-    table[60] = 0.25
-    table[65] = 0.39
-    table[70] = 0.52
-    table[75] = 0.67
-    table[80] = 0.84
-    table[85] = 1.04
-    table[90] = 1.28
-    table[95] = 1.64
-    table[99] = 2.33
-    table[99.90] = 3.09
-    table[99.99] = 3.72
-    return table
+def create_service_level_service_factor(service_level):
+    # Calculate the inverse of the standard normal cumulative distribution function
+    # for a given probability value
+    return norm.ppf(service_level)
 def dynamic_correction(monthly_sales, current_date):
-    print("monthly:", monthly_sales)
     last_year = monthly_sales[-1][0]
     last_month = monthly_sales[-1][1]
     current_year = current_date[0]
@@ -180,15 +168,29 @@ def get_model(model, is_dynamic, current_date, product_code, product_sales, curr
         future_sales = forecast_by_holt(prev_sales,prev_forecast_period, future_forecast_period)
     elif model == 'exp':
         future_sales = forecast_by_exp(prev_sales,prev_forecast_period, future_forecast_period)
-    sl_sf_table = create_service_level_service_factor_dict()
     future_stocks = simulate_future_stocks(current_stock,future_sales)
     all_sales = prev_sales + future_sales
-    safety_stock = sl_sf_table[service_level] * np.std(all_sales)
+    safety_stock = create_service_level_service_factor(service_level) * np.std(all_sales)
     order_flag = any(num < safety_stock for num in future_stocks[0:lead_time])
     rop = sum(future_sales[0:lead_time]) + safety_stock
     base_stock_level = safety_stock + (future_sales[0] * lead_time)
     order = (base_stock_level - current_stock) / lead_time
     return all_sales, prev_sales, future_sales, future_stocks, order_flag, safety_stock, rop, order
+
+def generate_future_forecast_dates(num_months):
+    current_date = jdatetime.datetime.now().date()
+    future_dates = [current_date.replace(day=1)]
+
+    for i in range(1, num_months):
+        last_date = future_dates[-1]
+        month = last_date.month + 1
+        year = last_date.year
+        if month > 12:
+            month = 1
+            year += 1
+        future_dates.append(jdatetime.date(year, month, 1))
+
+    return future_dates
 # product_code = 15202103
 # #product_sales = np.load('/Users/myurt/Downloads/data_array_numpy.npy')
 # product_sales = [[1,1,1400,1,900],
