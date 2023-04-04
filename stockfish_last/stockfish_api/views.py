@@ -2085,12 +2085,14 @@ class ROPView(APIView):
     authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
+        print(data)
         product_code = data.get('product_code')
         lead_time = data.get('lead_time')
         service_level = data.get('service_level')
         product_values = ProductPerformance.objects.filter(product_code=product_code)
         try:
             last_sales = MonthlyProductSales.objects.filter(product_code=product_code).values("date").latest("date")
+            print(last_sales)
             last_sale_date = last_sales["date"].strftime('%Y-%m-%d')
             jalali_date = current_jalali_date()
             jalali_date_str = jalali_date.strftime('%Y-%m-%d').split("-")
@@ -2102,7 +2104,7 @@ class ROPView(APIView):
         except Warehouse.DoesNotExist:
             return JsonResponse({"error" : f"There is no product in warehouse with product code: {product_code} "})
         
-        dates_for_sales = [jdatetime.date(item.year, item.month, 1) for item in product_values]
+        dates_for_sales = [jdatetime.date(item.year, item.month, 1).strftime('%Y-%m-%d') for item in product_values]
         sales = [item.sale_amount for item in product_values]
         product_values = [[1, item.month, item.year, item.product_code, item.sale_amount] for item in product_values]
         

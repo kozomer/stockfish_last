@@ -238,7 +238,7 @@ function Charts() {
   
     const access_token = await localforage.getItem('access_token');
     
-    const selectData = { product_code: selectedOption.value};
+    const selectData = { product_code: selectedItem.value, lead_time: leadTime, service_level:serviceLevel};
     // post the selected option to Django
     fetch('http://127.0.0.1:8000/rop/', {
       method: 'POST',
@@ -251,8 +251,8 @@ function Charts() {
       .then(response => response.json())
       .then(data => {
         
-        setTableData(data);
-        console.log(dataTable);
+       // setTableData(data);
+        console.log(data);
       }) 
   };
 

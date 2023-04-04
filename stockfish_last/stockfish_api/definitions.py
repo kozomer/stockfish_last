@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 from .models import ProductPerformance
 import numpy as np
 from itertools import product
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from statsmodels.tsa.api import ExponentialSmoothing, SimpleExpSmoothing, Holt
 from scipy.stats import norm
 
@@ -178,17 +178,18 @@ def get_model(model, is_dynamic, current_date, product_code, product_sales, curr
     return all_sales, prev_sales, future_sales, future_stocks, order_flag, safety_stock, rop, order
 
 def generate_future_forecast_dates(num_months):
-    current_date = jdatetime.datetime.now().date()
-    future_dates = [current_date.replace(day=1)]
+    current_date = current_jalali_date()
+    future_dates = [current_date]
 
     for i in range(1, num_months):
         last_date = future_dates[-1]
-        month = last_date.month + 1
+        print(last_date)
+        month = int(last_date.month) + 1
         year = last_date.year
         if month > 12:
             month = 1
             year += 1
-        future_dates.append(jdatetime.date(year, month, 1))
+        future_dates.append(jdatetime.date(year, month, 1).strftime('%Y-%m-%d'))
 
     return future_dates
 # product_code = 15202103
