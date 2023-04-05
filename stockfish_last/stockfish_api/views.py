@@ -2085,14 +2085,13 @@ class ROPView(APIView):
     authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
-        print(data)
         product_code = data.get('product_code')
-        lead_time = data.get('lead_time')
-        service_level = data.get('service_level')
+        lead_time = int(data.get('lead_time'))
+        service_level = float(data.get('service_level'))
+        forecast_period = int(data.get('forecast_period'))
         product_values = ProductPerformance.objects.filter(product_code=product_code)
         try:
             last_sales = MonthlyProductSales.objects.filter(product_code=product_code).values("date").latest("date")
-            print(last_sales)
             last_sale_date = last_sales["date"].strftime('%Y-%m-%d')
             jalali_date = current_jalali_date()
             jalali_date_str = jalali_date.strftime('%Y-%m-%d').split("-")
@@ -2108,13 +2107,18 @@ class ROPView(APIView):
         sales = [item.sale_amount for item in product_values]
         product_values = [[1, item.month, item.year, item.product_code, item.sale_amount] for item in product_values]
         
-        #all_sales, prev_sales, future_sales, future_stocks, order_flag, safety_stock, rop, order = get_model()
-        #holt_model = get_model("holt", True, jalali_date_str, product_code, product_values, stock, lead_time, service_level, 12, 3 )
-        
-        #exp_model = get_model("exp", True, jalali_date_str, product_code, product_values, stock, lead_time, service_level, 12, 3 )
-        avrg_all_sales, avrg_prev_sales, avrg_future_sales, avrg_future_stocks, avrg_order_flag, avrg_safety_stock, avrg_rop, avrg_order = get_model("average", True, jalali_date_str, product_code, product_values, stock, 3, 95, 12, 3 )
+        holt_all_sales, holt_prev_sales, holt_future_sales, holt_future_stocks, holt_order_flag, holt_safety_stock, holt_rop, holt_order = get_model("holt", True, jalali_date_str, product_code, product_values, stock, lead_time, service_level, 12, forecast_period )
+        exp_all_sales, exp_prev_sales, exp_future_sales, exp_future_stocks, exp_order_flag, exp_safety_stock, exp_rop, exp_order = get_model("exp", True, jalali_date_str, product_code, product_values, stock, lead_time, service_level, 12, forecast_period )
+        avrg_all_sales, avrg_prev_sales, avrg_future_sales, avrg_future_stocks, avrg_order_flag, avrg_safety_stock, avrg_rop, avrg_order = get_model("average", True, jalali_date_str, product_code, product_values, stock, lead_time, service_level, 12, forecast_period )
+        if avrg_order_flag == False:
+            avrg_order = 0
+        if exp_order_flag == False:
+            exp_order = 0
+        if holt_order_flag == False:
+            holt_order = 0
         avrg_future_forecast_dates = generate_future_forecast_dates(len(avrg_future_sales))
-        print(avrg_all_sales, avrg_prev_sales, avrg_future_sales, avrg_future_stocks, avrg_order_flag, avrg_safety_stock, avrg_rop, avrg_order)
+        exp_future_forecast_dates = generate_future_forecast_dates(len(exp_future_sales))
+        holt_future_forecast_dates = generate_future_forecast_dates(len(holt_future_sales))
         item = ROP.objects.get(product_code_ir = product_code)
         rop_list = rop_list = [
                 item.group,
@@ -2166,8 +2170,25 @@ class ROPView(APIView):
                 item.calculated_max_stock,
                 item.calculated_min_stock,
             ]
-        
-        return JsonResponse({'rop_list': rop_list, 'dates_for_sales': dates_for_sales, 'sales': sales, 'avrg_future_forecast_dates': avrg_future_forecast_dates, 'avrg_future_sales': avrg_future_sales}, safe=False)
+        return JsonResponse({'rop_list': rop_list, 'stock': stock,
+                            'avrg_dates_for_sales': dates_for_sales,
+                            'avrg_sales': sales,
+                            'avrg_future_forecast_dates': avrg_future_forecast_dates, 
+                            'avrg_future_sales': avrg_future_sales, 
+                            'avrg_order_flag': avrg_order_flag, 
+                            'avrg_order': avrg_order,
+                            'holt_dates_for_sales': dates_for_sales,
+                            'holt_sales': sales,
+                            'holt_future_forecast_dates': holt_future_forecast_dates, 
+                            'holt_future_sales': holt_future_sales.tolist(), 
+                            'holt_order_flag': holt_order_flag, 
+                            'holt_order': holt_order,
+                            'exp_dates_for_sales': dates_for_sales,
+                            'exp_sales': sales,
+                            'exp_future_forecast_dates': exp_future_forecast_dates, 
+                            'exp_future_sales': exp_future_sales.tolist(), 
+                            'exp_order_flag': exp_order_flag, 
+                            'exp_order': exp_order }, safe=False)
 
 
 

@@ -57,8 +57,15 @@ function Charts() {
   const [result, setResult] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [leadTime, setLeadTime] = useState('');
+  const [forecast, setForecast] = useState('');
   const [serviceLevel, setServiceLevel] = useState('');
   const [saveDisabled, setSaveDisabled] = useState(true);
+  const [orderFlag, setOrderFlag] = useState(false);
+  const [order, setOrder] = useState('');
+  const [orderFlagHolt, setOrderFlagHolt] = useState(false);
+  const [orderHolt, setOrderHolt] = useState('');
+  const [orderFlagExp, setOrderFlagExp] = useState(false);
+  const [orderExp, setOrderExp] = useState('');
   const [tableData, setTableData] = useState({
     group: "",
     subgroup: "",
@@ -171,7 +178,7 @@ function Charts() {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const productCode = queryParams.get('productCode');
-  console.log(productCode)
+  
 
   useEffect(() => {
     async function fetchData() {
@@ -223,22 +230,21 @@ function Charts() {
   }, [productCode]);
 
   useEffect(() => {
-    if (selectedItem && leadTime && serviceLevel) {
+    if (selectedItem && leadTime && serviceLevel && forecast) {
+      console.log("sd")
       setSaveDisabled(false);
     } else {
       setSaveDisabled(true);
     }
-  }, [selectedItem, leadTime, serviceLevel]);
+  }, [selectedItem, leadTime, serviceLevel,forecast]);
 
   const handleSave = async () => {
     // handle the save logic here
-    console.log('Selected Item:', selectedItem);
-    console.log('Lead Time:', leadTime);
-    console.log('Service Level:', serviceLevel);
+    
   
     const access_token = await localforage.getItem('access_token');
     
-    const selectData = { product_code: selectedItem.value, lead_time: leadTime, service_level:serviceLevel};
+    const selectData = { product_code: selectedItem.value, lead_time: leadTime, service_level:serviceLevel, forecast_period: forecast};
     // post the selected option to Django
     fetch('http://127.0.0.1:8000/rop/', {
       method: 'POST',
@@ -251,8 +257,17 @@ function Charts() {
       .then(response => response.json())
       .then(data => {
         
-       // setTableData(data);
-        console.log(data);
+        setTableData(data.rop_list);
+        setResult(data);
+        setOrder(data.avrg_order);
+        setOrderFlag(data.avrg_order_flag)
+
+        setOrderHolt(data.holt_order);
+        setOrderFlagHolt(data.holt_order_flag)
+
+        setOrderExp(data.exp_order);
+        setOrderFlagExp(data.exp_order_flag)
+        
       }) 
   };
 
@@ -273,26 +288,45 @@ function Charts() {
     label: item
   }));
 
-  let charts = {};
-  if (result && result.date_list && result.output_value_list && result.product_name) {
-    charts = {
+  let charts_ave = {};
+  if ( result && result.avrg_dates_for_sales && result.avrg_sales && result.avrg_future_forecast_dates && result.avrg_future_sales) {
+    const combinedDates = [...result.avrg_dates_for_sales, ...result.avrg_future_forecast_dates];
+    const combinedSales = [...result.avrg_sales, ...result.avrg_future_sales];
+    const historicalSales = combinedSales.slice(0, result.avrg_sales.length);
+    const futureSales = combinedSales.slice(result.avrg_sales.length);
+    const futureDates = result.avrg_future_forecast_dates;
+    console.log(futureDates)
+  
+    charts_ave = {
       data: {
-        labels: result.date_list,
+        labels: combinedDates,
         datasets: [
           {
-            label: result.product_name,
+            label: "Historical Sales",
             borderColor: "#6bd098",
-            pointRadius: 0,
-            pointHoverRadius: 0,
+            pointRadius: 4,
+            pointHoverRadius: 6,
             fill: false,
             borderWidth: 3,
             barPercentage: 1.6,
             tension: 0.4,
-            data: result.output_value_list
+            data: historicalSales.map((sales, index) => ({ x: result.avrg_dates_for_sales[index], y: sales })),
+          },
+          {
+            label: "Future Sales",
+            borderColor: "#f96868",
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            fill: false,
+            borderWidth: 3,
+            barPercentage: 1.6,
+            tension: 0.4,
+            data: futureSales.map((sales, index) => ({ x: futureDates[index], y: sales })),
           }
         ]
       },
       options: {
+        responsive: true,
         plugins: {
           legend: {
             display: false
@@ -311,24 +345,179 @@ function Charts() {
             },
             grid: {
               drawBorder: false,
-              display: false
+              display: true
             }
           },
           x: {
             grid: {
               drawBorder: false,
-              display: false
+              display: true
             },
             ticks: {
               padding: 20,
               color: "#9f9f9f"
             }
+            
           }
         }
       }
     };
   }
-
+  
+  let charts_holt = {};
+  if ( result && result.holt_dates_for_sales && result.holt_sales && result.holt_future_forecast_dates && result.holt_future_sales) {
+    console.log("sdad")
+    const combinedDates = [...result.holt_dates_for_sales, ...result.holt_future_forecast_dates];
+    const combinedSales = [...result.holt_sales, ...result.holt_future_sales];
+    const historicalSales = combinedSales.slice(0, result.holt_sales.length);
+    const futureSales = combinedSales.slice(result.holt_sales.length);
+    const futureDates = result.holt_future_forecast_dates;
+  
+  
+    charts_holt = {
+      data: {
+        labels: combinedDates,
+        datasets: [
+          {
+            label: "Historical Sales",
+            borderColor: "#6bd098",
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            fill: false,
+            borderWidth: 3,
+            barPercentage: 1.6,
+            tension: 0.4,
+            data: historicalSales.map((sales, index) => ({ x: result.holt_dates_for_sales[index], y: sales })),
+          },
+          {
+            label: "Future Sales",
+            borderColor: "#f96868",
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            fill: false,
+            borderWidth: 3,
+            barPercentage: 1.6,
+            tension: 0.4,
+            data: futureSales.map((sales, index) => ({ x: futureDates[index], y: sales })),
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltips: {
+            enabled: false
+          }
+        },
+        scales: {
+          y: {
+            ticks: {
+              color: "#9f9f9f",
+              beginAtZero: false,
+              maxTicksLimit: 5
+              //padding: 20
+            },
+            grid: {
+              drawBorder: false,
+              display: true
+            }
+          },
+          x: {
+            grid: {
+              drawBorder: false,
+              display: true
+            },
+            ticks: {
+              padding: 20,
+              color: "#9f9f9f"
+            }
+            
+          }
+        }
+      }
+    };
+  }
+  
+  let charts_exp = {};
+  if ( result && result.exp_dates_for_sales && result.exp_sales && result.exp_future_forecast_dates && result.exp_future_sales) {
+    console.log("sdad")
+    const combinedDates = [...result.exp_dates_for_sales, ...result.exp_future_forecast_dates];
+    const combinedSales = [...result.exp_sales, ...result.exp_future_sales];
+    const historicalSales = combinedSales.slice(0, result.exp_sales.length);
+    const futureSales = combinedSales.slice(result.exp_sales.length);
+    const futureDates = result.exp_future_forecast_dates;
+  
+  
+    charts_exp = {
+      data: {
+        labels: combinedDates,
+        datasets: [
+          {
+            label: "Historical Sales",
+            borderColor: "#6bd098",
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            fill: false,
+            borderWidth: 3,
+            barPercentage: 1.6,
+            tension: 0.4,
+            data: historicalSales.map((sales, index) => ({ x: result.exp_dates_for_sales[index], y: sales })),
+          },
+          {
+            label: "Future Sales",
+            borderColor: "#f96868",
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            fill: false,
+            borderWidth: 3,
+            barPercentage: 1.6,
+            tension: 0.4,
+            data: futureSales.map((sales, index) => ({ x: futureDates[index], y: sales })),
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltips: {
+            enabled: false
+          }
+        },
+        scales: {
+          y: {
+            ticks: {
+              color: "#9f9f9f",
+              beginAtZero: false,
+              maxTicksLimit: 5
+              //padding: 20
+            },
+            grid: {
+              drawBorder: false,
+              display: true
+            }
+          },
+          x: {
+            grid: {
+              drawBorder: false,
+              display: true
+            },
+            ticks: {
+              padding: 20,
+              color: "#9f9f9f"
+            }
+            
+          }
+        }
+      }
+    };
+  }
+  
  
 
   return (
@@ -373,12 +562,25 @@ function Charts() {
             />
           </Col>
           <Col md="4">
-            <Label for="serviceLevel">Service Level:</Label>
+            <Label for="serviceLevel">Service Level(must 0.00 - 1.00):</Label>
             <Input
               type="number"
               name="serviceLevel"
               value={serviceLevel}
+              min="0"
+              max="1"
+              step="0.01"
               onChange={(e) => setServiceLevel(e.target.value)}
+            />
+          </Col>
+          <Col md="4">
+            <Label for="forecast">Forecast Period:</Label>
+            <Input
+              type="number"
+              name="forecast"
+              value={forecast}
+              
+              onChange={(e) => setForecast(e.target.value)}
             />
           </Col>
         </Row>
@@ -414,10 +616,14 @@ function Charts() {
                   <div className="d-flex justify-content-center" style={{ width: "100%" }}>
                     <Card className="card-chart" style={{ width: "100%" }}>
                       <CardHeader>
-                        <CardTitle>SALES</CardTitle>
+                        <CardTitle tag="h5">AVERAGE MODEL(OLD)</CardTitle>
+                        <div>
+                        <span><strong>Order Status:</strong> {`${orderFlag ? "required" : "not-required"}, `}</span>
+<span><strong>Order:</strong>{` ${order}`}</span>
+                </div>
                       </CardHeader>
                       <CardBody>
-                        <Line data={charts.data} options={charts.options} />
+                        <Line data={charts_ave.data} options={charts_ave.options} />
                       </CardBody>
                     </Card>
                   </div>
@@ -428,11 +634,14 @@ function Charts() {
                   <div className="d-flex justify-content-center" style={{ width: "100%" }}>
                     <Card className="card-chart" style={{ width: "100%" }}>
                       <CardHeader>
-                        <CardTitle>NASDAQ: AAPL</CardTitle>
-                        <p className="card-category">Line Chart with Points</p>
+                        <CardTitle tag="h5">HOLT MODEL</CardTitle>
+                        <div>
+                        <span><strong>Order Status:</strong> {`${orderFlagHolt ? "required" : "not-required"}, `}</span>
+<span><strong>Order:</strong>{` ${orderHolt}`}</span>
+                </div>
                       </CardHeader>
                       <CardBody>
-                        <Line data={chartExample9.data} options={chartExample9.options} />
+                        <Line data={charts_holt.data} options={charts_holt.options} />
                       </CardBody>
                     </Card>
                   </div>
@@ -443,11 +652,14 @@ function Charts() {
                   <div className="d-flex justify-content-center" style={{ width: "100%" }}>
                     <Card className="card-chart" style={{ width: "100%" }}>
                       <CardHeader>
-                        <CardTitle>Views</CardTitle>
-                        <p className="card-category">Bar Chart</p>
+                        <CardTitle tag="h5">EXP. MODEL</CardTitle>
+                        <div>
+                        <span><strong>Order Status:</strong> {`${orderFlagExp ? "required" : "not-required"}, `}</span>
+<span><strong>Order:</strong>{` ${orderExp}`}</span>
+                </div>
                       </CardHeader>
                       <CardBody>
-                        <Bar data={chartExample10.data} options={chartExample10.options} />
+                        <Line data={charts_exp.data} options={charts_exp.options} />
                       </CardBody>
                     </Card>
                   </div>
