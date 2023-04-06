@@ -1,6 +1,6 @@
 from django.shortcuts import render
 import pandas as pd
-from .models import Customers, Products, Sales, Warehouse, ROP, Salers, SalerPerformance, SaleSummary, SalerMonthlySaleRating, MonthlyProductSales,CustomerPerformance, ProductPerformance
+from .models import Customers, Products, Sales, Warehouse, ROP, Salers, SalerPerformance, SaleSummary, SalerMonthlySaleRating, MonthlyProductSales,CustomerPerformance, ProductPerformance, OrderList
 from django.views import View
 from rest_framework.views import APIView
 from django.http import JsonResponse, HttpResponse
@@ -22,6 +22,7 @@ from django.db import models
 import openpyxl
 import base64
 from io import BytesIO
+import numpy as np
 
 
 
@@ -2192,9 +2193,75 @@ class ROPView(APIView):
 
 
 
+# endregion
 
-        
-        
+# region OrderList
+
+@receiver(post_save, sender=Sales)
+def create_sales_signal(sender, instance, created, **kwargs):
+    if created:
+        models = ['average', 'holt', 'exp']
+        order_flags = {'average': False, 'holt': False, 'exp': False}
+        orders = {'average': 0, 'holt': 0, 'exp': 0}
+        product_code = instance.product_code
+        product_values = ProductPerformance.objects.filter(product_code=product_code)
+        weight = Products.objects.get(product_code = product_code)
+        try:
+            last_sales = MonthlyProductSales.objects.filter(product_code=product_code).values("date").latest("date")
+            last_sale_date = last_sales["date"].strftime('%Y-%m-%d')
+            jalali_date = current_jalali_date()
+            jalali_date_str = jalali_date.strftime('%Y-%m-%d').split("-")
+        except MonthlyProductSales.DoesNotExist:
+            return JsonResponse({"error" : f"There is no product sales data with product code: {product_code} "})
+        try: 
+            warehouse = Warehouse.objects.get(product_code = product_code)
+            stock = warehouse.stock
+        except Warehouse.DoesNotExist:
+            return JsonResponse({"error" : f"There is no product in warehouse with product code: {product_code} "})
+
+        for model in models:
+            all_sales, prev_sales, future_sales, future_stocks, order_flag, safety_stock, rop, order = get_model(
+                model, True, jalali_date_str, product_code, product_values, stock, 3, 0.99,
+                12, 3
+            )
+
+            if order_flag:
+                is_active = True
+                order_flags[model] = True
+                orders[model] = order
+
+        is_active = any(order_flags.values())
+
+        if is_active:
+            order_list = OrderList(
+                product_code=product_code,
+                order_flag_avrg=order_flags['average'],
+                order_flag_exp=order_flags['exp'],
+                order_flag_holt=order_flags['holt'],
+                order_avrg=orders['average'],
+                order_exp=orders['exp'],
+                order_holt=orders['holt'],
+                current_date=jalali_date,
+                current_stock=stock,
+                weight=weight,
+                average_sale=np.mean(all_sales),
+                is_active=is_active
+            )
+            order_list.save()
+
+class OrderListView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def get(self, request, *args, **kwargs):
+        order_lists = OrderList.objects.filter(is_active=True).values()
+        order_list_data = [
+            [o['product_code'], o['date'], o['order_avrg'], o['order_exp'], o['order_holt'], o['current_date'],
+             o['current_stock'], o['decided_order'], o['weight']] for o in order_lists
+        ]
+        return JsonResponse(order_list_data, safe=False)
+
+
 # endregion
 
 

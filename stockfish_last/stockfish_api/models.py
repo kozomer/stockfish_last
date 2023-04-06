@@ -209,6 +209,20 @@ class ProductPerformance(models.Model):
     sale = models.FloatField(default=0, null=True)
     sale_amount = models.FloatField(default=0, null=True)
 
+class OrderList(models.Model):
+    objects = jmodels.jManager()
+    current_date = jmodels.jDateField(null=True)
+    order_flag_avrg = models.BooleanField()
+    order_flag_exp = models.BooleanField()
+    order_flag_holt = models.BooleanField()
+    order_avrg = models.FloatField(default=0, null=True)
+    order_exp = models.FloatField(default=0, null=True)
+    order_holt = models.FloatField(default=0, null=True)
+    current_stock = models.DecimalField(max_digits=10, decimal_places=2)
+    decided_order = models.FloatField(default=0, null=True)
+    weight = models.FloatField(default=0, null=True)
+    average_sale = models.FloatField(default=0, null=True)
+    product_code = models.IntegerField(null=True)
 
 
 
