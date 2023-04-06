@@ -19,9 +19,13 @@ const DataTable = () => {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleteData, setDeleteData] = useState(null);
   const [dataChanged, setDataChanged] = useState(false);
-
+  const [saveDisabled, setSaveDisabled] = useState(true);
   const [editData, setEditData] = useState(null);
   const [oldData, setOldData] = useState(null);
+
+  const [leadTime, setLeadTime] = useState('');
+
+  const [serviceLevel, setServiceLevel] = useState('');
   
   useEffect(() => {
     async function fetchData() {
@@ -45,62 +49,48 @@ const DataTable = () => {
 */
 
 
-const handleAddFileClick = () => {
-  setShowUploadDiv(true);
-}
+const handleSave = async () => {
+  // handle the save logic here
+  
 
-  const handleFileInputChange = (e) => {
-    setFile(e.target.files[0]);
-    console.log(file)
-  };
-
-  const handleUploadClick = async() => {
-    setIsLoading(true);
-    const formData = new FormData();
-    formData.append('file', file);
-    const access_token = await localforage.getItem('access_token'); 
-    fetch('http://127.0.0.1:8000/add_warehouse/', {
-      method: 'POST',
-      body: formData,
-      credentials: 'include',
-      headers: {
-        'Authorization': 'Bearer '+ String(access_token)
-      }
-    })
-    .then((response) => {
-      if (!response.ok) {
-        return response.json().then(data => {
-          console.log(data.error)
-          setIsLoading(false);
-          errorUpload(data.error);
-        });
-      }
-      else{
-        return response.json().then(data => {
-          setIsLoading(false);
-          successUpload(data.message);
-          fetch('http://127.0.0.1:8000/warehouse/',{
-            headers: {
-              'Authorization': 'Bearer '+ String(access_token)
-            }
-          })
-          .then((response) => response.json())
-          .then((data) =>{
-             setDataTable(data)
-             console.log(data.message)});
-        });
-      }
-    })
-    .catch((error) => {
-      console.error(error.message); // the error message returned by the server
-      setIsLoading(false);
-      errorUpload(e);
-    })
-    .finally(() => {
-      setShowUploadDiv(false);
+  const access_token = await localforage.getItem('access_token');
+  
+  const selectData = { lead_time: leadTime, service_level:serviceLevel};
+  // post the selected option to Django
+  fetch('http://127.0.0.1:8000/rop/', {
+    method: 'POST',
+  headers: { "Content-Type": "application/json", 
+  'Authorization': 'Bearer '+ String(access_token)},
+    
+    body: JSON.stringify(selectData),
+   
+  })
+    .then(response => response.json())
+    .then(data => {
       
-    });
-  };
+      setTableData(data.rop_list);
+      setResult(data);
+      setOrder(data.avrg_order);
+      setOrderFlag(data.avrg_order_flag)
+
+      setOrderHolt(data.holt_order);
+      setOrderFlagHolt(data.holt_order_flag)
+
+      setOrderExp(data.exp_order);
+      setOrderFlagExp(data.exp_order_flag)
+      
+    }) 
+};
+
+useEffect(() => {
+  if ( leadTime && serviceLevel ) {
+    
+    setSaveDisabled(false);
+  } else {
+    setSaveDisabled(true);
+  }
+}, [ leadTime, serviceLevel]);
+  
   
   const handleClick = (row) => {
      
@@ -310,39 +300,8 @@ const handleAddFileClick = () => {
   };
 
 
-  async function handleExportClick() {
-    // Retrieve the access token from localForage
-    const access_token = await localforage.getItem('access_token');
+ 
   
-    // Make an AJAX request to the backend to download the CSV file
-    const response = await fetch('http://127.0.0.1:8000/export_warehouse/', {
-      headers: {
-        'Authorization': 'Bearer '+ String(access_token)
-      },
-    });
-  
-    // Parse the JSON response
-    const data = await response.json();
-  
-    // Extract the filename and content from the JSON response
-    const filename = data.filename;
-    const base64Content = data.content;
-  
-    // Convert the base64 content to a Blob
-    const binaryContent = atob(base64Content);
-    const byteNumbers = new Array(binaryContent.length);
-    for (let i = 0; i < binaryContent.length; i++) {
-      byteNumbers[i] = binaryContent.charCodeAt(i);
-    }
-    const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  
-    // Create a link to download the file and simulate a click to download it
-    const link = document.createElement('a');
-    link.href = window.URL.createObjectURL(blob);
-    link.download = filename;
-    link.click();
-  }
   return (
     <>
       <div className='content'>
@@ -418,46 +377,37 @@ const handleAddFileClick = () => {
 
 <Card>
   <CardHeader>
-    <CardTitle tag='h4'>WAREHOUSE</CardTitle>
+    <CardTitle tag='h4'>ORDER LIST</CardTitle>
   </CardHeader>
   <CardBody>
-    <div className="upload-container">
-      {!showUploadDiv && (
-        <div className="d-flex justify-content-between align-items-center">
-          <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
-            <i className="fa fa-plus-circle mr-1"></i>
-            Add File
-          </Button>
-          <Button className="my-button-class" color="primary" onClick={handleExportClick}>
-            <i className="fa fa-download mr-1"></i>
-            Export
-          </Button>
-        </div>
-      )}
-      {showUploadDiv && (
-        <div>
-          <div className="d-flex justify-content-between align-items-center">
-            <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
-              <i className="fa fa-plus-circle mr-1"></i>
-              Add File
+    <Row>
+  <Col md="4">
+            <Label for="leadTime">Lead Time:</Label>
+            <Input
+              type="number"
+              name="leadTime"
+              value={leadTime}
+              onChange={(e) => setLeadTime(e.target.value)}
+            />
+          </Col>
+          <Col md="4">
+            <Label for="serviceLevel">Service Level(must 0.00 - 1.00):</Label>
+            <Input
+              type="number"
+              name="serviceLevel"
+              value={serviceLevel}
+              min="0"
+              max="1"
+              step="0.01"
+              onChange={(e) => setServiceLevel(e.target.value)}
+            />
+          </Col>
+          <Col md="4" className="text-center">
+            <Button color="primary" className="btn-upload" onClick={handleSave} disabled={saveDisabled}>
+              SHOW RESULTS
             </Button>
-            <Button className="my-button-class" color="primary" onClick={handleExportClick}>
-              <i className="fa fa-download mr-1"></i>
-              Export
-            </Button>
-          </div>
-          <div className="mt-3">
-            <input type="file" className="custom-file-upload" onChange={handleFileInputChange} />
-            <Button color="primary" className="btn-upload" onClick={handleUploadClick} disabled={!file} active={!file}>
-              Upload
-            </Button>
-            <div className="spinner-container">
-              {isLoading && <div className="loading-spinner"></div>}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+          </Col>
+          </Row>
   </CardBody>
 </Card>
         <Row>

@@ -36,6 +36,7 @@ import Warehouse from "views/tables/Warehouse.js";
 import Products from "views/tables/Products.js";
 import SalesReport from "views/tables/SalesReport";
 import ReorderPoints from "views/tables/ReorderPoints.js";
+import Orderlist from "views/tables/OrderList";
 
 import Register from "views/pages/Register.js";
 import RegularForms from "views/forms/RegularForms.js";
@@ -111,6 +112,13 @@ const routes = [
     name: "Reorder Points",
     icon:"nc-icon nc-bullet-list-67",
     component: ReorderPoints,
+    layout: "/admin"
+  },
+  {
+    path: "/orderlist",
+    name: "Orderlist",
+    icon:"nc-icon nc-bullet-list-67",
+    component: Orderlist,
     layout: "/admin"
   },
   {
