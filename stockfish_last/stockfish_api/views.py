@@ -2254,11 +2254,13 @@ class OrderListView(APIView):
     authentication_classes = (JWTAuthentication,)
 
     def get(self, request, *args, **kwargs):
-        order_lists = OrderList.objects.filter(is_active=True).values()
+        order_lists = OrderList.objects.filter(is_active = False).values() #! False True olacak
+        print(order_lists)
         order_list_data = [
-            [o['product_code'], o['date'], o['order_avrg'], o['order_exp'], o['order_holt'], o['current_date'],
-             o['current_stock'], o['decided_order'], o['weight']] for o in order_lists
+            [o['current_date'].strftime('%Y-%m-%d'), o['product_code'], o['weight'], o['average_sale'], o['current_stock'], o['order_avrg'], o['order_exp'], o['order_holt'],
+              o['decided_order']] for o in order_lists
         ]
+        print(order_list_data)
         return JsonResponse(order_list_data, safe=False)
 
 

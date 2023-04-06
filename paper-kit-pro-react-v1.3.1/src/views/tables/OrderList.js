@@ -31,13 +31,14 @@ const DataTable = () => {
     async function fetchData() {
       const access_token = await localforage.getItem('access_token'); 
       
-      const response = await fetch('http://127.0.0.1:8000/warehouse/',{
+      const response = await fetch('http://127.0.0.1:8000/order_list/',{
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer '+ String(access_token)
         }});
       const data = await response.json();
       setDataTable(data);
+      console.log(data)
     }
     fetchData();
   }, [dataChanged,renderEdit]);
@@ -419,11 +420,16 @@ useEffect(() => {
                 <ReactTable
                   data={dataTable.map((row, key) => ({
                     id: key,
-                    product_code: row[0],
-                    title: row[1],
-                    unit: row[2],
-                    stock: row[3],
-                    
+                    current_date: row[0],
+                    product_code: row[1],
+                    weight: row[2],
+                    average_sale: row[3],
+                    current_stock: row[4],
+                    order_avrg: row[5],
+                    order_exp: row[6],
+                    order_holt: row[7],
+
+                    decided_order: row[8],
                     actions: (
                       <div className='actions-left'>
                          <Button
@@ -473,10 +479,18 @@ useEffect(() => {
                     ),
                   }))}
                   columns={[
+                    { Header: 'Order Date', accessor: 'current_date' },
                     { Header: 'Product Code', accessor: 'product_code' },
-                    { Header: 'Product Title', accessor: 'title' },
-                    { Header: 'Unit', accessor: 'unit' },
-                    { Header: 'Stock', accessor: 'stock' },
+                    { Header: 'Weight', accessor: 'weight' },
+                    { Header: 'Average Sale', accessor: 'average_sale' },
+                    { Header: 'Current Stock', accessor: 'current_stock' },
+                    { Header: 'Order by Avrg.', accessor: 'order_avrg' },
+                    { Header: 'Order by Exp.', accessor: 'order_exp' },
+                    { Header: 'Order by Holt', accessor: 'order_holt' },
+                    
+                   
+                    { Header: 'Decided Order', accessor: 'decided_order' },
+                    
                     { Header: 'Actions', accessor: 'actions' ,sortable: false,
                     filterable: false },
                   ]}

@@ -218,11 +218,12 @@ class OrderList(models.Model):
     order_avrg = models.FloatField(default=0, null=True)
     order_exp = models.FloatField(default=0, null=True)
     order_holt = models.FloatField(default=0, null=True)
-    current_stock = models.DecimalField(max_digits=10, decimal_places=2)
+    current_stock = models.FloatField(default=0, null=True)
     decided_order = models.FloatField(default=0, null=True)
     weight = models.FloatField(default=0, null=True)
     average_sale = models.FloatField(default=0, null=True)
     product_code = models.IntegerField(null=True)
+    is_active = models.BooleanField()
 
 
 
