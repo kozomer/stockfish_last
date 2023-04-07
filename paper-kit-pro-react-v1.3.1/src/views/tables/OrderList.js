@@ -8,10 +8,18 @@ const DataTable = () => {
   const [file, setFile] = useState(null);
   const [showUploadDiv, setShowUploadDiv] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
+  const [date, setDate] = useState(null);
   const [productCode, setProductCode] = useState(null);
   const [productTitle, setProductTitle] = useState(null);
-  const [unit, setUnit] = useState(null);
+  const [weight, setWeight] = useState(null);
+  const [avrgSale, setAvrgSale] = useState(null);
   const [stock, setStock] = useState(null);
+  const [orderAvrg, setOrderAvrg] = useState(null);
+  const [orderExp, setOrderExp] = useState(null);
+  const [orderHolt, setOrderHolt] = useState(null);
+  const [decidedOrder, setDecidedOrder] = useState(null);
+  const [id, setID] = useState(null);
+
   const [alert, setAlert] = useState(null);
   const [renderEdit, setRenderEdit] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -93,39 +101,46 @@ useEffect(() => {
 }, [ leadTime, serviceLevel]);
   
   
-  const handleClick = (row) => {
+  const handleClick = (row,key) => {
      
     setEditData(row);
-    setOldData(row);
+    setID(key)
+    setDate(row.current_date)
 
     setProductCode(row.product_code);
-    setProductTitle(row.title);
-    setUnit(row.unit);
-    setStock(row.stock);
-   
+    setWeight(row.weight);
+    setAvrgSale(row.average_sale);
+    setStock(row.current_stock);
+    setOrderAvrg(row.order_avrg);
+    setOrderExp(row.order_exp);
+    setOrderHolt(row.orderHolt);
+    setDecidedOrder(row.decided_order);
     setShowPopup(!showPopup);
     console.log(row)
   };
   const handleSubmit = async (e) => {
     const access_token = await localforage.getItem('access_token'); 
-    console.log(oldData)
+    console.log(id)
     const updatedData = {
-      new_product_code:productCode,
-      new_title:productTitle,
-      new_unit:unit,
-      new_stock:stock,
+      id:id,
+      current_date:date,
+      product_code:productCode,
+      weight:weight,
+      average_sale:avrgSale,
+      current_stock: stock,
+      order_avrg: orderAvrg,
+      order_exp: orderExp,
+      order_holt: orderHolt,
+      decided_order: decidedOrder
      
       
 
-      old_product_code:oldData[0],
-      old_title:oldData[1],
-      old_unit:oldData[2],
-      old_stock:oldData[3],
+      
       
       
     };
     console.log(updatedData)
-    fetch('http://127.0.0.1:8000/edit_warehouse/', {
+    fetch('http://127.0.0.1:8000/edit_order_list/', {
     method: 'POST',
     body: JSON.stringify(updatedData),
     headers: {
@@ -181,18 +196,25 @@ useEffect(() => {
     setEditData(null)
   };
   
+  
   useEffect(() => {
     console.log("useEffect called")
     if(editData){
       
-      setProductCode(editData[0]);
-      setProductTitle(editData[1]);
-      setUnit(editData[2]);
-      setStock(editData[3]);
+      setDate(editData[0]);
+      setProductCode(editData[1]);
+      setWeight(editData[2]);
+      setAvrgSale(editData[3]);
+      setStock(editData[4]);
+      setOrderAvrg(editData[5]);
+      setOrderExp(editData[6]);
+      setOrderHolt(editData[7]);
+      setDecidedOrder(editData[8])
        
         setIsUpdated(true)
     }
   }, [editData])
+  
   const errorUpload = (e) => {
     setAlert(
       <ReactBSAlert
@@ -307,46 +329,55 @@ useEffect(() => {
     <>
       <div className='content'>
       {alert}
-      {showPopup && isUpdated &&(
+      {showPopup && (
        <div className="popup">
       <Card>
             <CardHeader>
-              <CardTitle tag="h4">Edit Customers</CardTitle>
+              <CardTitle tag="h4">Edit/Decide Order</CardTitle>
             </CardHeader>
             <CardBody>
               <Form onSubmit={handleSubmit}>
               <div>
 
         <div className="form-group-col">
-          <label>Product Code</label>
+          <label>Date</label>
           <FormGroup>
             <Input
               
+              type="text"
+              defaultValue={date}
+              onChange={(e) => setDate(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Product Code</label>
+          <FormGroup>
+            <Input
               type="text"
               defaultValue={productCode}
               onChange={(e) => setProductCode(e.target.value)}
             />
           </FormGroup>
 
-          <label>Product Title</label>
+          <label>Weight</label>
           <FormGroup>
             <Input
               type="text"
-              defaultValue={productTitle}
-              onChange={(e) => setProductTitle(e.target.value)}
+              defaultValue={weight}
+              onChange={(e) => setWeight(e.target.value)}
             />
           </FormGroup>
 
-          <label>Unit</label>
+          <label>Average Sale</label>
           <FormGroup>
             <Input
               type="text"
-              defaultValue={unit}
-              onChange={(e) => setUnit(e.target.value)}
+              defaultValue={avrgSale}
+              onChange={(e) => setAvrgSale(e.target.value)}
             />
           </FormGroup>
 
-          <label>Stock</label>
+          <label>Current Stock</label>
           <FormGroup>
             <Input
               type="text"
@@ -355,6 +386,41 @@ useEffect(() => {
             />
           </FormGroup>
 
+          <label>Order by Avrg.</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={orderAvrg}
+              onChange={(e) => setOrderAvrg(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Order by Exp.</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={orderExp}
+              onChange={(e) => setOrderExp(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Order by Holt</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={orderHolt}
+              onChange={(e) => setOrderHolt(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Decided Order</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={decidedOrder}
+              onChange={(e) => setDecidedOrder(e.target.value)}
+            />
+          </FormGroup>
           
           </div>
          
@@ -437,7 +503,7 @@ useEffect(() => {
                           onClick={() => {
                             // Enable edit mode
                             
-                           {handleClick(row)}
+                           {handleClick(row,key)}
                            
                           
                           }}
