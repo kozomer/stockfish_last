@@ -224,6 +224,7 @@ class OrderList(models.Model):
     average_sale = models.FloatField(default=0, null=True)
     product_code = models.IntegerField(null=True)
     is_active = models.BooleanField()
+    is_ordered = models.BooleanField()
 
 
 

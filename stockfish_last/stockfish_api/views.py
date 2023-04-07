@@ -2263,6 +2263,37 @@ class OrderListView(APIView):
         print(order_list_data)
         return JsonResponse(order_list_data, safe=False)
 
+class EditOrderListView(View):
+    # permission_classes = (IsAuthenticated,)
+    # authentication_classes = (JWTAuthentication,)
+    @csrf_exempt
+    def post(self, request, *args, **kwargs):
+        # Expecting the updated data to be sent as a list of dictionaries
+        updated_order_list_data = json.loads(request.body)
+        print(updated_order_list_data)
+
+        try:
+            order = OrderList.objects.get(id=updated_order_list_data['id'])
+            order.current_date = updated_order_list_data['current_date']
+            order.product_code = updated_order_list_data['product_code']
+            order.weight = updated_order_list_data['weight']
+            order.average_sale = updated_order_list_data['average_sale']
+            order.current_stock = updated_order_list_data['current_stock']
+            order.order_avrg = updated_order_list_data['order_avrg']
+            order.order_exp = updated_order_list_data['order_exp']
+            order.order_holt = updated_order_list_data['order_holt']
+            order.decided_order = updated_order_list_data['decided_order']
+
+            if order.decided_order > 0:
+                order.is_active = False
+                order.is_ordered = True
+
+            order.save()
+        except OrderList.DoesNotExist:
+            return JsonResponse({"error": "Order not found"}, status=404)
+
+        return HttpResponse(status=204)
+
 
 # endregion
 
