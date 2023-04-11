@@ -183,10 +183,4 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# React app
-REACT_APP_DIR = os.path.join(BASE_DIR, 'reactapp')
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "reactapp", "static")
-]
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
