@@ -2086,6 +2086,7 @@ class ROPView(APIView):
     authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
+        print(data)
         product_code = data.get('product_code')
         lead_time = int(data.get('lead_time'))
         service_level = float(data.get('service_level'))
