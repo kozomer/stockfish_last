@@ -99,5 +99,6 @@ urlpatterns = [
     path('export_products/', ExportProductsView.as_view(), name= 'export_products') ]+ static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 urlpatterns += [
-    re_path(r'^.*$', TemplateView.as_view(template_name="index.html")),
+    path("", TemplateView.as_view(template_name="reactapp/index.html")),
+    re_path(r"^(?:.*)/?$", TemplateView.as_view(template_name="reactapp/index.html")),
 ]
