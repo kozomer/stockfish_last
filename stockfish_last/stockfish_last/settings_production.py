@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-0n#6q-+h&+8o3lb&%&5afiger05--w5d$9j9bmq%f!1j184orx
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['www.vividstockfish.com', 'vividstockfish.com', 'your_server_ip']
+ALLOWED_HOSTS = ['www.vividstockfish.com', 'vividstockfish.com', '179.61.219.154']
 
 
 CORS_ALLOW_CREDENTIALS = True
