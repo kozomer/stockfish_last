@@ -25,14 +25,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-0n#6q-+h&+8o3lb&%&5afiger05--w5d$9j9bmq%f!1j184orx'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['www.vividstockfish.com', 'vividstockfish.com', '179.61.219.154']
 
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
-  
+    "https://www.vividstockfish.com",
+    "https://vividstockfish.com",
     "http://localhost:3000",
     "http://127.0.0.1:8000",
 ]
@@ -190,7 +191,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-DEBUG = False
+
 
 SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
