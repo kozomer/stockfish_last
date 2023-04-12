@@ -23,7 +23,7 @@ import openpyxl
 import base64
 from io import BytesIO
 import numpy as np
-
+import logging
 
 
 # Authentications
@@ -41,7 +41,7 @@ import filetype
 
 
 # region Login/Logout
-
+logger = logging.getLogger(__name__)
 class LoginView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
@@ -60,6 +60,7 @@ class LoginView(TokenObtainPairView):
             response.data['last_name'] = last_name
             return response
         else:
+            logger.warning(f"Invalid credentials for username: {username}")
             return JsonResponse({'error': 'Invalid credentials'}, status=401)
 
 class LogoutView(APIView):
