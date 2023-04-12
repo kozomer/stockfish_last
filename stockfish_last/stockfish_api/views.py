@@ -634,10 +634,10 @@ class ExportSalesView(APIView):
 
 # region Warehouse
 
-class AddWarehouseView(View):
-    # permission_classes = (IsAuthenticated,)
-    # authentication_classes = (JWTAuthentication,)
-    @csrf_exempt
+class AddWarehouseView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+    
     def post(self, request, *args, **kwargs):
         try:
             if 'file' not in request.FILES:
@@ -667,10 +667,9 @@ class AddWarehouseView(View):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
-class ViewWarehouseView(View):
-    # permission_classes = (IsAuthenticated,)
-    # authentication_classes = (JWTAuthentication,)
-    @csrf_exempt
+class ViewWarehouseView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
     def get(self, request, *args, **kwargs):
         # if not request.user.is_authenticated:
         #     return HttpResponse(status=401)
@@ -678,20 +677,19 @@ class ViewWarehouseView(View):
         warehouse_list = [[item['product_code'], item['title'], item['unit'], item['stock']] for item in warehouse_items]
         return JsonResponse(warehouse_list, safe=False)
 
-class DeleteWarehouseView(View):
-    # permission_classes = (IsAuthenticated,)
-    # authentication_classes = (JWTAuthentication,)
-    csrf_exempt
+class DeleteWarehouseView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
         product_code = request.POST.get('product_code')
         Warehouse.objects.filter(product_code=product_code).delete()
         return HttpResponse('OK')
 
 
-class EditWarehouseView(View):
-    # permission_classes = (IsAuthenticated,)
-    # authentication_classes = (JWTAuthentication,)
-    @csrf_exempt
+class EditWarehouseView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
     def post(self, request, *args, **kwargs):
         try:
             data = json.loads(request.body)
@@ -735,10 +733,10 @@ class EditWarehouseView(View):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
-class ExportWarehouseView(View):
-    # permission_classes = (IsAuthenticated,)
-    # authentication_classes = (JWTAuthentication,)
-    @csrf_exempt
+class ExportWarehouseView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
     def get(self, request, *args, **kwargs):
         def set_column_widths(worksheet):
             for column_cells in worksheet.columns:
