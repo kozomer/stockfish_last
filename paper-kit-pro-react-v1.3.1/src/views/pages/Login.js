@@ -53,7 +53,7 @@ function Login({ history }) {
     event.preventDefault();
     console.log(username)
     try {
-      const response = await fetch("https://vividstockfish.com/login/", {
+      const response = await fetch("https://vividstockfish.com/auth/login/", {
         method: "POST",
       
         body: JSON.stringify({
