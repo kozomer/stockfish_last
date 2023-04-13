@@ -45,7 +45,7 @@ urlpatterns = [
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('token/blacklist/', TokenBlacklistView.as_view(), name='token_blacklist'),
-    path('auth/login/', LoginView.as_view(), name='login'),
+    path('login/', LoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
 
     path('add_customers/', AddCustomersView.as_view(), name='add_customers'),
@@ -98,4 +98,4 @@ urlpatterns = [
     path('export_warehouse/', ExportWarehouseView.as_view(), name= 'export_warehouse'),
     path('export_products/', ExportProductsView.as_view(), name= 'export_products'), 
     re_path(r'^.*$', TemplateView.as_view(template_name='index.html')),
-] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+]
