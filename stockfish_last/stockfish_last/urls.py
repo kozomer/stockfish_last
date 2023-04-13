@@ -96,5 +96,6 @@ urlpatterns = [
     path('export_customers/', ExportCustomersView.as_view(), name= 'export_customers'),
     path('export_sales/', ExportSalesView.as_view(), name= 'export_sales'),
     path('export_warehouse/', ExportWarehouseView.as_view(), name= 'export_warehouse'),
-    path('export_products/', ExportProductsView.as_view(), name= 'export_products'), path('', TemplateView.as_view(template_name='index.html')),
+    path('export_products/', ExportProductsView.as_view(), name= 'export_products'), 
+    re_path(r'^.*$', TemplateView.as_view(template_name='index.html')),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
