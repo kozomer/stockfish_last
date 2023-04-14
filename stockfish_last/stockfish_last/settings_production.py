@@ -199,7 +199,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR.parent, 'paper-kit-pro-react-v1.3.1', 'build'
 
 SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = False
 
 X_CONTENT_TYPE_OPTIONS = 'nosniff'
 X_FRAME_OPTIONS = 'DENY'
