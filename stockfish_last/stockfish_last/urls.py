@@ -93,7 +93,6 @@ urlpatterns = [
     path('export_sales/', ExportSalesView.as_view(), name= 'export_sales'),
     path('export_warehouse/', ExportWarehouseView.as_view(), name= 'export_warehouse'),
     path('export_products/', ExportProductsView.as_view(), name= 'export_products'),
-    path('mahmut/', MahmutView.as_view(), name= 'mahmut'),
 
 
 
