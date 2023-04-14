@@ -15,8 +15,8 @@ from  datetime import timedelta
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-print("BASE DIR: ", BASE_DIR)
+BASE_DIR = Path(__file__).resolve().parent.parent
+print(BASE_DIR)
 
 
 # Quick-start development settings - unsuitable for production
@@ -37,7 +37,6 @@ CORS_ALLOWED_ORIGINS = [
     "https://vividstockfish.com",
     "http://localhost:3000",
     "http://127.0.0.1:8000",
-    
 ]
 
 # Application definition
@@ -58,7 +57,10 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'rest_framework_jwt',
 ]
-CSRF_TRUSTED_ORIGINS = ['http://localhost:3000',"https://www.vividstockfish.com", "https://vividstockfish.com"]
+CSRF_TRUSTED_ORIGINS = ['http://localhost:3000',
+                        "https://www.vividstockfish.com",
+                        "https://vividstockfish.com",
+                        ]
 
 
 REST_FRAMEWORK = {
@@ -141,7 +143,7 @@ WSGI_APPLICATION = 'stockfish_last.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'stockfish_last'/'db.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
@@ -187,18 +189,11 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-STATIC_URL = '/static/'
 
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'paper-kit-pro-react-v1.3.1', 'build', 'static'),
-    os.path.join(BASE_DIR, 'stockfish_last', 'static'),
-]
-
-
-
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'paper-kit-pro-react-v1.3.1','build', 'static','media')
+MEDIA_ROOT = os.path.join(BASE_DIR.parent, 'paper-kit-pro-react-v1.3.1', 'build', 'static', 'media')
 
 
 
