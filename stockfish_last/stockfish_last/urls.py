@@ -5,13 +5,13 @@ The `urlpatterns` list routes URLs to views. For more information please see:
 Examples:
 Function views
     1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
+    2. Add a URL to urlpatterns:  path('api/', views.home, name='home')
 Class-based views
     1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
+    2. Add a URL to urlpatterns:  path('api/', Home.as_view(), name='home')
 Including another URLconf
     1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+    2. Add a URL to urlpatterns:  path('api/blog/', include('api/blog.urls'))
 """
 from django.contrib import admin
 from django.urls import path
@@ -34,63 +34,63 @@ from rest_framework_simplejwt.views import (
 
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('api/admin/', admin.site.urls),
     
-    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('token/blacklist/', TokenBlacklistView.as_view(), name='token_blacklist'),
-    path('login/', LoginView.as_view(), name='login'),
-    path('logout/', LogoutView.as_view(), name='logout'),
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/token/blacklist/', TokenBlacklistView.as_view(), name='token_blacklist'),
+    path('api/login/', LoginView.as_view(), name='login'),
+    path('api/logout/', LogoutView.as_view(), name='logout'),
 
-    path('add_customers/', AddCustomersView.as_view(), name='add_customers'),
-    path('add_warehouse/', AddWarehouseView.as_view(), name='add_warehouse'),
-    path('add_sales/', AddSalesView.as_view(), name='add_sales'),
-    path('add_products/',AddProductsView.as_view(), name='add_pricelists'),
-    path('add_salers/',AddSalerView.as_view(), name='add_salers'),
+    path('api/add_customers/', AddCustomersView.as_view(), name='add_customers'),
+    path('api/add_warehouse/', AddWarehouseView.as_view(), name='add_warehouse'),
+    path('api/add_sales/', AddSalesView.as_view(), name='add_sales'),
+    path('api/add_products/',AddProductsView.as_view(), name='add_pricelists'),
+    path('api/add_salers/',AddSalerView.as_view(), name='add_salers'),
 
-    path('customers/', ViewCustomersView.as_view(), name='view_customers'),
-    path('sales/', ViewSalesView.as_view(), name='view_sales'),
-    path('warehouse/', ViewWarehouseView.as_view(), name='view_warehouse'),
-    path('charts/', ChartView.as_view(), name='view_charts'),
-    path('products/', ViewProductsView.as_view(), name='view_pricelists'),
-    path('salers/', SalerView.as_view(), name='view_saler'),
-    path('collapsed_salers/', CollapsedSalerView.as_view(), name='view_saler_collapsed'),
-    path('rop/', ROPView.as_view(), name='view_rop'),
-    path('order_list/', OrderListView.as_view(), name='order_list'),
+    path('api/customers/', ViewCustomersView.as_view(), name='view_customers'),
+    path('api/sales/', ViewSalesView.as_view(), name='view_sales'),
+    path('api/warehouse/', ViewWarehouseView.as_view(), name='view_warehouse'),
+    path('api/charts/', ChartView.as_view(), name='view_charts'),
+    path('api/products/', ViewProductsView.as_view(), name='view_pricelists'),
+    path('api/salers/', SalerView.as_view(), name='view_saler'),
+    path('api/collapsed_salers/', CollapsedSalerView.as_view(), name='view_saler_collapsed'),
+    path('api/rop/', ROPView.as_view(), name='view_rop'),
+    path('api/order_list/', OrderListView.as_view(), name='order_list'),
 
 
 
-    path('delete_sales/',  DeleteSaleView.as_view(), name='delete_sales'),
-    path('delete_customers/',  DeleteCustomerView.as_view(), name='delete_customers'),
-    path('delete_products/', DeleteProductView.as_view(), name='delete_goods'),
-    path('delete_saler/', DeleteSalerView.as_view(), name='delete_saler'),
-    path('delete_warehouse/', DeleteWarehouseView.as_view(), name='delete_warehouse'),
+    path('api/delete_sales/',  DeleteSaleView.as_view(), name='delete_sales'),
+    path('api/delete_customers/',  DeleteCustomerView.as_view(), name='delete_customers'),
+    path('api/delete_products/', DeleteProductView.as_view(), name='delete_goods'),
+    path('api/delete_saler/', DeleteSalerView.as_view(), name='delete_saler'),
+    path('api/delete_warehouse/', DeleteWarehouseView.as_view(), name='delete_warehouse'),
     
-    path('item_list/',  ItemListView.as_view(), name='item_list'),
-    path('item_list_filter/', ItemListView.as_view(), name='item_list_filter'),
-    path('sales_report/', SalesReportView.as_view(), name='sales_report'),
+    path('api/item_list/',  ItemListView.as_view(), name='item_list'),
+    path('api/item_list_filter/', ItemListView.as_view(), name='item_list_filter'),
+    path('api/sales_report/', SalesReportView.as_view(), name='sales_report'),
 
-    path('edit_products/', EditProductView.as_view(), name='edit_product'),
-    path('edit_customers/', EditCustomerView.as_view(), name='edit_customer'),
-    path('edit_sales/', EditSaleView.as_view(), name='edit_sale'),
-    path('edit_warehouse/', EditWarehouseView.as_view(), name='edit_warehouse'),
-    path('edit_salers/', EditSalerView.as_view(), name='edit_saler'),
-    path('edit_order_list/', EditOrderListView.as_view(), name='edit_order_list'),
+    path('api/edit_products/', EditProductView.as_view(), name='edit_product'),
+    path('api/edit_customers/', EditCustomerView.as_view(), name='edit_customer'),
+    path('api/edit_sales/', EditSaleView.as_view(), name='edit_sale'),
+    path('api/edit_warehouse/', EditWarehouseView.as_view(), name='edit_warehouse'),
+    path('api/edit_salers/', EditSalerView.as_view(), name='edit_saler'),
+    path('api/edit_order_list/', EditOrderListView.as_view(), name='edit_order_list'),
 
-    path('top_customers/', TopCustomersView.as_view(), name= 'top_customers'),
-    path('top_products/', TopProductsView.as_view(), name= 'top_products'),
-    path('customer_area/', CustomerAreaPieChartView.as_view(), name='customer_area'),
+    path('api/top_customers/', TopCustomersView.as_view(), name= 'top_customers'),
+    path('api/top_products/', TopProductsView.as_view(), name= 'top_products'),
+    path('api/customer_area/', CustomerAreaPieChartView.as_view(), name='customer_area'),
 
-    path('exchange_rate/', ExchangeRateAPIView.as_view(), name='exchange_rate'),
-    path('daily_report/saler_data/', SalerDataView.as_view(), name='saler_data'),
-    path('daily_report/total_data/', TotalDataView.as_view(), name='total_data'),
-    path('daily_report/total_data_by_monthly/', TotalDataByMonthlyView.as_view(), name='total_data_by_monthly'),
+    path('api/exchange_rate/', ExchangeRateAPIView.as_view(), name='exchange_rate'),
+    path('api/daily_report/saler_data/', SalerDataView.as_view(), name='saler_data'),
+    path('api/daily_report/total_data/', TotalDataView.as_view(), name='total_data'),
+    path('api/daily_report/total_data_by_monthly/', TotalDataByMonthlyView.as_view(), name='total_data_by_monthly'),
     
 
-    path('export_customers/', ExportCustomersView.as_view(), name= 'export_customers'),
-    path('export_sales/', ExportSalesView.as_view(), name= 'export_sales'),
-    path('export_warehouse/', ExportWarehouseView.as_view(), name= 'export_warehouse'),
-    path('export_products/', ExportProductsView.as_view(), name= 'export_products'),
+    path('api/export_customers/', ExportCustomersView.as_view(), name= 'export_customers'),
+    path('api/export_sales/', ExportSalesView.as_view(), name= 'export_sales'),
+    path('api/export_warehouse/', ExportWarehouseView.as_view(), name= 'export_warehouse'),
+    path('api/export_products/', ExportProductsView.as_view(), name= 'export_products'),
 
 
 
