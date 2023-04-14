@@ -22,9 +22,7 @@ from stockfish_api.views import ( AddCustomersView, AddSalesView, AddProductsVie
                                  LoginView, LogoutView,
                                  TopCustomersView, TopProductsView,
                                  ExchangeRateAPIView, SalerDataView, TotalDataView, TotalDataByMonthlyView, CustomerAreaPieChartView, 
-                                 ExportCustomersView, ExportSalesView, ExportWarehouseView, ExportProductsView, 
-                                 MahmutView
-
+                                 ExportCustomersView, ExportSalesView, ExportWarehouseView, ExportProductsView,
 
                                  )
 from rest_framework_simplejwt.views import (
