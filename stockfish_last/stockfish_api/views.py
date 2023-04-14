@@ -45,7 +45,6 @@ logger = logging.getLogger(__name__)
 from django.http import JsonResponse
 
 class LoginView(TokenObtainPairView):
-    @csrf_exempt
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
         username = data.get('username')
@@ -83,6 +82,19 @@ class LoginView(TokenObtainPairView):
             
             return response
 
+
+class LogoutView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+    def post(self, request):
+        try:
+            refresh_token = request.POST.get('refresh_token')
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+
+            return JsonResponse({'success': 'successfully log out'}, status=205)
+        except Exception as e:
+            return JsonResponse({'error': 'BAD REQUEST'}, status=400)
 
 
 class MahmutView(View):
