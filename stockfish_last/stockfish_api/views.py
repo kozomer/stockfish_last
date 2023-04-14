@@ -62,7 +62,7 @@ class LoginView(TokenObtainPairView):
             response.data['last_name'] = last_name
             
             # Add CORS headers to the response
-            response['Access-Control-Allow-Origin'] = 'your origin'
+            response['Access-Control-Allow-Origin'] = '*'
             response['Access-Control-Allow-Methods'] = 'GET, POST, PATCH, PUT, DELETE, OPTIONS'
             response['Access-Control-Allow-Credentials'] = 'true'
             response['Access-Control-Max-Age'] = '86400'
@@ -74,7 +74,7 @@ class LoginView(TokenObtainPairView):
             response = JsonResponse({'error': 'Invalid credentials'}, status=401)
             
             # Add CORS headers to the response
-            response['Access-Control-Allow-Origin'] = 'your origin'
+            response['Access-Control-Allow-Origin'] = '*'
             response['Access-Control-Allow-Methods'] = 'GET, POST, PATCH, PUT, DELETE, OPTIONS'
             response['Access-Control-Allow-Credentials'] = 'true'
             response['Access-Control-Max-Age'] = '86400'
