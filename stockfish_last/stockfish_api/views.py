@@ -76,12 +76,6 @@ class LogoutView(APIView):
             return JsonResponse({'error': 'BAD REQUEST'}, status=400)
 
 
-class MahmutView(View):
-    @csrf_exempt
-    def get(self, request):
-        product = get_model()
-        return JsonResponse(product, safe=False)
-
 # endregion
 
 # region Customers

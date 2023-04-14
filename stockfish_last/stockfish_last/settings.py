@@ -24,13 +24,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-0n#6q-+h&+8o3lb&%&5afiger05--w5d$9j9bmq%f!1j184orx'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ["192.168.1.192","127.0.0.1","localhost"]
+ALLOWED_HOSTS = ["192.168.1.192","127.0.0.1","localhost","179.61.219.154", "vividstockfish.com", "www.vividstockfish.com"]
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
-  
+    "https://www.vividstockfish.com",
+    "https://vividstockfish.com",
     "http://localhost:3000",
     "http://127.0.0.1:8000",
 ]
@@ -53,7 +54,9 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'rest_framework_jwt',
 ]
-CSRF_TRUSTED_ORIGINS = ['http://localhost:3000']
+CSRF_TRUSTED_ORIGINS = ['http://localhost:3000',  
+                        "https://www.vividstockfish.com",
+                        "https://vividstockfish.com"]
 
 
 REST_FRAMEWORK = {
