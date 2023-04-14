@@ -63,6 +63,7 @@ function Login({ history }) {
         headers: {
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
        
       });
 
