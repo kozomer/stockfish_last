@@ -66,7 +66,7 @@ function Login({ history }) {
         credentials: 'include',
        
       });
-
+      console.log(response)
       if (!response.ok) {
         
         throw new Error("Invalid email or password");
