@@ -45,6 +45,7 @@ logger = logging.getLogger(__name__)
 from django.http import JsonResponse
 
 class LoginView(TokenObtainPairView):
+    @csrf_exempt
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
         username = data.get('username')
