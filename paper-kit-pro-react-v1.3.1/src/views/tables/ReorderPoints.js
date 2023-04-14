@@ -21,7 +21,6 @@ import { Line, Bar, Pie } from "react-chartjs-2";
 import Select from "react-select";
 import '../../assets/css/Table.css';
 
-
 // reactstrap components
 import {
   Card,
@@ -50,8 +49,7 @@ import {
 } from "variables/charts.js";
 
 import localforage from 'localforage';
-import { useParams, useLocation } from 'react-router-dom';
-
+import { useLocation } from 'react-router-dom';
 function Charts() {
   const [dataTable, setDataTable] = useState([]);
   const [items, setItems] = useState([]);
@@ -178,13 +176,9 @@ function Charts() {
 
 
   const location = useLocation();
-  {/* 
   const queryParams = new URLSearchParams(location.search);
   const productCode = queryParams.get('productCode');
-  */}
-
-  const productCode = location.pathname.split('/').pop();
-  console.log(productCode)
+  
 
   useEffect(() => {
     async function fetchData() {
@@ -230,20 +224,10 @@ function Charts() {
 
   useEffect(() => {
     if (productCode) {
-      const parsedProductCode = parseInt(productCode, 10);
-      setSelectedItem({ value: parsedProductCode });
-      setLeadTime(2);
-      setServiceLevel(0.9);
-      setForecast(3);
-     
+      
+      handleSelect({ value: productCode });
     }
   }, [productCode]);
-
-  useEffect(() => {
-    if (selectedItem && selectedItem.value) {
-      handleSave();
-    }
-  }, [selectedItem]);
 
   useEffect(() => {
     if (selectedItem && leadTime && serviceLevel && forecast) {
@@ -256,7 +240,7 @@ function Charts() {
 
   const handleSave = async () => {
     // handle the save logic here
-    console.log(selectedItem,leadTime,serviceLevel,forecast)
+    
   
     const access_token = await localforage.getItem('access_token');
     

@@ -23,7 +23,7 @@ import openpyxl
 import base64
 from io import BytesIO
 import numpy as np
-import logging
+
 
 
 # Authentications
@@ -41,8 +41,6 @@ import filetype
 
 
 # region Login/Logout
-logger = logging.getLogger(__name__)
-from django.http import JsonResponse
 
 class LoginView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
@@ -60,28 +58,9 @@ class LoginView(TokenObtainPairView):
             # Add the uppercase names to the response
             response.data['first_name'] = first_name
             response.data['last_name'] = last_name
-            
-            # Add CORS headers to the response
-            response['Access-Control-Allow-Origin'] = '*'
-            response['Access-Control-Allow-Methods'] = 'GET, POST, PATCH, PUT, DELETE, OPTIONS'
-            response['Access-Control-Allow-Credentials'] = 'true'
-            response['Access-Control-Max-Age'] = '86400'
-            response['Access-Control-Allow-Headers'] = 'Origin, Content-Type, X-Auth-Token, Accept, Authorization, X-Requested-With'
-            
             return response
         else:
-            logger.warning(f"Invalid credentials for username: {username}")
-            response = JsonResponse({'error': 'Invalid credentials'}, status=401)
-            
-            # Add CORS headers to the response
-            response['Access-Control-Allow-Origin'] = '*'
-            response['Access-Control-Allow-Methods'] = 'GET, POST, PATCH, PUT, DELETE, OPTIONS'
-            response['Access-Control-Allow-Credentials'] = 'true'
-            response['Access-Control-Max-Age'] = '86400'
-            response['Access-Control-Allow-Headers'] = 'Origin, Content-Type, X-Auth-Token, Accept, Authorization, X-Requested-With'
-            
-            return response
-
+            return JsonResponse({'error': 'Invalid credentials'}, status=401)
 
 class LogoutView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -2107,7 +2086,6 @@ class ROPView(APIView):
     authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
-        print(data)
         product_code = data.get('product_code')
         lead_time = int(data.get('lead_time'))
         service_level = float(data.get('service_level'))

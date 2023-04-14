@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Card, CardHeader, CardBody, CardTitle, Row, Col, Input,Form, FormGroup, Label,CardFooter} from 'reactstrap';
-import  {Link} from 'react-router-dom';
 import ReactTable from 'components/ReactTable/ReactTable.js';
 import localforage from 'localforage';
 import ReactBSAlert from "react-bootstrap-sweetalert";
@@ -547,10 +546,7 @@ useEffect(() => {
                   }))}
                   columns={[
                     { Header: 'Order Date', accessor: 'current_date' },
-                    { Header: 'Product Code', accessor: 'product_code',
-                    Cell: ({ value }) => (
-                      <Link to={`rop/${value}`}>{value}</Link>
-                    ), },
+                    { Header: 'Product Code', accessor: 'product_code' },
                     { Header: 'Weight', accessor: 'weight' },
                     { Header: 'Average Sale', accessor: 'average_sale' },
                     { Header: 'Current Stock', accessor: 'current_stock' },

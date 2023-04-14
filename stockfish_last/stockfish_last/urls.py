@@ -33,10 +33,6 @@ from rest_framework_simplejwt.views import (
     TokenBlacklistView,
     
 )
-from django.urls import re_path
-from django.views.generic import TemplateView
-from django.conf import settings
-from django.conf.urls.static import static
 
 
 urlpatterns = [
@@ -96,6 +92,9 @@ urlpatterns = [
     path('export_customers/', ExportCustomersView.as_view(), name= 'export_customers'),
     path('export_sales/', ExportSalesView.as_view(), name= 'export_sales'),
     path('export_warehouse/', ExportWarehouseView.as_view(), name= 'export_warehouse'),
-    path('export_products/', ExportProductsView.as_view(), name= 'export_products'), 
-    re_path(r'^.*$', TemplateView.as_view(template_name='index.html')),
+    path('export_products/', ExportProductsView.as_view(), name= 'export_products'),
+    path('mahmut/', MahmutView.as_view(), name= 'mahmut'),
+
+
+
 ]
