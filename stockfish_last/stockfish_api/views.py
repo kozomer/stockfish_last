@@ -42,6 +42,8 @@ import filetype
 
 # region Login/Logout
 logger = logging.getLogger(__name__)
+from django.http import JsonResponse
+
 class LoginView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
@@ -58,23 +60,28 @@ class LoginView(TokenObtainPairView):
             # Add the uppercase names to the response
             response.data['first_name'] = first_name
             response.data['last_name'] = last_name
+            
+            # Add CORS headers to the response
+            response['Access-Control-Allow-Origin'] = 'your origin'
+            response['Access-Control-Allow-Methods'] = 'GET, POST, PATCH, PUT, DELETE, OPTIONS'
+            response['Access-Control-Allow-Credentials'] = 'true'
+            response['Access-Control-Max-Age'] = '86400'
+            response['Access-Control-Allow-Headers'] = 'Origin, Content-Type, X-Auth-Token, Accept, Authorization, X-Requested-With'
+            
             return response
         else:
             logger.warning(f"Invalid credentials for username: {username}")
-            return JsonResponse({'error': 'Invalid credentials'}, status=401)
+            response = JsonResponse({'error': 'Invalid credentials'}, status=401)
+            
+            # Add CORS headers to the response
+            response['Access-Control-Allow-Origin'] = 'your origin'
+            response['Access-Control-Allow-Methods'] = 'GET, POST, PATCH, PUT, DELETE, OPTIONS'
+            response['Access-Control-Allow-Credentials'] = 'true'
+            response['Access-Control-Max-Age'] = '86400'
+            response['Access-Control-Allow-Headers'] = 'Origin, Content-Type, X-Auth-Token, Accept, Authorization, X-Requested-With'
+            
+            return response
 
-class LogoutView(APIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = (JWTAuthentication,)
-    def post(self, request):
-        try:
-            refresh_token = request.POST.get('refresh_token')
-            token = RefreshToken(refresh_token)
-            token.blacklist()
-
-            return JsonResponse({'success': 'successfully log out'}, status=205)
-        except Exception as e:
-            return JsonResponse({'error': 'BAD REQUEST'}, status=400)
 
 
 class MahmutView(View):
