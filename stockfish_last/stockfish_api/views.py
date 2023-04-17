@@ -709,7 +709,8 @@ class EditWarehouseView(APIView):
             for field in ['new_title', 'new_unit', 'new_stock']:
                 value = data.get(field)
                 if value is not None and value != '':
-                    setattr(warehouse_item, field, value)
+                    updated_field = field[4:]  # Remove the "new_" prefix
+                    setattr(warehouse_item, updated_field, value)
                 else: 
                     return JsonResponse({'error': f"{field} cannot be empty!"}, status=400)
 
@@ -879,15 +880,16 @@ class EditProductView(APIView):
                     product.product_code_ir = new_product_code_ir
 
             # Update other product fields
-            for field in [ 'new_product_code_tr', 'new_description_tr', 'new_description_ir', 'new_unit', 'new_weight', 'new_currency', 'new_price']:
+            for field in [ 'new_currency', 'new_description_ir', 'new_description_tr', 'new_feature', 'new_group', 'new_price', 'new_product_code_tr', 'new_subgroup', 'new_unit', 'new_unit_secondary', 'new_weight']:
                 value = data.get(field)
                 if value is not None and value != '':
-                    setattr(product, field, value)
+                    updated_field = field[4:]  # Remove the "new_" prefix
+                    setattr(product, updated_field, value)
                 else:
                     return JsonResponse({'error': f"The field '{field}' cannot be empty."}, status=400)
 
             product.save()
-            return JsonResponse({'message': "Your changes have been successfully saved."}, status=200)
+            return JsonResponse({'message': f"Your changes have been successfully saved."}, status=200)
 
         except Products.DoesNotExist:
             return JsonResponse({'error': "Product not found."}, status=400)
@@ -1121,9 +1123,9 @@ class SalerView(APIView):
         data = json.loads(request.body)
         id = data.get('id')
         saler = Salers.objects.get(id=id)
-        current_jalali_date= current_jalali_date()
+        jalali_current_date = current_jalali_date()
         try:
-            saler_monthly_ratings = SalerMonthlySaleRating.objects.get(name=saler.name, month = current_jalali_date.month, year= current_jalali_date.year )
+            saler_monthly_ratings = SalerMonthlySaleRating.objects.get(name=saler.name, month = jalali_current_date.month, year= jalali_current_date.year )
             monthly_sale_rating = saler_monthly_ratings.sale_rating
         except SalerMonthlySaleRating.DoesNotExist:
             monthly_sale_rating = 1

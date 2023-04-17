@@ -52,7 +52,7 @@ function Charts() {
   useEffect(() => {
     async function fetchData() {
       console.log('useEffect called');
-      const response = await fetch('http://127.0.0.1:8000/charts/', {
+      const response = await fetch('https://vividstockfish.com/api/charts/', {
         method: 'POST',
          // replace with your data
       });
@@ -67,7 +67,7 @@ function Charts() {
   }, []);
 
   useEffect(() => {
-    fetch('http://127.0.0.1:8000/item_list/')
+    fetch('https://vividstockfish.com/api/item_list/')
       .then(response => response.json())
       .then(data => {
         setItems(data);
@@ -85,7 +85,7 @@ function Charts() {
     console.log(selectedItem.value)
     const selectData= { product_code: selectedOption.value};
     // post the selected option to Django
-    fetch('http://127.0.0.1:8000/item_list_filter/', {
+    fetch('https://vividstockfish.com/api/item_list_filter/', {
       method: 'POST',
     
       body: JSON.stringify(selectData)

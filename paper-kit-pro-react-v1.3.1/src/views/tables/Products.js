@@ -47,7 +47,7 @@ const DataTable = () => {
     async function fetchData() {
       const access_token = await localforage.getItem('access_token');
       
-      const response = await fetch('http://127.0.0.1:8000/products/',{
+      const response = await fetch('https://vividstockfish.com/api/products/',{
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer '+ String(access_token)
@@ -81,10 +81,10 @@ const DataTable = () => {
     const formData = new FormData();
     formData.append('file', file);
     const access_token = await localforage.getItem('access_token');
-    fetch('http://127.0.0.1:8000/add_products/', {
+    fetch('https://vividstockfish.com/api/add_products/', {
       method: 'POST',
       body: formData,
-      credentials: 'include',
+      
       headers: {
           
         'Authorization': 'Bearer '+ String(access_token)
@@ -104,7 +104,7 @@ const DataTable = () => {
       setIsLoading(false);
       successUpload(data.message);
       
-      fetch('http://127.0.0.1:8000/products/',{
+      fetch('https://vividstockfish.com/api/products/',{
         headers: {
           'Authorization': 'Bearer '+ String(access_token)
         }
@@ -186,7 +186,7 @@ const DataTable = () => {
       </ReactBSAlert>
     );
   };
-  const successEdit = () => {
+  const successEdit = (s) => {
     setAlert(
       <ReactBSAlert
         success
@@ -200,7 +200,7 @@ const DataTable = () => {
         confirmBtnBsStyle="info"
         btnSize=""
       >
-        Your edit has been successfully saved.
+        {s}
       </ReactBSAlert>
     );
     setRenderEdit(true)
@@ -248,7 +248,7 @@ const DataTable = () => {
       if (deleteConfirm) {
        
         const access_token =  await localforage.getItem('access_token'); 
-        fetch(`http://127.0.0.1:8000/delete_products/`, {
+        fetch(`https://vividstockfish.com/api/delete_products/`, {
           method: "POST",
           body: new URLSearchParams(deleteData),
           headers: {
@@ -289,7 +289,7 @@ const DataTable = () => {
 
     const handleSubmit =async (e) => {
       const access_token =  await localforage.getItem('access_token'); 
-      console.log("e")
+      console.log("e")  
       console.log(oldData)
       const updatedData = {
         new_group:group,
@@ -319,18 +319,32 @@ const DataTable = () => {
         old_price:oldData[11],
       };
       console.log(updatedData)
-      fetch('http://127.0.0.1:8000/edit_products/', {
+      fetch('https://vividstockfish.com/api/edit_products/', {
       method: 'POST',
       body: JSON.stringify(updatedData),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer '+ String(access_token)
       },
-      credentials: 'include'
+      
     })
-    setEditData(updatedData);
-    successEdit()
-
+    .then((response) => {
+      if (!response.ok) {
+        return response.json().then(data => {
+          console.log(data.error)
+          
+          errorUpload(data.error);
+        });
+      }
+     
+      else{
+        return response.json().then(data => {
+          setEditData(updatedData);
+          successEdit(data.message);
+        })
+    
+        }
+      })
       // Call your Django API to send the updated values here
     };
 
@@ -365,7 +379,7 @@ const DataTable = () => {
       const access_token = await localforage.getItem('access_token');
     
       // Make an AJAX request to the backend to download the CSV file
-      const response = await fetch('http://127.0.0.1:8000/export_products/', {
+      const response = await fetch('https://vividstockfish.com/api/export_products/', {
         headers: {
           'Authorization': 'Bearer '+ String(access_token)
         },
@@ -649,7 +663,7 @@ const DataTable = () => {
                                 };
                                 setDeleteData(data);
                                 //console.log(data);
-                                fetch(`http://127.0.0.1:8000/delete_sales/`, {
+                                fetch(`https://vividstockfish.com/api/delete_sales/`, {
                                   method: "POST",
                                   body: new URLSearchParams(data),
                                 }).then(() => {

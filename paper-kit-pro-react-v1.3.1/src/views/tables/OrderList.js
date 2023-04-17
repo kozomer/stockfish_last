@@ -39,7 +39,7 @@ const DataTable = () => {
     async function fetchData() {
       const access_token = await localforage.getItem('access_token'); 
       
-      const response = await fetch('http://127.0.0.1:8000/order_list/',{
+      const response = await fetch('https://vividstockfish.com/api/order_list/',{
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer '+ String(access_token)
@@ -66,7 +66,7 @@ const handleSave = async () => {
   
   const selectData = { lead_time: leadTime, service_level:serviceLevel};
   // post the selected option to Django
-  fetch('http://127.0.0.1:8000/rop/', {
+  fetch('https://vividstockfish.com/api/rop/', {
     method: 'POST',
   headers: { "Content-Type": "application/json", 
   'Authorization': 'Bearer '+ String(access_token)},
@@ -140,14 +140,14 @@ useEffect(() => {
       
     };
     console.log(updatedData)
-    fetch('http://127.0.0.1:8000/edit_order_list/', {
+    fetch('https://vividstockfish.com/api/edit_order_list/', {
     method: 'POST',
     body: JSON.stringify(updatedData),
     headers: {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer '+ String(access_token)
     },
-    credentials: 'include'
+    
   })
   setEditData(updatedData);
   successEdit()
@@ -267,7 +267,7 @@ useEffect(() => {
         if (deleteConfirm) {
          console.log("delete")
          const access_token =  await localforage.getItem('access_token'); 
-          fetch(`http://127.0.0.1:8000/delete_warehouse/`, {
+          fetch(`https://vividstockfish.com/api/delete_warehouse/`, {
             method: "POST",
             body: new URLSearchParams(deleteData),
             headers: {

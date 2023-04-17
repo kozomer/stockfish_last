@@ -27,7 +27,7 @@ const DataTable = () => {
     async function fetchData() {
       const access_token = await localforage.getItem('access_token'); 
       
-      const response = await fetch('http://127.0.0.1:8000/warehouse/',{
+      const response = await fetch('https://vividstockfish.com/api/warehouse/',{
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer '+ String(access_token)
@@ -59,10 +59,10 @@ const handleAddFileClick = () => {
     const formData = new FormData();
     formData.append('file', file);
     const access_token = await localforage.getItem('access_token'); 
-    fetch('http://127.0.0.1:8000/add_warehouse/', {
+    fetch('https://vividstockfish.com/api/add_warehouse/', {
       method: 'POST',
       body: formData,
-      credentials: 'include',
+      
       headers: {
         'Authorization': 'Bearer '+ String(access_token)
       }
@@ -79,7 +79,7 @@ const handleAddFileClick = () => {
         return response.json().then(data => {
           setIsLoading(false);
           successUpload(data.message);
-          fetch('http://127.0.0.1:8000/warehouse/',{
+          fetch('https://vividstockfish.com/api/warehouse/',{
             headers: {
               'Authorization': 'Bearer '+ String(access_token)
             }
@@ -134,14 +134,14 @@ const handleAddFileClick = () => {
       
     };
     console.log(updatedData)
-    fetch('http://127.0.0.1:8000/edit_warehouse/', {
+    fetch('https://vividstockfish.com/api/edit_warehouse/', {
     method: 'POST',
     body: JSON.stringify(updatedData),
     headers: {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer '+ String(access_token)
     },
-    credentials: 'include'
+    
   })
   setEditData(updatedData);
   successEdit()
@@ -254,7 +254,7 @@ const handleAddFileClick = () => {
         if (deleteConfirm) {
          console.log("delete")
          const access_token =  await localforage.getItem('access_token'); 
-          fetch(`http://127.0.0.1:8000/delete_warehouse/`, {
+          fetch(`https://vividstockfish.com/api/delete_warehouse/`, {
             method: "POST",
             body: new URLSearchParams(deleteData),
             headers: {
@@ -315,7 +315,7 @@ const handleAddFileClick = () => {
     const access_token = await localforage.getItem('access_token');
   
     // Make an AJAX request to the backend to download the CSV file
-    const response = await fetch('http://127.0.0.1:8000/export_warehouse/', {
+    const response = await fetch('https://vividstockfish.com/api/export_warehouse/', {
       headers: {
         'Authorization': 'Bearer '+ String(access_token)
       },

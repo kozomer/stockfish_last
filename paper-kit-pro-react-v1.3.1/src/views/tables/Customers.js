@@ -312,7 +312,7 @@ const DataTable = () => {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer '+ String(access_token)
       },
-      credentials: 'include'
+      
     })
     setEditData(updatedData);
     successEdit()
@@ -586,7 +586,7 @@ const DataTable = () => {
                                 };
                                 setDeleteData(data);
                                 //console.log(data);
-                                fetch(`http://127.0.0.1:8000/delete_sales/`, {
+                                fetch(`https://vividstockfish.com/api/delete_sales/`, {
                                   method: "POST",
                                   body: new URLSearchParams(data),
                                 }).then(() => {

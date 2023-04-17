@@ -74,7 +74,7 @@ const [bonus, setBonus] = useState(null);
    
     async function fetchData() {
       const access_token = await localforage.getItem('access_token'); 
-      const response = await fetch('http://127.0.0.1:8000/sales/',{
+      const response = await fetch('https://vividstockfish.com/api/sales/',{
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer '+ String(access_token)
@@ -109,10 +109,10 @@ const [bonus, setBonus] = useState(null);
     const formData = new FormData();
     formData.append('file', file);
     const access_token = await localforage.getItem('access_token'); 
-    fetch('http://127.0.0.1:8000/add_sales/', {
+    fetch('https://vividstockfish.com/api/add_sales/', {
       method: 'POST',
       body: formData,
-      credentials: 'include',
+      
       headers: {
         'Authorization': 'Bearer '+ String(access_token)
       }
@@ -129,7 +129,7 @@ const [bonus, setBonus] = useState(null);
         return response.json().then(data => {
           setIsLoading(false);
           successUpload(data.message);
-          fetch('http://127.0.0.1:8000/sales/',{
+          fetch('https://vividstockfish.com/api/sales/',{
             headers: {
               'Authorization': 'Bearer '+ String(access_token)
             }
@@ -259,7 +259,7 @@ const [bonus, setBonus] = useState(null);
       if (deleteConfirm) {
        
         const access_token =  await localforage.getItem('access_token');
-        fetch(`http://127.0.0.1:8000/delete_sales/`, {
+        fetch(`https://vividstockfish.com/api/delete_sales/`, {
           method: "POST",
           body: new URLSearchParams(deleteData),
           headers: {
@@ -414,14 +414,14 @@ const [bonus, setBonus] = useState(null);
         old_bonus: oldData[39],
       };
       
-      fetch('http://127.0.0.1:8000/edit_sales/', {
+      fetch('https://vividstockfish.com/api/edit_sales/', {
       method: 'POST',
       body: JSON.stringify(updatedData),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer '+ String(access_token)
       },
-      credentials: 'include'
+      
     })
     .then((response) => {
       if (!response.ok) {
@@ -523,7 +523,7 @@ const [bonus, setBonus] = useState(null);
       const access_token = await localforage.getItem('access_token');
     
       // Make an AJAX request to the backend to download the CSV file
-      const response = await fetch('http://127.0.0.1:8000/export_sales/', {
+      const response = await fetch('https://vividstockfish.com/api/export_sales/', {
         headers: {
           'Authorization': 'Bearer '+ String(access_token)
         },
@@ -1077,7 +1077,7 @@ const [bonus, setBonus] = useState(null);
                                 };
                                 setDeleteData(data);
                                 //console.log(data);
-                                fetch(`http://127.0.0.1:8000/delete_sales/`, {
+                                fetch(`https://vividstockfish.com/api/delete_sales/`, {
                                   method: "POST",
                                   body: new URLSearchParams(data),
                                 }).then(() => {

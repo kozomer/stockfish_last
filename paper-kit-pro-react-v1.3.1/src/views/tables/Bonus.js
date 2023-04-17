@@ -65,10 +65,9 @@ function UserProfile() {
     console.log(saler_id)
 
     const access_token = await localforage.getItem('access_token');
-    fetch('http://127.0.0.1:8000/salers/', {
+    fetch('https://vividstockfish.com/api/salers/', {
       method: 'POST',
       body: JSON.stringify(saler_id),
-      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + String(access_token)
@@ -95,10 +94,10 @@ function UserProfile() {
 
     };
     console.log(newSaler)
-    fetch("http://127.0.0.1:8000/add_salers/", {
+    fetch("https://vividstockfish.com/api/add_salers/", {
       method: "POST",
       body: JSON.stringify(newSaler),
-      credentials: "include",
+      
       headers: {
         'Authorization': 'Bearer ' + String(access_token)
       },
@@ -128,7 +127,7 @@ function UserProfile() {
     
     const access_token = await localforage.getItem('access_token');
     console.log(access_token)
-    fetch('http://127.0.0.1:8000/collapsed_salers/', {
+    fetch('https://vividstockfish.com/api/collapsed_salers/', {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + String(access_token)
@@ -185,10 +184,10 @@ function UserProfile() {
         old_data: salersWholeData
       }
       const access_token = await localforage.getItem('access_token');
-      fetch('http://127.0.0.1:8000/edit_salers/', {
+      fetch('https://vividstockfish.com/api/edit_salers/', {
         method: "POST",
         body: JSON.stringify(all_data),
-        credentials: "include",
+        
         headers: {
           'Authorization': 'Bearer ' + String(access_token)
         },
@@ -242,14 +241,14 @@ function UserProfile() {
       id: id
     }
     const access_token = await localforage.getItem('access_token');
-    fetch("http://127.0.0.1:8000/delete_saler/", {
+    fetch("https://vividstockfish.com/api/delete_saler/", {
       method: "POST",
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + String(access_token)
       },
       body: JSON.stringify(delete_id),
-      credentials: "include"
+      
 
     })
       .then((response) => {
