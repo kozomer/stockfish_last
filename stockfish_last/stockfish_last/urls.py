@@ -23,7 +23,7 @@ from stockfish_api.views import ( AddCustomersView, AddSalesView, AddProductsVie
                                  TopCustomersView, TopProductsView,
                                  ExchangeRateAPIView, SalerDataView, TotalDataView, TotalDataByMonthlyView, CustomerAreaPieChartView, 
                                  ExportCustomersView, ExportSalesView, ExportWarehouseView, ExportProductsView,
-                                 GoodsOnRoadView
+                                 GoodsOnRoadView, AddTruckView
 
                                  )
 from rest_framework_simplejwt.views import (
@@ -48,6 +48,7 @@ urlpatterns = [
     path('api/add_sales/', AddSalesView.as_view(), name='add_sales'),
     path('api/add_products/',AddProductsView.as_view(), name='add_pricelists'),
     path('api/add_salers/',AddSalerView.as_view(), name='add_salers'),
+    path('api/add_truck/', AddTruckView.as_view(), name='add_truck'),
 
     path('api/customers/', ViewCustomersView.as_view(), name='view_customers'),
     path('api/sales/', ViewSalesView.as_view(), name='view_sales'),

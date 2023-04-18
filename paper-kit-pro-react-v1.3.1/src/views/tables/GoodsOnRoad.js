@@ -33,6 +33,12 @@ const DataTable = () => {
   const [oldData, setOldData] = useState(null);
 
   const [leadTime, setLeadTime] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [newTruck, setNewTruck] = useState({
+    truck_name: '',
+    estimated_order_date: '',
+    estimated_arrival_date: '',
+  });
 
   const [serviceLevel, setServiceLevel] = useState('');
   
@@ -40,8 +46,10 @@ const DataTable = () => {
     async function fetchData() {
       const access_token = await localforage.getItem('access_token'); 
       
-      const response = await fetch('http://vividstockfish.com/api/goods_on_road/',{
+      const response = await fetch('http://127.0.0.1:8000/api/goods_on_road/',{
+        method: 'GET',
         headers: {
+            
           'Content-Type': 'application/json',
           'Authorization': 'Bearer '+ String(access_token)
         }});
@@ -53,8 +61,8 @@ const DataTable = () => {
   }, [dataChanged,renderEdit]);
 
 
-  const handleEdit = (row, column) => {
-    setEdit({ row, column });
+  const handleEdit = (key, column) => {
+    setEdit({ row: key, column: column });
   };
 
   const handleChange = (e, row) => {
@@ -65,39 +73,54 @@ const DataTable = () => {
     setEdit({ row: -1, column: '' });
   };
 
-const handleSave = async () => {
-  // handle the save logic here
-  
+  const handleNewTruckInputChange = (e) => {
+    setNewTruck({ ...newTruck, [e.target.name]: e.target.value });
+  };
 
-  const access_token = await localforage.getItem('access_token');
-  
-  const selectData = { lead_time: leadTime, service_level:serviceLevel};
-  // post the selected option to Django
-  fetch('http://127.0.0.1:8000/rop/', {
-    method: 'POST',
-  headers: { "Content-Type": "application/json", 
-  'Authorization': 'Bearer '+ String(access_token)},
+  // Function to handle form submission
+  const handleNewTruckSubmit = async () => {
+      const access_token = await localforage.getItem('access_token'); 
+      const response = await fetch('http://127.0.0.1:8000/api/add_truck/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer '+ String(access_token)
+          // Add the appropriate headers for your API (e.g., Authorization)
+        },
+        body: JSON.stringify(newTruck),
+      })
+
+
+      .then((response) => {
+        if (!response.ok) {
+          return response.json().then(data => {
+            console.log(data.error)
+            
+            errorUpload(data.error);
+          });
+        }
+       
+        else{
+          return response.json().then(data => {
+            
+            successEdit(data.message);
+            handleShowForm()
+          })
+      
+          }
+        })
+  }
+
+  // Y
+  const handleShowForm = () => {
+    setShowForm((prevState) => !prevState);
     
-    body: JSON.stringify(selectData),
-   
-  })
-    .then(response => response.json())
-    .then(data => {
-      
-      setTableData(data.rop_list);
-      setResult(data);
-      setOrder(data.avrg_order);
-      setOrderFlag(data.avrg_order_flag)
+  };
 
-      setOrderHolt(data.holt_order);
-      setOrderFlagHolt(data.holt_order_flag)
-
-      setOrderExp(data.exp_order);
-      setOrderFlagExp(data.exp_order_flag)
-      
-    }) 
-};
-
+  // Function to hide the form
+  const handleCancelForm = () => {
+    setShowForm(false);
+  };
 useEffect(() => {
   if ( leadTime && serviceLevel ) {
     
@@ -161,8 +184,8 @@ useEffect(() => {
 
     // Call your Django API to send the updated values here
   };
-  const successEdit = () => {
-    console.log("edit success")
+  const successEdit = (s) => {
+    
     setAlert(
       <ReactBSAlert
         success
@@ -176,7 +199,7 @@ useEffect(() => {
         confirmBtnBsStyle="info"
         btnSize=""
       >
-        Your edit has been successfully saved.
+       {s}
       </ReactBSAlert>
     );
     setRenderEdit(true)
@@ -336,6 +359,60 @@ useEffect(() => {
     <>
       <div className='content'>
       {alert}
+      <Card>
+        <CardHeader>
+        <CardTitle tag="h4">
+            Add Truck
+            
+              <Button onClick={handleShowForm} color="success" size="sm" className="btn-icon btn-link">
+                <i className="fa fa-plus" />
+              </Button>
+            
+          </CardTitle>
+        </CardHeader>
+        <CardBody>
+        {showForm && (
+          <Form>
+            <FormGroup>
+              <Label for="truck_name">Truck Name</Label>
+              <Input
+                type="text"
+                name="truck_name"
+                id="truck_name"
+                value={newTruck.truck_name}
+                onChange={handleNewTruckInputChange}
+              />
+            </FormGroup>
+            <FormGroup>
+              <Label for="estimated_order_date">Estimated Order Date(YYYY-MM-DD)</Label>
+              <Input
+                type="text"
+                name="estimated_order_date"
+                id="estimated_order_date"
+                value={newTruck.estimated_order_date}
+                onChange={handleNewTruckInputChange}
+              />
+            </FormGroup>
+            <FormGroup>
+              <Label for="estimated_arrival_date">Estimated Arrival Date(YYYY-MM-DD)</Label>
+              <Input
+                type="text"
+                name="estimated_arrival_date"
+                id="estimated_arrival_date"
+                value={newTruck.estimated_arrival_date}
+                onChange={handleNewTruckInputChange}
+              />
+            </FormGroup>
+            <Button onClick={handleNewTruckSubmit} color="primary">
+              Submit
+            </Button>
+            <Button onClick={handleCancelForm} color="secondary">
+                Cancel
+              </Button>
+          </Form>
+          )}
+        </CardBody>
+      </Card>
       {showPopup && (
        <div className="popup">
       <Card>
