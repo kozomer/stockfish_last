@@ -2381,6 +2381,7 @@ class AddTruckView(APIView):
                 estimated_arrival_date=estimated_arrival_date,
                 is_arrived=False,
                 is_ordered= False,
+                is_waiting = True
             )
             truck.save()
             return JsonResponse({'message': "Truck added successfully"}, status=200)
@@ -2390,6 +2391,70 @@ class AddTruckView(APIView):
             return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD' "}, status=400)
         except Exception as e:
              return JsonResponse({'error': str(e)}, status=500)
+
+class WaitingTrucksView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def get(self, request, *args, **kwargs):
+        waiting_trucks = Trucks.objects.filter(is_waiting=True).values_list('truck_name', flat=True)
+        goods_on_road = GoodsOnRoad.objects.filter(is_on_truck=True).values()
+        grouped_goods = {}
+
+        for good in goods_on_road:
+            if good['truck_name'] not in waiting_trucks:
+                grouped_goods[good['truck_name']] = []
+
+            grouped_goods[good['truck_name']].append(good)
+
+        return JsonResponse(grouped_goods, safe=False)
+
+class ApproveWaitingTruckView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            data = json.loads(request.body)
+            truck_name = data.get("truck_name")
+
+            if not truck_name:
+                return JsonResponse({'error': "Truck name cannot be empty."}, status=400)
+
+            truck = Trucks.objects.get(truck_name=truck_name, is_waiting=True)
+            if not truck:
+                return JsonResponse({'error': "No truck found with the given name on waiting list"}, status=404)
+
+            truck.is_waiting = False
+            truck.is_ordered = True
+            truck.save()
+
+            goods_on_road = GoodsOnRoad.objects.filter(truck_name=truck_name, is_on_truck=True)
+            for good in goods_on_road:
+                good.is_on_truck = False
+                good.is_on_road = True
+                good.save()
+
+            return JsonResponse({'message': f"Truck with name: {truck_name} is successfully ordered."}, status=200)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+class TrucksOnRoadView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def get(self, request, *args, **kwargs):
+        trucks_on_road = Trucks.objects.filter(is_on_road=True).values_list('truck_name', flat=True)
+        goods_on_road = GoodsOnRoad.objects.filter(is_on_road = True).values()
+        grouped_goods = {}
+
+        for good in goods_on_road:
+            if good['truck_name'] not in trucks_on_road:
+                grouped_goods[good['truck_name']] = []
+
+            grouped_goods[good['truck_name']].append(good)
+
+        return JsonResponse(grouped_goods, safe=False)
 
 # endregion
 
