@@ -1,6 +1,7 @@
 from django.shortcuts import render
 import pandas as pd
-from .models import Customers, Products, Sales, Warehouse, ROP, Salers, SalerPerformance, SaleSummary, SalerMonthlySaleRating, MonthlyProductSales,CustomerPerformance, ProductPerformance, OrderList
+from .models import (Customers, Products, Sales, Warehouse, ROP, Salers, SalerPerformance, SaleSummary, SalerMonthlySaleRating, 
+                    MonthlyProductSales,CustomerPerformance, ProductPerformance, OrderList, GoodsOnRoad, Trucks)
 from django.views import View
 from rest_framework.views import APIView
 from django.http import JsonResponse, HttpResponse
@@ -394,7 +395,7 @@ class AddSalesView(APIView):
         except OperationalError as e:
             return JsonResponse({'error': f"Database error: {str(e)}"}, status=500)
         except Exception as e:
-            traceback.print_exc()
+            #traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
 
 
@@ -2250,23 +2251,19 @@ class OrderListView(APIView):
     authentication_classes = (JWTAuthentication,)
 
     def get(self, request, *args, **kwargs):
-        order_lists = OrderList.objects.filter(is_active = False).values() #! False True olacak
-        print(order_lists)
+        order_lists = OrderList.objects.filter(is_active = True).values() #! False True olacak
         order_list_data = [
             [o['current_date'].strftime('%Y-%m-%d'), o['product_code'], o['weight'], o['average_sale'], o['current_stock'], o['order_avrg'], o['order_exp'], o['order_holt'],
               o['decided_order']] for o in order_lists
         ]
-        print(order_list_data)
         return JsonResponse(order_list_data, safe=False)
 
-class EditOrderListView(View):
-    # permission_classes = (IsAuthenticated,)
-    # authentication_classes = (JWTAuthentication,)
-    @csrf_exempt
+class EditOrderListView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
         # Expecting the updated data to be sent as a list of dictionaries
         updated_order_list_data = json.loads(request.body)
-        print(updated_order_list_data)
 
         try:
             order = OrderList.objects.get(id=updated_order_list_data['id'])
@@ -2292,6 +2289,79 @@ class EditOrderListView(View):
 
 
 # endregion
+
+# region GoodsOnRoad
+
+@receiver(post_save, sender=OrderList)
+def update_goods_on_road(sender, instance, created, **kwargs):
+    if not created and instance.is_ordered:
+        product = Products.objects.get(product_code=instance.product_code)
+        goods_on_road, created = GoodsOnRoad.objects.get_or_create(product_code=instance.product_code, is_terminated=False)
+        goods_on_road.product_name_tr = product.description_tr
+        goods_on_road.product_name_ir = product.description_ir
+        goods_on_road.decided_order = instance.decided_order
+        goods_on_road.weight = instance.weight
+        goods_on_road.truck_id = None
+        goods_on_road.is_ordered = instance.is_ordered
+        goods_on_road.is_on_truck = False
+        goods_on_road.save()
+
+class GoodsOnRoadView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def get(self, request, *args, **kwargs):
+        goods_on_road = GoodsOnRoad.objects.filter(is_terminated=False).values()
+        goods_on_road_data = [
+            [g['product_code'], g['product_name_tr'], g['product_name_ir'], g['decided_order'], g['weight'], g['truck_id']]
+            for g in goods_on_road
+        ]
+        return JsonResponse(goods_on_road_data, safe=False)
+
+# endregion
+
+# region Trucks
+
+class AddTruckView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            data = json.loads(request.body)
+
+            # Check if a truck with the same name and is_arrived=False already exists
+            existing_truck = Trucks.objects.filter(truck_name=data.get("truck_name"), is_arrived=False)
+            if existing_truck.exists():
+                return JsonResponse({'error': "A truck with the same name already exists and has not arrived yet."}, status=400)
+
+            estimated_order_date_jalali = data.get("estimated_order_date").split("-")
+            estimated_arrival_date_jalali = data.get("estimated_arrival_date").split("-")
+
+            try:
+                estimated_order_date = jdatetime.date(int(estimated_order_date_jalali[0]), int(estimated_order_date_jalali[1]), int(estimated_order_date_jalali[2]))
+                estimated_arrival_date = jdatetime.date(int(estimated_arrival_date_jalali[0]), int(estimated_arrival_date_jalali[1]), int(estimated_arrival_date_jalali[2]))
+            except Exception as e:
+                return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD'"}, status=400)
+
+            truck = Trucks(
+                truck_name=data.get("truck_name"),
+                estimated_order_date=estimated_order_date,
+                estimated_arrival_date=estimated_arrival_date,
+                is_arrived=False,
+                is_ordered= False,
+            )
+            truck.save()
+            return JsonResponse({'message': "Truck added successfully"}, status=200)
+        except IndexError:
+            return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD' "}, status=400)
+        except ValueError:
+            return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD' "}, status=400)
+        except Exception as e:
+             return JsonResponse({'error': str(e)}, status=500)
+
+# endregion
+
 
 
 

@@ -3,6 +3,7 @@ Internal Server Error: /api/edit_products/
 Internal Server Error: /api/edit_warehouse/
 Bad Request: /api/edit_sales/
 Bad Request: /api/edit_sales/
+<<<<<<< HEAD
 Watching for file changes with StatReloader
 Waiting for apps ready_event.
 Apps ready_event triggered. Sending autoreload_started signal.
@@ -6983,3 +6984,7 @@ File C:\Users\yasin\AppData\Local\Programs\Python\Python311\Lib\site-packages\jw
 Not Found: /edit_order_list/
 "POST /edit_order_list/ HTTP/1.1" 404 179
 "GET /api/order_list/ HTTP/1.1" 200 61
+=======
+CREATE TABLE "stockfish_api_goodsonroad" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, "product_code" integer NULL, "product_name_tr" varchar(100) NOT NULL, "product_name_ir" varchar(100) NOT NULL, "decided_order" real NULL, "weight" real NULL, "truck_id" varchar(100) NOT NULL, "is_ordered" bool NOT NULL, "is_terminated" bool NOT NULL, "is_on_truck" bool NOT NULL); (params None)
+CREATE TABLE "stockfish_api_trucks" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, "truck_name" varchar(100) NOT NULL, "estimated_order_date" date NULL, "estimated_arrival_date" date NULL, "is_arrived" bool NOT NULL, "is_ordered" bool NOT NULL); (params None)
+>>>>>>> dcd7816d886559ff726c6816233c9b7e58d677f3
