@@ -40,7 +40,7 @@ const DataTable = () => {
     estimated_arrival_date: '',
   });
 
-  const [serviceLevel, setServiceLevel] = useState('');
+  const [waitingTrucksData, setWaitingTrucksData] = useState([]);
   
   useEffect(() => {
     async function fetchData() {
@@ -111,6 +111,7 @@ const DataTable = () => {
         })
   }
 
+  
   // Y
   const handleShowForm = () => {
     setShowForm((prevState) => !prevState);
@@ -121,14 +122,32 @@ const DataTable = () => {
   const handleCancelForm = () => {
     setShowForm(false);
   };
-useEffect(() => {
-  if ( leadTime && serviceLevel ) {
-    
-    setSaveDisabled(false);
-  } else {
-    setSaveDisabled(true);
-  }
-}, [ leadTime, serviceLevel]);
+  useEffect(() => {
+    const fetchWaitingTrucksData = async () => {
+        const access_token = await localforage.getItem('access_token'); 
+        const response = await fetch('http://127.0.0.1:8000/api/waiting_trucks/', {
+          method: 'GET',
+          headers: {
+            
+            'Authorization': 'Bearer '+ String(access_token)
+          },
+        });
+
+        const responseData = await response.json();
+        
+        console.log(responseData)
+       
+        const formattedData = Object.keys(responseData).map((key) => ({
+            truck_name: key,
+            data: responseData[key],
+          }));
+          setWaitingTrucksData(formattedData);
+       
+    }
+
+    fetchWaitingTrucksData();
+  }, []);
+
   
   
   const handleClick = (row,key) => {
@@ -641,6 +660,82 @@ useEffect(() => {
                   </Card>
                   </Col>
                   </Row>
+
+
+
+                  <Card>
+  <CardHeader>
+    <CardTitle tag="h4">Waiting Trucks</CardTitle>
+  </CardHeader>
+  <CardBody>
+    {waitingTrucksData.map((truckData, index) => (
+      <div
+        className="truck-table-container"
+        key={index}
+        style={{
+          marginBottom: index < waitingTrucksData.length - 1 ? '2rem' : 0,
+          borderBottom:
+            index < waitingTrucksData.length - 1
+              ? '1px solid #dee2e6'
+              : 'none',
+          paddingBottom: index < waitingTrucksData.length - 1 ? '2rem' : 0,
+        }}
+      >
+        <h5>{truckData.truck_name}</h5>
+        <ReactTable
+          data={truckData.data.map((row, key) => {
+            const newRow = {};
+            Object.keys(row).forEach((column) => {
+              if (
+                ![
+                  'is_ordered',
+                  'is_terminated',
+                  'is_on_truck',
+                  'is_on_road',
+                  'is_arrived',
+                ].includes(column)
+              ) {
+                const formattedKey = column
+                  .split('_')
+                  .map(
+                    (word) =>
+                      word.charAt(0).toUpperCase() + word.slice(1),
+                  )
+                  .join(' ');
+                newRow[formattedKey] = row[column];
+              }
+            });
+            return newRow;
+          })}
+          columns={Object.keys(truckData.data[0] || {})
+            .filter(
+              (key) =>
+                ![
+                  'is_ordered',
+                  'is_terminated',
+                  'is_on_truck',
+                  'is_on_road',
+                  'is_arrived',
+                ].includes(key),
+            )
+            .map((key) => {
+              const formattedKey = key
+                .split('_')
+                .map(
+                  (word) =>
+                    word.charAt(0).toUpperCase() + word.slice(1),
+                )
+                .join(' ');
+              return { Header: formattedKey, accessor: formattedKey };
+            })}
+          defaultPageSize={10}
+          className="-striped -highlight"
+        />
+      </div>
+    ))}
+  </CardBody>
+</Card>
+
                   </div>
                   </>
                   );

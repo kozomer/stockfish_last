@@ -2400,10 +2400,14 @@ class WaitingTrucksView(APIView):
         waiting_trucks = Trucks.objects.filter(is_waiting=True).values_list('truck_name', flat=True)
         goods_on_road = GoodsOnRoad.objects.filter(is_on_truck=True).values()
         grouped_goods = {}
+        print(waiting_trucks)
 
         for good in goods_on_road:
-            if good['truck_name'] not in waiting_trucks:
+            print(good['truck_name'])
+            if good['truck_name'] not in grouped_goods:
+                print("omer")
                 grouped_goods[good['truck_name']] = []
+            print(grouped_goods)
 
             grouped_goods[good['truck_name']].append(good)
 
@@ -2449,7 +2453,7 @@ class TrucksOnRoadView(APIView):
         grouped_goods = {}
 
         for good in goods_on_road:
-            if good['truck_name'] not in trucks_on_road:
+            if good['truck_name'] not in grouped_goods:
                 grouped_goods[good['truck_name']] = []
 
             grouped_goods[good['truck_name']].append(good)

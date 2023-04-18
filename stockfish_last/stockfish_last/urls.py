@@ -23,7 +23,7 @@ from stockfish_api.views import ( AddCustomersView, AddSalesView, AddProductsVie
                                  TopCustomersView, TopProductsView,
                                  ExchangeRateAPIView, SalerDataView, TotalDataView, TotalDataByMonthlyView, CustomerAreaPieChartView, 
                                  ExportCustomersView, ExportSalesView, ExportWarehouseView, ExportProductsView,
-                                 GoodsOnRoadView, AddTruckView
+                                 GoodsOnRoadView, AddTruckView, WaitingTrucksView
 
                                  )
 from rest_framework_simplejwt.views import (
@@ -60,6 +60,7 @@ urlpatterns = [
     path('api/rop/', ROPView.as_view(), name='view_rop'),
     path('api/order_list/', OrderListView.as_view(), name='order_list'),
     path('api/goods_on_road/', GoodsOnRoadView.as_view(), name='goods_on_road'),
+     path('api/waiting_trucks/',WaitingTrucksView.as_view(), name='waiting_trucks'),
 
 
 
