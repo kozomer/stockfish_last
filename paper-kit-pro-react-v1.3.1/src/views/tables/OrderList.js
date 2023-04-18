@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Card, CardHeader, CardBody, CardTitle, Row, Col, Input,Form, FormGroup, Label,CardFooter} from 'reactstrap';
+import  {Link} from 'react-router-dom';
 import ReactTable from 'components/ReactTable/ReactTable.js';
 import localforage from 'localforage';
 import ReactBSAlert from "react-bootstrap-sweetalert";
@@ -39,7 +40,7 @@ const DataTable = () => {
     async function fetchData() {
       const access_token = await localforage.getItem('access_token'); 
       
-      const response = await fetch('https://vividstockfish.com/api/order_list/',{
+      const response = await fetch('http://vividstockfish.com/api/order_list/',{
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer '+ String(access_token)
@@ -51,12 +52,8 @@ const DataTable = () => {
     fetchData();
   }, [dataChanged,renderEdit]);
 
-  /*
-  useEffect(() => {
-    console.log(dataTable);
-  }, [dataTable]);
-*/
 
+  
 
 const handleSave = async () => {
   // handle the save logic here
@@ -66,7 +63,7 @@ const handleSave = async () => {
   
   const selectData = { lead_time: leadTime, service_level:serviceLevel};
   // post the selected option to Django
-  fetch('https://vividstockfish.com/api/rop/', {
+  fetch('http://127.0.0.1:8000/rop/', {
     method: 'POST',
   headers: { "Content-Type": "application/json", 
   'Authorization': 'Bearer '+ String(access_token)},
@@ -140,14 +137,14 @@ useEffect(() => {
       
     };
     console.log(updatedData)
-    fetch('https://vividstockfish.com/api/edit_order_list/', {
+    fetch('http://vividstockfish.com/api/edit_order_list/', {
     method: 'POST',
     body: JSON.stringify(updatedData),
     headers: {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer '+ String(access_token)
     },
-    
+    credentials: 'include'
   })
   setEditData(updatedData);
   successEdit()
@@ -267,7 +264,7 @@ useEffect(() => {
         if (deleteConfirm) {
          console.log("delete")
          const access_token =  await localforage.getItem('access_token'); 
-          fetch(`https://vividstockfish.com/api/delete_warehouse/`, {
+          fetch(`http://127.0.0.1:8000/delete_warehouse/`, {
             method: "POST",
             body: new URLSearchParams(deleteData),
             headers: {
@@ -546,7 +543,10 @@ useEffect(() => {
                   }))}
                   columns={[
                     { Header: 'Order Date', accessor: 'current_date' },
-                    { Header: 'Product Code', accessor: 'product_code' },
+                    { Header: 'Product Code', accessor: 'product_code',
+                    Cell: ({ value }) => (
+                      <Link to={`rop/${value}`}>{value}</Link>
+                    ), },
                     { Header: 'Weight', accessor: 'weight' },
                     { Header: 'Average Sale', accessor: 'average_sale' },
                     { Header: 'Current Stock', accessor: 'current_stock' },

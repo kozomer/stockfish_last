@@ -26,11 +26,15 @@ const [date, setDate] = useState(null);
 const [psr, setPsr] = useState(null);
 const [customerCode, setCustomerCode] = useState(null);
 const [name, setName] = useState(null);
+const [city, setCity] = useState(null);
 const [area, setArea] = useState(null);
+const [colorMake, setColorMake] = useState(null);
 const [group, setGroup] = useState(null);
-const [goodCode, setGoodCode] = useState(null);
-const [goods, setGoods] = useState(null);
+const [productCode, setProductCode] = useState(null);
+const [productName, setProductName] = useState(null);
 const [unit, setUnit] = useState(null);
+const [unit2, setUnit2] = useState(null);
+const [kg, setKg] = useState(null);
 const [originalValue, setOriginalValue] = useState(null);
 const [originalOutputValue, setOriginalOutputValue] = useState(null);
 const [secondaryOutputValue, setSecondaryOutputValue] = useState(null);
@@ -47,6 +51,8 @@ const [paymentCash, setPaymentCash] = useState(null);
 const [paymentCheck, setPaymentCheck] = useState(null);
 const [balance, setBalance] = useState(null);
 const [saler, setSaler] = useState(null);
+const [currSepidar, setCurrSepidar] = useState(null);
+const [dollarSepidar, setDollarSepidar] = useState(null);
 const [currency, setCurrency] = useState(null);
 const [dollar, setDollar] = useState(null);
 const [managerRating, setManagerRating] = useState(null);
@@ -287,11 +293,15 @@ const [bonus, setBonus] = useState(null);
       setPsr(row.psr);
       setCustomerCode(row.customer_code);
       setName(row.name);
+      setCity(row.city)
       setArea(row.area);
+      setColorMake(row.color_making_saler)
       setGroup(row.group);
-      setGoodCode(row.good_code);
-      setGoods(row.goods);
+      setProductCode(row.product_code);
+      setProductName(row.product_name);
       setUnit(row.unit);
+      setUnit2(row.unit2);
+      setKg(row.kg)
       setOriginalValue(row.original_value);
       setOriginalOutputValue(row.original_output_value);
       setSecondaryOutputValue(row.secondary_output_value);
@@ -308,6 +318,8 @@ const [bonus, setBonus] = useState(null);
       setPaymentCheck(row.payment_check);
       setBalance(row.balance);
       setSaler(row.saler);
+      setCurrSepidar(row.currency_sepidar);
+      setDollarSepidar(row.dollar_sepidar);
       setCurrency(row.currency);
       setDollar(row.dollar);
       setManagerRating(row.manager_rating);
@@ -337,11 +349,15 @@ const [bonus, setBonus] = useState(null);
         new_psr: psr,
         new_customer_code: customerCode,
         new_name: name,
+        new_city: city,
         new_area: area,
+        new_color_making_saler: colorMake,
         new_group: group,
-        new_good_code: goodCode,
-        new_goods: goods,
+        new_product_code: productCode,
+        new_product_name: productName,
         new_unit: unit,
+        new_unit2: unit2,
+        new_kg: kg,
         new_original_value: originalValue,
         new_original_output_value: originalOutputValue,
         new_secondary_output_value: secondaryOutputValue,
@@ -358,6 +374,8 @@ const [bonus, setBonus] = useState(null);
         new_payment_check: paymentCheck,
         new_balance: balance,
         new_saler: saler,
+        new_currency_sepidar:currSepidar,
+        new_dollar_sepidar: dollarSepidar,
         new_currency: currency,
         new_dollar: dollar,
         new_manager_rating: managerRating,
@@ -378,40 +396,46 @@ const [bonus, setBonus] = useState(null);
         old_psr: oldData[3],
         old_customer_code: oldData[4],
         old_name: oldData[5],
-        old_area: oldData[6],
-        old_group: oldData[7],
-        old_good_code: oldData[8],
-        old_goods: oldData[9],
-        old_unit: oldData[10],
-        old_original_value: oldData[11],
-        old_original_output_value: oldData[12],
-        old_secondary_output_value: oldData[13],
-        old_price: oldData[14],
-        old_original_price: oldData[15],
-        old_discount_percentage: oldData[16],
-        old_amount_sale: oldData[17],
-        old_discount: oldData[18],
-        old_additional_sales: oldData[19],
-        old_net_sales: oldData[20],
-        old_discount_percentage_2: oldData[21],
-        old_real_discount_percentage: oldData[22],
-        old_payment_cash: oldData[23],
-        old_payment_check: oldData[24],
-        old_balance: oldData[25],
-        old_saler: oldData[26],
-        old_currency: oldData[27],
-        old_dollar: oldData[28],
-        old_manager_rating: oldData[29],
-        old_senior_saler: oldData[30],
-        old_tot_monthly_sales: oldData[31],
-        old_receipment: oldData[32],
-        old_ct: oldData[33],
-        old_payment_type: oldData[34],
-        old_costumer_size: oldData[35],
-        old_saler_factor: oldData[36],
-        old_prim_percentage: oldData[37],
-        old_bonus_factor: oldData[38],
-        old_bonus: oldData[39],
+        old_city: oldData[6],
+        old_area: oldData[7],
+        old_color_making_saler: oldData[8],
+        old_group: oldData[9],
+        old_product_code: oldData[10],
+        old_product_name: oldData[11],
+        old_unit: oldData[12],
+        old_unit2: oldData[13],
+        old_kg: oldData[14],
+        old_original_value: oldData[15],
+        old_original_output_value: oldData[16],
+        old_secondary_output_value: oldData[17],
+        old_price: oldData[18],
+        old_original_price: oldData[19],
+        old_discount_percentage: oldData[20],
+        old_amount_sale: oldData[21],
+        old_discount: oldData[22],
+        old_additional_sales: oldData[23],
+        old_net_sales: oldData[24],
+        old_discount_percentage_2: oldData[25],
+        old_real_discount_percentage: oldData[26],
+        old_payment_cash: oldData[27],
+        old_payment_check: oldData[28],
+        old_balance: oldData[29],
+        old_saler: oldData[30],
+        old_currency_sepidar: oldData[31],
+        old_dollar_sepidar: oldData[32],
+        old_currency: oldData[33],
+        old_dollar: oldData[34],
+        old_manager_rating: oldData[35],
+        old_senior_saler: oldData[36],
+        old_tot_monthly_sales: oldData[37],
+        old_receipment: oldData[38],
+        old_ct: oldData[39],
+        old_payment_type: oldData[40],
+        old_costumer_size: oldData[41],
+        old_saler_factor: oldData[42],
+        old_prim_percentage: oldData[43],
+        old_bonus_factor: oldData[44],
+        old_bonus: oldData[45],
       };
       
       fetch('https://vividstockfish.com/api/edit_sales/', {
@@ -458,40 +482,46 @@ const [bonus, setBonus] = useState(null);
         setPsr(editData[3]);
         setCustomerCode(editData[4]);
         setName(editData[5]);
-        setArea(editData[6]);
-        setGroup(editData[7]);
-        setGoodCode(editData[8]);
-        setGoods(editData[9]);
-        setUnit(editData[10]);
-        setOriginalValue(editData[11]);
-        setOriginalOutputValue(editData[12]);
-        setSecondaryOutputValue(editData[13]);
-        setPrice(editData[14]);
-        setOriginalPrice(editData[15]);
-        setDiscountPercentage(editData[16]);
-        setAmountSale(editData[17]);
-        setDiscount(editData[18]);
-        setAdditionalSales(editData[19]);
-        setNetSales(editData[20]);
-        setDiscountPercentage2(editData[21]);
-        setRealDiscountPercentage(editData[22]);
-        setPaymentCash(editData[23]);
-        setPaymentCheck(editData[24]);
-        setBalance(editData[25]);
-        setSaler(editData[26]);
-        setCurrency(editData[27]);
-        setDollar(editData[28]);
-        setManagerRating(editData[29]);
-        setSeniorSaler(editData[30]);
-        setTotMonthlySales(editData[31]);
-        setReceipment(editData[32]);
-        setCt(editData[33]);
-        setPaymentType(editData[34]);
-        setCostumerSize(editData[35]);
-        setSalerFactor(editData[36]);
-        setPrimPercentage(editData[37]);
-        setBonusFactor(editData[38]);
-        setBonus(editData[39]);
+        setCity(editData[6])
+        setArea(editData[7]);
+        setColorMake(editData[8])
+        setGroup(editData[9]);
+        setProductCode(editData[10]);
+        setProductName(editData[11]);
+        setUnit(editData[12]);
+        setUnit2(editData[13]);
+        setKg(editData[14])
+        setOriginalValue(editData[15]);
+        setOriginalOutputValue(editData[16]);
+        setSecondaryOutputValue(editData[17]);
+        setPrice(editData[18]);
+        setOriginalPrice(editData[19]);
+        setDiscountPercentage(editData[20]);
+        setAmountSale(editData[21]);
+        setDiscount(editData[22]);
+        setAdditionalSales(editData[23]);
+        setNetSales(editData[24]);
+        setDiscountPercentage2(editData[25]);
+        setRealDiscountPercentage(editData[26]);
+        setPaymentCash(editData[27]);
+        setPaymentCheck(editData[28]);
+        setBalance(editData[29]);
+        setSaler(editData[30]);
+        setCurrSepidar(editData[31])
+        setDollarSepidar(editData[32])
+        setCurrency(editData[33]);
+        setDollar(editData[34]);
+        setManagerRating(editData[35]);
+        setSeniorSaler(editData[36]);
+        setTotMonthlySales(editData[37]);
+        setReceipment(editData[38]);
+        setCt(editData[39]);
+        setPaymentType(editData[40]);
+        setCostumerSize(editData[41]);
+        setSalerFactor(editData[42]);
+        setPrimPercentage(editData[43]);
+        setBonusFactor(editData[44]);
+        setBonus(editData[45]);
           setIsUpdated(true)
       }
     }, [editData])
@@ -626,8 +656,17 @@ const [bonus, setBonus] = useState(null);
             />
           </FormGroup>
         
-
+          <label>City</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={city}
+              onChange={(e) => setCity(e.target.value)}
+            />
+          </FormGroup>
+          </div>
         
+          <div className="form-group-col-sales">
           <label>Area</label>
           <FormGroup>
             <Input
@@ -636,8 +675,16 @@ const [bonus, setBonus] = useState(null);
               onChange={(e) => setArea(e.target.value)}
             />
           </FormGroup>
-          </div>
-          <div className="form-group-col-sales">
+          <label>Color Making Saler</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={colorMake}
+              onChange={(e) => setColorMake(e.target.value)}
+            />
+          </FormGroup>
+          
+          
           <label>Group</label>
           <FormGroup>
             <Input
@@ -647,16 +694,25 @@ const [bonus, setBonus] = useState(null);
             />
           </FormGroup>
 
-          <label>Good Code</label>
+          <label>Product Code</label>
           <FormGroup>
             <Input
               type="text"
-              defaultValue={goodCode}
-              onChange={(e) => setGoodCode(e.target.value)}
+              defaultValue={productCode}
+              onChange={(e) => setProductCode(e.target.value)}
             />
           </FormGroup>
 
-          <label>Goods</label>
+          <label>Prodcut Name</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={productName}
+              onChange={(e) => setProductName(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Unit</label>
           <FormGroup>
             <Input
               type="text"
@@ -664,8 +720,29 @@ const [bonus, setBonus] = useState(null);
               onChange={(e) => setUnit(e.target.value)}
             />
           </FormGroup>
+          
+          <label>Unit2</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={unit2}
+              onChange={(e) => setUnit2(e.target.value)}
+            />
+          </FormGroup>
+          </div>
 
-          <label>Original Output Value</label>
+          <div className="form-group-col-sales">
+
+          <label>KG</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={kg}
+              onChange={(e) => setKg(e.target.value)}
+            />
+          </FormGroup>
+          
+          <label>Orig. Output Val.</label>
           <FormGroup>
             <Input
               type="text"
@@ -674,7 +751,7 @@ const [bonus, setBonus] = useState(null);
             />
           </FormGroup>
 
-          <label>Secondary Output Value</label>
+          <label>Second. Output Val.</label>
           <FormGroup>
             <Input
               type="text"
@@ -701,9 +778,9 @@ const [bonus, setBonus] = useState(null);
               onChange={(e) => setOriginalPrice(e.target.value)}
             />
           </FormGroup>
-          </div>
+         
 
-          <div className="form-group-col-sales">
+          
           <label>Amount Sale</label>
           <FormGroup>
             <Input
@@ -721,7 +798,10 @@ const [bonus, setBonus] = useState(null);
               onChange={(e) =>  setDiscount(e.target.value)}
             />
           </FormGroup>
+          </div>
 
+
+          <div className="form-group-col-sales">
           <label>Additional Sales</label>
           <FormGroup>
             <Input
@@ -740,7 +820,7 @@ const [bonus, setBonus] = useState(null);
             />
           </FormGroup>
 
-          <label>Discount Percentage(2)</label>
+          <label>Discount Perc.(2)</label>
           <FormGroup>
             <Input
               type="text"
@@ -749,7 +829,7 @@ const [bonus, setBonus] = useState(null);
             />
           </FormGroup>
 
-          <label>Real Discount Percentage</label>
+          <label>Real Discount Perc.</label>
           <FormGroup>
             <Input
               type="text"
@@ -775,9 +855,9 @@ const [bonus, setBonus] = useState(null);
               onChange={(e) =>   setPaymentCheck(e.target.value)}
             />
           </FormGroup>
-          </div>
+         
 
-          <div className="form-group-col-sales">
+          
           <label>Balance</label>
           <FormGroup>
             <Input
@@ -786,13 +866,33 @@ const [bonus, setBonus] = useState(null);
               onChange={(e) =>   setBalance(e.target.value)}
             />
           </FormGroup>
+          </div>
 
-          <label>Set Saler</label>
+          <div className="form-group-col-sales">
+          <label>Saler</label>
           <FormGroup>
             <Input
               type="text"
               defaultValue={saler}
               onChange={(e) =>   setSaler(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Curreny-Sepidar</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={currSepidar}
+              onChange={(e) => setCurrSepidar(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Dollar-Sepidar</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={dollarSepidar}
+              onChange={(e) => setDollarSepidar(e.target.value)}
             />
           </FormGroup>
 
@@ -831,6 +931,10 @@ const [bonus, setBonus] = useState(null);
               onChange={(e) =>   setSeniorSaler(e.target.value)}
             />
           </FormGroup>
+
+          </div>
+
+          <div className="form-group-col-sales">
           
           <label>Total Monthly Sales</label>
           <FormGroup>
@@ -840,9 +944,9 @@ const [bonus, setBonus] = useState(null);
               onChange={(e) =>   setTotMonthlySales(e.target.value)}
             />
           </FormGroup>
-          </div>
+          
 
-          <div className="form-group-col-sales">
+          
           <label>Receipment</label>
           <FormGroup>
             <Input
@@ -878,9 +982,7 @@ const [bonus, setBonus] = useState(null);
               onChange={(e) => setCostumerSize(e.target.value)}
             />
           </FormGroup>
-          </div>
-
-          <div className="form-group-col-sales">
+          
           <label>Saler Factor</label>
           <FormGroup>
             <Input
@@ -898,7 +1000,9 @@ const [bonus, setBonus] = useState(null);
               onChange={(e) =>setPrimPercentage(e.target.value)}
             />
           </FormGroup>
+          
 
+          
           <label>Bonus Factor</label>
           <FormGroup>
             <Input
@@ -993,8 +1097,8 @@ const [bonus, setBonus] = useState(null);
                     area: row[7],
                     color_making_saler: row[8],
                     group: row[9],
-                    good_code: row[10],
-                    goods: row[11],
+                    product_code: row[10],
+                    product_name: row[11],
                     unit: row[12],
                     unit2: row[13],
                     kg: row[14],
@@ -1061,7 +1165,7 @@ const [bonus, setBonus] = useState(null);
                                const rowToDelete = {...row};
                                const data = {
                                 no: rowToDelete [0],
-                                good_code: rowToDelete [8],
+                                product_code: rowToDelete [8],
                                 original_output_value: rowToDelete [12],
                               };
                               setDeleteData(data);
@@ -1154,12 +1258,12 @@ const [bonus, setBonus] = useState(null);
                       accessor: 'group'
                     },
                     {
-                      Header: 'Good Code',
-                      accessor: 'good_code'
+                      Header: 'Product Code',
+                      accessor: 'product_code'
                     },
                     {
-                      Header: 'Goods',
-                      accessor: 'goods'
+                      Header: 'Product Name',
+                      accessor: 'product_name'
                     },
                     {
                       Header: 'Unit',

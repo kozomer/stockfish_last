@@ -117,7 +117,7 @@ const handleAddFileClick = () => {
   };
   const handleSubmit = async (e) => {
     const access_token = await localforage.getItem('access_token'); 
-    console.log(oldData)
+    
     const updatedData = {
       new_product_code:productCode,
       new_title:productTitle,
@@ -143,12 +143,28 @@ const handleAddFileClick = () => {
     },
     
   })
-  setEditData(updatedData);
-  successEdit()
+  .then((response) => {
+    if (!response.ok) {
+      return response.json().then(data => {
+        console.log(data.error)
+        
+        errorUpload(data.error);
+      });
+    }
+   
+    else{
+      return response.json().then(data => {
+        setEditData(updatedData);
+        successEdit(data.message);
+      })
+  
+      }
+    })
+ 
 
     // Call your Django API to send the updated values here
   };
-  const successEdit = () => {
+  const successEdit = (s) => {
     console.log("edit success")
     setAlert(
       <ReactBSAlert
@@ -163,7 +179,7 @@ const handleAddFileClick = () => {
         confirmBtnBsStyle="info"
         btnSize=""
       >
-        Your edit has been successfully saved.
+        {s}
       </ReactBSAlert>
     );
     setRenderEdit(true)
@@ -252,7 +268,7 @@ const handleAddFileClick = () => {
       useEffect(() => {
         async function deleteFunc() {
         if (deleteConfirm) {
-         console.log("delete")
+         
          const access_token =  await localforage.getItem('access_token'); 
           fetch(`https://vividstockfish.com/api/delete_warehouse/`, {
             method: "POST",

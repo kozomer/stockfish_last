@@ -141,7 +141,7 @@ const DataTable = () => {
     );
   };
   const warningWithConfirmAndCancelMessage = () => {
-    console.log("sadsads"),
+    
     setAlert(
       
       <ReactBSAlert
@@ -289,8 +289,7 @@ const DataTable = () => {
 
     const handleSubmit =async (e) => {
       const access_token =  await localforage.getItem('access_token'); 
-      console.log("e")  
-      console.log(oldData)
+      
       const updatedData = {
         new_group:group,
         new_subgroup:subgroup,

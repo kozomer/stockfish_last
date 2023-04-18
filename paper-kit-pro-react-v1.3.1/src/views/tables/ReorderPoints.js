@@ -176,9 +176,8 @@ function Charts() {
 
 
   const location = useLocation();
-  const queryParams = new URLSearchParams(location.search);
-  const productCode = queryParams.get('productCode');
-  
+  const productCode = location.pathname.split('/').pop();
+
 
   useEffect(() => {
     async function fetchData() {
@@ -224,10 +223,20 @@ function Charts() {
 
   useEffect(() => {
     if (productCode) {
-      
-      handleSelect({ value: productCode });
+      const parsedProductCode = parseInt(productCode, 10);
+      setSelectedItem({ value: parsedProductCode });
+      setLeadTime(2);
+      setServiceLevel(0.9);
+      setForecast(3);
+     
     }
   }, [productCode]);
+
+  useEffect(() => {
+    if (selectedItem && selectedItem.value) {
+      handleSave();
+    }
+  }, [selectedItem]);
 
   useEffect(() => {
     if (selectedItem && leadTime && serviceLevel && forecast) {

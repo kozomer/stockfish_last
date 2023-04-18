@@ -37,6 +37,7 @@ import Products from "views/tables/Products.js";
 import SalesReport from "views/tables/SalesReport";
 import ReorderPoints from "views/tables/ReorderPoints.js";
 import Orderlist from "views/tables/OrderList";
+import GoodsOnRoad from "views/tables/GoodsOnRoad";
 
 import Register from "views/pages/Register.js";
 import RegularForms from "views/forms/RegularForms.js";
@@ -117,14 +118,22 @@ const routes = [
   {
     path: "/orderlist",
     name: "Orderlist",
-    icon:"nc-icon nc-bullet-list-67",
+    icon:"nc-icon nc-bookmark-2",
     component: Orderlist,
     layout: "/admin"
   },
   {
+    path: "/goods-road",
+    name: "Goods On Road",
+    icon: "nc-icon nc-bus-front-12",
+    component: GoodsOnRoad,
+    layout: "/admin",
+    navbar: false  // Add this field to indicate that the Login link should not be displayed in the navbar
+  },
+  {
     path: "/login",
     name: "Login",
-    icon: "nc-icon nc-bank",
+    icon: "nc-icon nc-bus-front-12",
     component: Login,
     layout: "/auth",
     navbar: false  // Add this field to indicate that the Login link should not be displayed in the navbar
