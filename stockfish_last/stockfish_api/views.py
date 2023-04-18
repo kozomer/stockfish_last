@@ -2455,6 +2455,72 @@ class TrucksOnRoadView(APIView):
             grouped_goods[good['truck_name']].append(good)
 
         return JsonResponse(grouped_goods, safe=False)
+    
+class EditGoodsOnRoadView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            data = json.loads(request.body)
+
+            product_code = data.get('product_code')
+            good_on_road = GoodsOnRoad.objects.get(product_code=product_code)
+
+            # Update decided_order
+            new_decided_order = data.get('new_decided_order')
+            if new_decided_order is not None and new_decided_order >= 0:
+                good_on_road.decided_order = new_decided_order
+            else:
+                return JsonResponse({'error': "Decided Order cannot be negative or empty."}, status=400)
+
+            good_on_road.save()
+            return JsonResponse({'message': "Your changes have been successfully saved."}, status=200)
+
+        except GoodsOnRoad.DoesNotExist:
+            return JsonResponse({'error': "Good not found."}, status=400)
+
+        except ValueError as e:
+            return JsonResponse({'error': str(e)}, status=400)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    
+class ApproveArrivedTruckView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            data = json.loads(request.body)
+            truck_name = data.get("truck_name")
+
+            if not truck_name:
+                return JsonResponse({'error': "Truck name cannot be empty."}, status=400)
+
+            truck = Trucks.objects.filter(truck_name=truck_name, is_ordered=True).first()
+            if not truck:
+                return JsonResponse({'error': "No truck found with the given name and is_ordered=True."}, status=404)
+
+            truck.is_ordered = False
+            truck.is_arrived = True
+            truck.save()
+
+            goods_on_road = GoodsOnRoad.objects.filter(truck_name=truck_name, is_on_road=True)
+            for good in goods_on_road:
+                good.is_on_road = False
+                good.is_arrived = True
+                good.save()
+
+                warehouse_product = Warehouse.objects.get(product_code=good.product_code)
+                if warehouse_product:
+                    warehouse_product.stock += good.decided_order
+                    warehouse_product.save()
+
+            return JsonResponse({'message': "Truck, related GoodsOnRoad objects, and Warehouse stock updated successfully."}, status=200)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
 
 # endregion
 
