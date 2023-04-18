@@ -237,6 +237,7 @@ class GoodsOnRoad(models.Model):
     is_terminated = models.BooleanField(default= False)
     is_on_truck = models.BooleanField(default= False)
     is_on_road = models.BooleanField(default= False)
+    is_arrived = models.BooleanField(default= False)
 
 class Trucks(models.Model):
     objects = jmodels.jManager()
@@ -244,7 +245,8 @@ class Trucks(models.Model):
     estimated_order_date = jmodels.jDateField(null=True)
     estimated_arrival_date = jmodels.jDateField(null=True)
     is_arrived = models.BooleanField(default=False)
-    is_ordered = models.BooleanField()
+    is_ordered = models.BooleanField(default=False)
+    is_waiting = models.BooleanField()
 
 
 
