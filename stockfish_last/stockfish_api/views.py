@@ -2313,10 +2313,41 @@ class GoodsOnRoadView(APIView):
     def get(self, request, *args, **kwargs):
         goods_on_road = GoodsOnRoad.objects.filter(is_terminated=False).values()
         goods_on_road_data = [
-            [g['product_code'], g['product_name_tr'], g['product_name_ir'], g['decided_order'], g['weight'], g['truck_id']]
+            [g['product_code'], g['product_name_tr'], g['product_name_ir'], g['decided_order'], g['weight'], g['truck_name']]
             for g in goods_on_road
         ]
         return JsonResponse(goods_on_road_data, safe=False)
+
+class ApproveProductsToOrderView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            data = json.loads(request.body)
+
+            if not data.get("truck_name"):
+                return JsonResponse({'error': "Truck Name cannot be empty."}, status=400)
+
+            truck = Trucks.objects.filter(truck_name=data.get("truck_name"), is_ordered=False).first()
+            if not truck:
+                return JsonResponse({'error': "No active truck found with the given Name."}, status=404)
+
+            if data.get("decided_order", 0) <= 0:
+                return JsonResponse({'error': "Decided order cannot be equal to or smaller than zero."}, status=400)
+
+            goods_on_road = GoodsOnRoad.objects.get(product_code=data['product_code'], is_terminated=False)
+            goods_on_road.truck_name = data['truck_name']
+            goods_on_road.decided_order = data['decided_order']
+            goods_on_road.is_terminated = True
+            goods_on_road.is_on_truck = True
+            goods_on_road.save()
+
+            return JsonResponse({'message': "GoodsOnRoad object updated successfully."}, status=200)
+        except GoodsOnRoad.DoesNotExist:
+            return JsonResponse({'error': "GoodsOnRoad object not found."}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
 
 # endregion
 
