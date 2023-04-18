@@ -226,6 +226,25 @@ class OrderList(models.Model):
     is_active = models.BooleanField()
     is_ordered = models.BooleanField()
 
+class GoodsOnRoad(models.Model):
+    product_code = models.IntegerField(null=True)
+    product_name_tr = models.CharField(max_length=100)
+    product_name_ir = models.CharField(max_length=100)
+    decided_order = models.FloatField(default=0, null=True)
+    weight = models.FloatField(default=0, null=True)
+    truck_id = models.CharField(max_length=100)
+    is_ordered = models.BooleanField()
+    is_terminated = models.BooleanField(default= False)
+    is_on_truck = models.BooleanField()
+
+class Trucks(models.Model):
+    objects = jmodels.jManager()
+    truck_name = models.CharField(max_length=100)
+    estimated_order_date = jmodels.jDateField(null=True)
+    estimated_arrival_date = jmodels.jDateField(null=True)
+    is_arrived = models.BooleanField(default=False)
+    is_ordered = models.BooleanField()
+
 
 
 
