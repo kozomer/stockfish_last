@@ -1,5 +1,8 @@
 from django.db import models
 from django_jalali.db import models as jmodels
+from dirtyfields import DirtyFieldsMixin
+
+
 
 class Customers(models.Model):
     customer_code = models.CharField(max_length=100, unique=True)
