@@ -4,6 +4,9 @@ import  {Link} from 'react-router-dom';
 import ReactTable from 'components/ReactTable/ReactTable.js';
 import localforage from 'localforage';
 import ReactBSAlert from "react-bootstrap-sweetalert";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCheck } from '@fortawesome/free-solid-svg-icons';
+import { faEdit } from '@fortawesome/free-solid-svg-icons';
 const DataTable = () => {
   const [dataTable, setDataTable] = useState([]);
   const [edit, setEdit] = useState({ row: -1, column: '' });
@@ -19,7 +22,7 @@ const DataTable = () => {
   const [orderExp, setOrderExp] = useState(null);
   const [orderHolt, setOrderHolt] = useState(null);
   const [decidedOrder, setDecidedOrder] = useState(null);
-  const [id, setID] = useState(null);
+  const [goodsOnRoadData, setGoodsOnRoadData] = useState([]);
 
   const [alert, setAlert] = useState(null);
   const [renderEdit, setRenderEdit] = useState(false);
@@ -149,60 +152,69 @@ const DataTable = () => {
   }, []);
 
   
+  const handleMoveToGoodsOnRoad = async (truckData) => {
+    try {
+      const access_token = await localforage.getItem('access_token');
+      const response = await fetch("http://127.0.0.1:8000/api/approve_waiting/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': 'Bearer ' + String(access_token)
+        },
+        body: JSON.stringify({ truck_name: truckData.truck_name }),
+      });
   
-  const handleClick = (row,key) => {
-     
-    setEditData(row);
-    setID(key)
-    setDate(row.current_date)
-
-    setProductCode(row.product_code);
-    setWeight(row.weight);
-    setAvrgSale(row.average_sale);
-    setStock(row.current_stock);
-    setOrderAvrg(row.order_avrg);
-    setOrderExp(row.order_exp);
-    setOrderHolt(row.orderHolt);
-    setDecidedOrder(row.decided_order);
-    setShowPopup(!showPopup);
-    console.log(row)
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log("Approved waiting truck:", responseData);
+  
+        // Remove the truck from the waitingTrucksData state
+        setWaitingTrucksData((prevData) => {
+          return prevData.filter((data) => data.truck_name !== truckData.truck_name);
+        });
+  
+        // Add the approved truck to the goodsOnRoadData state
+        setGoodsOnRoadData((prevData) => {
+          const newTruckData = {
+            truck_name: truckData.truck_name,
+            data: truckData.data,
+          };
+          return [...prevData, newTruckData];
+        });
+  
+        fetchGoodsOnRoadData();
+      } else {
+        console.error("Failed to approve waiting truck");
+      }
+    } catch (error) {
+      console.error("Error approving waiting truck:", error);
+    }
   };
-  const handleSubmit = async (e) => {
-    const access_token = await localforage.getItem('access_token'); 
-    console.log(id)
-    const updatedData = {
-      id:id,
-      current_date:date,
-      product_code:productCode,
-      weight:weight,
-      average_sale:avrgSale,
-      current_stock: stock,
-      order_avrg: orderAvrg,
-      order_exp: orderExp,
-      order_holt: orderHolt,
-      decided_order: decidedOrder
-     
-      
-
-      
-      
-      
+  
+  
+  useEffect(() => {
+    const fetchGoodsOnRoadData = async () => {
+      const access_token = await localforage.getItem('access_token');
+      const response = await fetch('http://127.0.0.1:8000/api/trucks_on_road/', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + String(access_token),
+        },
+      });
+  
+      const responseData = await response.json();
+  
+      const formattedData = Object.keys(responseData).map((key) => ({
+        truck_name: key,
+        data: responseData[key],
+      }));
+      setGoodsOnRoadData(formattedData);
     };
-    console.log(updatedData)
-    fetch('http://vividstockfish.com/api/edit_order_list/', {
-    method: 'POST',
-    body: JSON.stringify(updatedData),
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer '+ String(access_token)
-    },
-    credentials: 'include'
-  })
-  setEditData(updatedData);
-  successEdit()
-
-    // Call your Django API to send the updated values here
-  };
+  
+    fetchGoodsOnRoadData();
+  }, []);
+  
   const successEdit = (s) => {
     
     setAlert(
@@ -223,22 +235,7 @@ const DataTable = () => {
     );
     setRenderEdit(true)
   };
-  const successUpload = (s) => {
-    setAlert(
-      <ReactBSAlert
-        success
-        style={{ display: "block", marginTop: "-100px" }}
-        title="Uploaded!"
-        onConfirm={() => hideAlert()}
-        onCancel={() => hideAlert()}
-        confirmBtnBsStyle="info"
-        btnSize=""
-      >
-        {s}
-      </ReactBSAlert>
-    );
-  };
-
+  
 
   const handleCancel = () => {
     setShowPopup(false);
@@ -284,8 +281,8 @@ const DataTable = () => {
   
 
 
-  const warningWithConfirmAndCancelMessage = () => {
-    console.log("sadsads"),
+  const approve = (truck) => {
+   
     setAlert(
       
       <ReactBSAlert
@@ -293,20 +290,19 @@ const DataTable = () => {
         style={{ display: "block", marginTop: "-100px" }}
         title="Are you sure?"
         onConfirm={() =>{ 
-        setDeleteConfirm(true);
-        successDelete()}}
+        handleMoveToGoodsOnRoad(truck)
+        }}
         onCancel={() => {
-          setDeleteConfirm(false);
-          cancelDelete()
+         hideAlert()
         }}
         confirmBtnBsStyle="info"
         cancelBtnBsStyle="danger"
-        confirmBtnText="Yes, delete it!"
+        confirmBtnText="Yes!"
         cancelBtnText="Cancel"
         showCancel
         btnSize=""
       >
-       Are you sure to delete this row?
+       Are you sure to approve this truck?
       </ReactBSAlert>
     );
       };
@@ -681,7 +677,14 @@ const DataTable = () => {
           paddingBottom: index < waitingTrucksData.length - 1 ? '2rem' : 0,
         }}
       >
-        <h5>{truckData.truck_name}</h5>
+       <div className="d-flex justify-content-between align-items-center">
+          <h5>{truckData.truck_name}</h5>
+          <FontAwesomeIcon
+            icon={faCheck}
+            className="text-success cursor-pointer"
+            onClick={() => approve(truckData)}
+          />
+        </div>
         <ReactTable
           data={truckData.data.map((row, key) => {
             const newRow = {};
@@ -737,6 +740,90 @@ const DataTable = () => {
 </Card>
 
                   </div>
+                  <Row>
+  <Col md="12">
+                  <Card>
+  <CardHeader>
+    <CardTitle tag="h4">Goods on the Road</CardTitle>
+  </CardHeader>
+  <CardBody>
+    {goodsOnRoadData &&
+      goodsOnRoadData.map((goodsOnRoadTruck, index) => (
+        <div
+          className="truck-table-container"
+          key={index}
+          style={{
+            marginBottom: index < goodsOnRoadData.length - 1 ? "2rem" : 0,
+            borderBottom:
+              index < goodsOnRoadData.length - 1
+                ? "1px solid #dee2e6"
+                : "none",
+            paddingBottom: index < goodsOnRoadData.length - 1 ? "2rem" : 0,
+          }}
+        >
+          <div className="d-flex justify-content-between align-items-center">
+            <h5>{goodsOnRoadTruck.truck_name}</h5>
+            <FontAwesomeIcon
+              icon={faEdit}
+              className="text-warning cursor-pointer"
+              onClick={() => handleEditGoodsOnRoad(goodsOnRoadTruck)}
+            />
+          </div>
+          <ReactTable
+            data={goodsOnRoadTruck.data.map((row, key) => {
+              const newRow = {};
+              Object.keys(row).forEach((column) => {
+                if (
+                  ![
+                    "is_ordered",
+                    "is_terminated",
+                    "is_on_truck",
+                    "is_on_road",
+                    "is_arrived",
+                  ].includes(column)
+                ) {
+                  const formattedKey = column
+                    .split("_")
+                    .map(
+                      (word) => word.charAt(0).toUpperCase() + word.slice(1)
+                    )
+                    .join(" ");
+                  newRow[formattedKey] = row[column];
+                }
+              });
+              return newRow;
+            })}
+            columns={Object.keys(goodsOnRoadTruck.data[0] || {})
+              .filter(
+                (key) =>
+                  ![
+                    "is_ordered",
+                    "is_terminated",
+                    "is_on_truck",
+                    "is_on_road",
+                    "is_arrived",
+                  ].includes(key)
+              )
+              .map((key) => {
+                const formattedKey = key
+                  .split("_")
+                  .map(
+                    (word) => word.charAt(0).toUpperCase() + word.slice(1)
+                  )
+                  .join(" ");
+                return { Header: formattedKey, accessor: formattedKey };
+              })}
+            defaultPageSize={10}
+            className="-striped -highlight"
+            // Make sure to add the necessary properties to make the rows editable
+          />
+        </div>
+      ))}
+  </CardBody>
+</Card>
+</Col>
+</Row>
+
                   </>
                   );
                   };
