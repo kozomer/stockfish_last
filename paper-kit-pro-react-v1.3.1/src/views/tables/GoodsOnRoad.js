@@ -4,9 +4,6 @@ import  {Link} from 'react-router-dom';
 import ReactTable from 'components/ReactTable/ReactTable.js';
 import localforage from 'localforage';
 import ReactBSAlert from "react-bootstrap-sweetalert";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck } from '@fortawesome/free-solid-svg-icons';
-import { faEdit } from '@fortawesome/free-solid-svg-icons';
 const DataTable = () => {
   const [dataTable, setDataTable] = useState([]);
   const [edit, setEdit] = useState({ row: -1, column: '' });
@@ -22,7 +19,7 @@ const DataTable = () => {
   const [orderExp, setOrderExp] = useState(null);
   const [orderHolt, setOrderHolt] = useState(null);
   const [decidedOrder, setDecidedOrder] = useState(null);
-  const [goodsOnRoadData, setGoodsOnRoadData] = useState([]);
+  const [id, setID] = useState(null);
 
   const [alert, setAlert] = useState(null);
   const [renderEdit, setRenderEdit] = useState(false);
@@ -36,23 +33,15 @@ const DataTable = () => {
   const [oldData, setOldData] = useState(null);
 
   const [leadTime, setLeadTime] = useState('');
-  const [showForm, setShowForm] = useState(false);
-  const [newTruck, setNewTruck] = useState({
-    truck_name: '',
-    estimated_order_date: '',
-    estimated_arrival_date: '',
-  });
 
-  const [waitingTrucksData, setWaitingTrucksData] = useState([]);
+  const [serviceLevel, setServiceLevel] = useState('');
   
   useEffect(() => {
     async function fetchData() {
       const access_token = await localforage.getItem('access_token'); 
       
-      const response = await fetch('http://127.0.0.1:8000/api/goods_on_road/',{
-        method: 'GET',
+      const response = await fetch('http://vividstockfish.com/api/goods_on_road/',{
         headers: {
-            
           'Content-Type': 'application/json',
           'Authorization': 'Bearer '+ String(access_token)
         }});
@@ -64,8 +53,8 @@ const DataTable = () => {
   }, [dataChanged,renderEdit]);
 
 
-  const handleEdit = (key, column) => {
-    setEdit({ row: key, column: column });
+  const handleEdit = (row, column) => {
+    setEdit({ row, column });
   };
 
   const handleChange = (e, row) => {
@@ -76,147 +65,104 @@ const DataTable = () => {
     setEdit({ row: -1, column: '' });
   };
 
-  const handleNewTruckInputChange = (e) => {
-    setNewTruck({ ...newTruck, [e.target.name]: e.target.value });
-  };
+const handleSave = async () => {
+  // handle the save logic here
+  
 
-  // Function to handle form submission
-  const handleNewTruckSubmit = async () => {
-      const access_token = await localforage.getItem('access_token'); 
-      const response = await fetch('http://127.0.0.1:8000/api/add_truck/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer '+ String(access_token)
-          // Add the appropriate headers for your API (e.g., Authorization)
-        },
-        body: JSON.stringify(newTruck),
-      })
-
-
-      .then((response) => {
-        if (!response.ok) {
-          return response.json().then(data => {
-            console.log(data.error)
-            
-            errorUpload(data.error);
-          });
-        }
-       
-        else{
-          return response.json().then(data => {
-            
-            successEdit(data.message);
-            handleShowForm()
-          })
+  const access_token = await localforage.getItem('access_token');
+  
+  const selectData = { lead_time: leadTime, service_level:serviceLevel};
+  // post the selected option to Django
+  fetch('http://127.0.0.1:8000/rop/', {
+    method: 'POST',
+  headers: { "Content-Type": "application/json", 
+  'Authorization': 'Bearer '+ String(access_token)},
+    
+    body: JSON.stringify(selectData),
+   
+  })
+    .then(response => response.json())
+    .then(data => {
       
-          }
-        })
+      setTableData(data.rop_list);
+      setResult(data);
+      setOrder(data.avrg_order);
+      setOrderFlag(data.avrg_order_flag)
+
+      setOrderHolt(data.holt_order);
+      setOrderFlagHolt(data.holt_order_flag)
+
+      setOrderExp(data.exp_order);
+      setOrderFlagExp(data.exp_order_flag)
+      
+    }) 
+};
+
+useEffect(() => {
+  if ( leadTime && serviceLevel ) {
+    
+    setSaveDisabled(false);
+  } else {
+    setSaveDisabled(true);
   }
-
+}, [ leadTime, serviceLevel]);
   
-  // Y
-  const handleShowForm = () => {
-    setShowForm((prevState) => !prevState);
-    
+  
+  const handleClick = (row,key) => {
+     
+    setEditData(row);
+    setID(key)
+    setDate(row.current_date)
+
+    setProductCode(row.product_code);
+    setWeight(row.weight);
+    setAvrgSale(row.average_sale);
+    setStock(row.current_stock);
+    setOrderAvrg(row.order_avrg);
+    setOrderExp(row.order_exp);
+    setOrderHolt(row.orderHolt);
+    setDecidedOrder(row.decided_order);
+    setShowPopup(!showPopup);
+    console.log(row)
   };
+  const handleSubmit = async (e) => {
+    const access_token = await localforage.getItem('access_token'); 
+    console.log(id)
+    const updatedData = {
+      id:id,
+      current_date:date,
+      product_code:productCode,
+      weight:weight,
+      average_sale:avrgSale,
+      current_stock: stock,
+      order_avrg: orderAvrg,
+      order_exp: orderExp,
+      order_holt: orderHolt,
+      decided_order: decidedOrder
+     
+      
 
-  // Function to hide the form
-  const handleCancelForm = () => {
-    setShowForm(false);
-  };
-  useEffect(() => {
-    const fetchWaitingTrucksData = async () => {
-        const access_token = await localforage.getItem('access_token'); 
-        const response = await fetch('http://127.0.0.1:8000/api/waiting_trucks/', {
-          method: 'GET',
-          headers: {
-            
-            'Authorization': 'Bearer '+ String(access_token)
-          },
-        });
-
-        const responseData = await response.json();
-        
-        console.log(responseData)
-       
-        const formattedData = Object.keys(responseData).map((key) => ({
-            truck_name: key,
-            data: responseData[key],
-          }));
-          setWaitingTrucksData(formattedData);
-       
-    }
-
-    fetchWaitingTrucksData();
-  }, []);
-
-  
-  const handleMoveToGoodsOnRoad = async (truckData) => {
-    try {
-      const access_token = await localforage.getItem('access_token');
-      const response = await fetch("http://127.0.0.1:8000/api/approve_waiting/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          'Authorization': 'Bearer ' + String(access_token)
-        },
-        body: JSON.stringify({ truck_name: truckData.truck_name }),
-      });
-  
-      if (response.ok) {
-        const responseData = await response.json();
-        console.log("Approved waiting truck:", responseData);
-  
-        // Remove the truck from the waitingTrucksData state
-        setWaitingTrucksData((prevData) => {
-          return prevData.filter((data) => data.truck_name !== truckData.truck_name);
-        });
-  
-        // Add the approved truck to the goodsOnRoadData state
-        setGoodsOnRoadData((prevData) => {
-          const newTruckData = {
-            truck_name: truckData.truck_name,
-            data: truckData.data,
-          };
-          return [...prevData, newTruckData];
-        });
-  
-        fetchGoodsOnRoadData();
-      } else {
-        console.error("Failed to approve waiting truck");
-      }
-    } catch (error) {
-      console.error("Error approving waiting truck:", error);
-    }
-  };
-  
-  
-  useEffect(() => {
-    const fetchGoodsOnRoadData = async () => {
-      const access_token = await localforage.getItem('access_token');
-      const response = await fetch('http://127.0.0.1:8000/api/trucks_on_road/', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + String(access_token),
-        },
-      });
-  
-      const responseData = await response.json();
-  
-      const formattedData = Object.keys(responseData).map((key) => ({
-        truck_name: key,
-        data: responseData[key],
-      }));
-      setGoodsOnRoadData(formattedData);
+      
+      
+      
     };
-  
-    fetchGoodsOnRoadData();
-  }, []);
-  
-  const successEdit = (s) => {
-    
+    console.log(updatedData)
+    fetch('http://vividstockfish.com/api/edit_order_list/', {
+    method: 'POST',
+    body: JSON.stringify(updatedData),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer '+ String(access_token)
+    },
+    credentials: 'include'
+  })
+  setEditData(updatedData);
+  successEdit()
+
+    // Call your Django API to send the updated values here
+  };
+  const successEdit = () => {
+    console.log("edit success")
     setAlert(
       <ReactBSAlert
         success
@@ -230,12 +176,27 @@ const DataTable = () => {
         confirmBtnBsStyle="info"
         btnSize=""
       >
-       {s}
+        Your edit has been successfully saved.
       </ReactBSAlert>
     );
     setRenderEdit(true)
   };
-  
+  const successUpload = (s) => {
+    setAlert(
+      <ReactBSAlert
+        success
+        style={{ display: "block", marginTop: "-100px" }}
+        title="Uploaded!"
+        onConfirm={() => hideAlert()}
+        onCancel={() => hideAlert()}
+        confirmBtnBsStyle="info"
+        btnSize=""
+      >
+        {s}
+      </ReactBSAlert>
+    );
+  };
+
 
   const handleCancel = () => {
     setShowPopup(false);
@@ -281,8 +242,8 @@ const DataTable = () => {
   
 
 
-  const approve = (truck) => {
-   
+  const warningWithConfirmAndCancelMessage = () => {
+    console.log("sadsads"),
     setAlert(
       
       <ReactBSAlert
@@ -290,19 +251,20 @@ const DataTable = () => {
         style={{ display: "block", marginTop: "-100px" }}
         title="Are you sure?"
         onConfirm={() =>{ 
-        handleMoveToGoodsOnRoad(truck)
-        }}
+        setDeleteConfirm(true);
+        successDelete()}}
         onCancel={() => {
-         hideAlert()
+          setDeleteConfirm(false);
+          cancelDelete()
         }}
         confirmBtnBsStyle="info"
         cancelBtnBsStyle="danger"
-        confirmBtnText="Yes!"
+        confirmBtnText="Yes, delete it!"
         cancelBtnText="Cancel"
         showCancel
         btnSize=""
       >
-       Are you sure to approve this truck?
+       Are you sure to delete this row?
       </ReactBSAlert>
     );
       };
@@ -374,60 +336,6 @@ const DataTable = () => {
     <>
       <div className='content'>
       {alert}
-      <Card>
-        <CardHeader>
-        <CardTitle tag="h4">
-            Add Truck
-            
-              <Button onClick={handleShowForm} color="success" size="sm" className="btn-icon btn-link">
-                <i className="fa fa-plus" />
-              </Button>
-            
-          </CardTitle>
-        </CardHeader>
-        <CardBody>
-        {showForm && (
-          <Form>
-            <FormGroup>
-              <Label for="truck_name">Truck Name</Label>
-              <Input
-                type="text"
-                name="truck_name"
-                id="truck_name"
-                value={newTruck.truck_name}
-                onChange={handleNewTruckInputChange}
-              />
-            </FormGroup>
-            <FormGroup>
-              <Label for="estimated_order_date">Estimated Order Date(YYYY-MM-DD)</Label>
-              <Input
-                type="text"
-                name="estimated_order_date"
-                id="estimated_order_date"
-                value={newTruck.estimated_order_date}
-                onChange={handleNewTruckInputChange}
-              />
-            </FormGroup>
-            <FormGroup>
-              <Label for="estimated_arrival_date">Estimated Arrival Date(YYYY-MM-DD)</Label>
-              <Input
-                type="text"
-                name="estimated_arrival_date"
-                id="estimated_arrival_date"
-                value={newTruck.estimated_arrival_date}
-                onChange={handleNewTruckInputChange}
-              />
-            </FormGroup>
-            <Button onClick={handleNewTruckSubmit} color="primary">
-              Submit
-            </Button>
-            <Button onClick={handleCancelForm} color="secondary">
-                Cancel
-              </Button>
-          </Form>
-          )}
-        </CardBody>
-      </Card>
       {showPopup && (
        <div className="popup">
       <Card>
@@ -656,174 +564,7 @@ const DataTable = () => {
                   </Card>
                   </Col>
                   </Row>
-
-
-
-                  <Card>
-  <CardHeader>
-    <CardTitle tag="h4">Waiting Trucks</CardTitle>
-  </CardHeader>
-  <CardBody>
-    {waitingTrucksData.map((truckData, index) => (
-      <div
-        className="truck-table-container"
-        key={index}
-        style={{
-          marginBottom: index < waitingTrucksData.length - 1 ? '2rem' : 0,
-          borderBottom:
-            index < waitingTrucksData.length - 1
-              ? '1px solid #dee2e6'
-              : 'none',
-          paddingBottom: index < waitingTrucksData.length - 1 ? '2rem' : 0,
-        }}
-      >
-       <div className="d-flex justify-content-between align-items-center">
-          <h5>{truckData.truck_name}</h5>
-          <FontAwesomeIcon
-            icon={faCheck}
-            className="text-success cursor-pointer"
-            onClick={() => approve(truckData)}
-          />
-        </div>
-        <ReactTable
-          data={truckData.data.map((row, key) => {
-            const newRow = {};
-            Object.keys(row).forEach((column) => {
-              if (
-                ![
-                  'is_ordered',
-                  'is_terminated',
-                  'is_on_truck',
-                  'is_on_road',
-                  'is_arrived',
-                ].includes(column)
-              ) {
-                const formattedKey = column
-                  .split('_')
-                  .map(
-                    (word) =>
-                      word.charAt(0).toUpperCase() + word.slice(1),
-                  )
-                  .join(' ');
-                newRow[formattedKey] = row[column];
-              }
-            });
-            return newRow;
-          })}
-          columns={Object.keys(truckData.data[0] || {})
-            .filter(
-              (key) =>
-                ![
-                  'is_ordered',
-                  'is_terminated',
-                  'is_on_truck',
-                  'is_on_road',
-                  'is_arrived',
-                ].includes(key),
-            )
-            .map((key) => {
-              const formattedKey = key
-                .split('_')
-                .map(
-                  (word) =>
-                    word.charAt(0).toUpperCase() + word.slice(1),
-                )
-                .join(' ');
-              return { Header: formattedKey, accessor: formattedKey };
-            })}
-          defaultPageSize={10}
-          className="-striped -highlight"
-        />
-      </div>
-    ))}
-  </CardBody>
-</Card>
-
                   </div>
-                  <Row>
-  <Col md="12">
-                  <Card>
-  <CardHeader>
-    <CardTitle tag="h4">Goods on the Road</CardTitle>
-  </CardHeader>
-  <CardBody>
-    {goodsOnRoadData &&
-      goodsOnRoadData.map((goodsOnRoadTruck, index) => (
-        <div
-          className="truck-table-container"
-          key={index}
-          style={{
-            marginBottom: index < goodsOnRoadData.length - 1 ? "2rem" : 0,
-            borderBottom:
-              index < goodsOnRoadData.length - 1
-                ? "1px solid #dee2e6"
-                : "none",
-            paddingBottom: index < goodsOnRoadData.length - 1 ? "2rem" : 0,
-          }}
-        >
-          <div className="d-flex justify-content-between align-items-center">
-            <h5>{goodsOnRoadTruck.truck_name}</h5>
-            <FontAwesomeIcon
-              icon={faEdit}
-              className="text-warning cursor-pointer"
-              onClick={() => handleEditGoodsOnRoad(goodsOnRoadTruck)}
-            />
-          </div>
-          <ReactTable
-            data={goodsOnRoadTruck.data.map((row, key) => {
-              const newRow = {};
-              Object.keys(row).forEach((column) => {
-                if (
-                  ![
-                    "is_ordered",
-                    "is_terminated",
-                    "is_on_truck",
-                    "is_on_road",
-                    "is_arrived",
-                  ].includes(column)
-                ) {
-                  const formattedKey = column
-                    .split("_")
-                    .map(
-                      (word) => word.charAt(0).toUpperCase() + word.slice(1)
-                    )
-                    .join(" ");
-                  newRow[formattedKey] = row[column];
-                }
-              });
-              return newRow;
-            })}
-            columns={Object.keys(goodsOnRoadTruck.data[0] || {})
-              .filter(
-                (key) =>
-                  ![
-                    "is_ordered",
-                    "is_terminated",
-                    "is_on_truck",
-                    "is_on_road",
-                    "is_arrived",
-                  ].includes(key)
-              )
-              .map((key) => {
-                const formattedKey = key
-                  .split("_")
-                  .map(
-                    (word) => word.charAt(0).toUpperCase() + word.slice(1)
-                  )
-                  .join(" ");
-                return { Header: formattedKey, accessor: formattedKey };
-              })}
-            defaultPageSize={10}
-            className="-striped -highlight"
-            // Make sure to add the necessary properties to make the rows editable
-          />
-        </div>
-      ))}
-  </CardBody>
-</Card>
-</Col>
-</Row>
-
                   </>
                   );
                   };

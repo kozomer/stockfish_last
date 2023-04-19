@@ -2401,13 +2401,9 @@ class WaitingTrucksView(APIView):
         goods_on_road = GoodsOnRoad.objects.filter(is_on_truck=True).values()
         grouped_goods = {}
 
-
         for good in goods_on_road:
-
-            if good['truck_name'] not in grouped_goods:
-
+            if good['truck_name'] not in waiting_trucks:
                 grouped_goods[good['truck_name']] = []
-
 
             grouped_goods[good['truck_name']].append(good)
 
@@ -2426,16 +2422,14 @@ class ApproveWaitingTruckView(APIView):
                 return JsonResponse({'error': "Truck name cannot be empty."}, status=400)
 
             truck = Trucks.objects.get(truck_name=truck_name, is_waiting=True)
-
             if not truck:
                 return JsonResponse({'error': "No truck found with the given name on waiting list"}, status=404)
 
             truck.is_waiting = False
             truck.is_ordered = True
             truck.save()
-            
-            goods_on_road = GoodsOnRoad.objects.filter(truck_name=truck_name, is_on_truck=True)
 
+            goods_on_road = GoodsOnRoad.objects.filter(truck_name=truck_name, is_on_truck=True)
             for good in goods_on_road:
                 good.is_on_truck = False
                 good.is_on_road = True
@@ -2450,12 +2444,12 @@ class TrucksOnRoadView(APIView):
     authentication_classes = (JWTAuthentication,)
 
     def get(self, request, *args, **kwargs):
-        trucks_on_road = Trucks.objects.filter(is_ordered=True).values_list('truck_name', flat=True)
+        trucks_on_road = Trucks.objects.filter(is_on_road=True).values_list('truck_name', flat=True)
         goods_on_road = GoodsOnRoad.objects.filter(is_on_road = True).values()
         grouped_goods = {}
 
         for good in goods_on_road:
-            if good['truck_name'] not in grouped_goods:
+            if good['truck_name'] not in trucks_on_road:
                 grouped_goods[good['truck_name']] = []
 
             grouped_goods[good['truck_name']].append(good)
