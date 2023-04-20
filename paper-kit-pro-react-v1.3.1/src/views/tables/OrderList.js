@@ -40,7 +40,7 @@ const DataTable = () => {
     async function fetchData() {
       const access_token = await localforage.getItem('access_token'); 
       
-      const response = await fetch('https://vividstockfish.com/api/order_list/',{
+      const response = await fetch('http://127.0.0.1:8000/api/order_list/',{
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer '+ String(access_token)
@@ -55,38 +55,7 @@ const DataTable = () => {
 
   
 
-const handleSave = async () => {
-  // handle the save logic here
-  
 
-  const access_token = await localforage.getItem('access_token');
-  
-  const selectData = { lead_time: leadTime, service_level:serviceLevel};
-  // post the selected option to Django
-  fetch('http://127.0.0.1:8000/rop/', {
-    method: 'POST',
-  headers: { "Content-Type": "application/json", 
-  'Authorization': 'Bearer '+ String(access_token)},
-    
-    body: JSON.stringify(selectData),
-   
-  })
-    .then(response => response.json())
-    .then(data => {
-      
-      setTableData(data.rop_list);
-      setResult(data);
-      setOrder(data.avrg_order);
-      setOrderFlag(data.avrg_order_flag)
-
-      setOrderHolt(data.holt_order);
-      setOrderFlagHolt(data.holt_order_flag)
-
-      setOrderExp(data.exp_order);
-      setOrderFlagExp(data.exp_order_flag)
-      
-    }) 
-};
 
 useEffect(() => {
   if ( leadTime && serviceLevel ) {
@@ -101,7 +70,8 @@ useEffect(() => {
   const handleClick = (row,key) => {
      
     setEditData(row);
-    setID(key)
+    
+    setID(row.id)
     setDate(row.current_date)
 
     setProductCode(row.product_code);
@@ -113,11 +83,11 @@ useEffect(() => {
     setOrderHolt(row.orderHolt);
     setDecidedOrder(row.decided_order);
     setShowPopup(!showPopup);
-    console.log(row)
+   
   };
   const handleSubmit = async (e) => {
     const access_token = await localforage.getItem('access_token'); 
-    console.log(id)
+   
     const updatedData = {
       id:id,
       current_date:date,
@@ -136,22 +106,40 @@ useEffect(() => {
       
       
     };
-    console.log(updatedData)
-    fetch('http://vividstockfish.com/api/edit_order_list/', {
+   
+    fetch('http://127.0.0.1:8000/api/edit_order_list/', {
     method: 'POST',
     body: JSON.stringify(updatedData),
     headers: {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer '+ String(access_token)
     },
-    credentials: 'include'
+    
   })
-  setEditData(updatedData);
-  successEdit()
+  .then((response) => {
+    if (!response.ok) {
+      return response.json().then(data => {
+
+
+        errorUpload(data.error);
+      });
+    }
+
+    else {
+      return response.json().then(data => {
+        setEditData(updatedData);
+        successEdit(data.message)
+      })
+
+    }
+  })
+
+  
+  
 
     // Call your Django API to send the updated values here
   };
-  const successEdit = () => {
+  const successEdit = (s) => {
     console.log("edit success")
     setAlert(
       <ReactBSAlert
@@ -166,7 +154,7 @@ useEffect(() => {
         confirmBtnBsStyle="info"
         btnSize=""
       >
-        Your edit has been successfully saved.
+       {s}
       </ReactBSAlert>
     );
     setRenderEdit(true)
@@ -197,16 +185,16 @@ useEffect(() => {
   useEffect(() => {
     console.log("useEffect called")
     if(editData){
-      
-      setDate(editData[0]);
-      setProductCode(editData[1]);
-      setWeight(editData[2]);
-      setAvrgSale(editData[3]);
-      setStock(editData[4]);
-      setOrderAvrg(editData[5]);
-      setOrderExp(editData[6]);
-      setOrderHolt(editData[7]);
-      setDecidedOrder(editData[8])
+      setID(editData[0])
+      setDate(editData[1]);
+      setProductCode(editData[2]);
+      setWeight(editData[3]);
+      setAvrgSale(editData[4]);
+      setStock(editData[5]);
+      setOrderAvrg(editData[6]);
+      setOrderExp(editData[7]);
+      setOrderHolt(editData[8]);
+      setDecidedOrder(editData[9])
        
         setIsUpdated(true)
     }
@@ -439,7 +427,8 @@ useEffect(() => {
             </div>
 )}
 
-<Card>
+
+{/* 
   <CardHeader>
     <CardTitle tag='h4'>ORDER LIST</CardTitle>
   </CardHeader>
@@ -474,25 +463,29 @@ useEffect(() => {
           </Row>
   </CardBody>
 </Card>
+*/}
+
         <Row>
           <Col md='12'>
             <Card>
-             
+            <CardHeader>
+    <CardTitle tag='h4'>ORDER LIST</CardTitle>
+  </CardHeader>
               <CardBody>
              
                 <ReactTable
                   data={dataTable.map((row, key) => ({
-                    id: key,
-                    current_date: row[0],
-                    product_code: row[1],
-                    weight: row[2],
-                    average_sale: row[3],
-                    current_stock: row[4],
-                    order_avrg: row[5],
-                    order_exp: row[6],
-                    order_holt: row[7],
+                    id: row[0],
+                    current_date: row[1],
+                    product_code: row[2],
+                    weight: row[3],
+                    average_sale: row[4],
+                    current_stock: row[5],
+                    order_avrg: row[6],
+                    order_exp: row[7],
+                    order_holt: row[8],
 
-                    decided_order: row[8],
+                    decided_order: row[9],
                     actions: (
                       <div className='actions-left'>
                          <Button

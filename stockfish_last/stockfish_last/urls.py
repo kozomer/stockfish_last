@@ -23,8 +23,8 @@ from stockfish_api.views import ( AddCustomersView, AddSalesView, AddProductsVie
                                  TopCustomersView, TopProductsView,
                                  ExchangeRateAPIView, SalerDataView, TotalDataView, TotalDataByMonthlyView, CustomerAreaPieChartView, 
                                  ExportCustomersView, ExportSalesView, ExportWarehouseView, ExportProductsView,
-                                 GoodsOnRoadView, AddTruckView, WaitingTrucksView, TrucksOnRoadView, ApproveWaitingTruckView
-
+                                 GoodsOnRoadView, AddTruckView, WaitingTrucksView, TrucksOnRoadView, ApproveWaitingTruckView,
+                                 ApproveProductsToOrderView, ApproveArrivedTruckView
                                  )
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -63,7 +63,8 @@ urlpatterns = [
     path('api/waiting_trucks/',WaitingTrucksView.as_view(), name='waiting_trucks'),
     path('api/approve_waiting/',ApproveWaitingTruckView.as_view(), name='approve_waiting'),
     path('api/trucks_on_road/',TrucksOnRoadView.as_view(), name='trucks_on_road'),
-
+    path('api/approve_products/',ApproveProductsToOrderView.as_view(), name='approve_products'),
+    path('api/approve_arrived_truck/',ApproveArrivedTruckView.as_view(), name='approve_arrived_truck'),
 
 
     path('api/delete_sales/',  DeleteSaleView.as_view(), name='delete_sales'),
