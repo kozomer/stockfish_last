@@ -24,6 +24,7 @@ import openpyxl
 import base64
 from io import BytesIO
 import numpy as np
+from django.db import transaction
 
 
 
@@ -404,6 +405,7 @@ class ViewSalesView(APIView):
     authentication_classes = [JWTAuthentication,]
     def get(self, request, *args, **kwargs):
         sales = Sales.objects.values().all()
+        print("eee")
         sale_list = [[sale['no'], sale['bill_number'], sale['date'].strftime('%Y-%m-%d'), sale['psr'], sale['customer_code'],
                         sale['name'], sale['city'], sale['area'], sale['color_making_saler'], sale['group'], sale['product_code'], 
                         sale['product_name'], sale['unit'], sale['unit2'], sale['kg'], sale['original_value'], sale['original_output_value'], 
@@ -1952,7 +1954,7 @@ def update_rop_for_sales_add_or_edit(sender, instance, created, **kwargs):
             return JsonResponse({'error': str(e)})
 
 @receiver(post_delete, sender=Sales)
-def update_rop_for_sales_delete(sender, instance, created, **kwargs):
+def update_rop_for_sales_delete(sender, instance, **kwargs):
         try:
             product = Products.objects.get(product_code_ir = instance.product_code)
             warehouse = Warehouse.objects.get(product_code=instance.product_code)
@@ -2253,7 +2255,7 @@ class OrderListView(APIView):
     def get(self, request, *args, **kwargs):
         order_lists = OrderList.objects.filter(is_active = True).values() #! False True olacak
         order_list_data = [
-            [o['current_date'].strftime('%Y-%m-%d'), o['product_code'], o['weight'], o['average_sale'], o['current_stock'], o['order_avrg'], o['order_exp'], o['order_holt'],
+            [o['id'], o['current_date'].strftime('%Y-%m-%d'), o['product_code'], o['weight'], o['average_sale'], o['current_stock'], o['order_avrg'], o['order_exp'], o['order_holt'],
               o['decided_order']] for o in order_lists
         ]
         return JsonResponse(order_list_data, safe=False)
@@ -2264,9 +2266,11 @@ class EditOrderListView(APIView):
     def post(self, request, *args, **kwargs):
         # Expecting the updated data to be sent as a list of dictionaries
         updated_order_list_data = json.loads(request.body)
+        
 
         try:
-            order = OrderList.objects.get(id=updated_order_list_data['id'])
+            
+            order = OrderList.objects.get(id=updated_order_list_data['id'])           
             order.current_date = updated_order_list_data['current_date']
             order.product_code = updated_order_list_data['product_code']
             order.weight = updated_order_list_data['weight']
@@ -2275,7 +2279,7 @@ class EditOrderListView(APIView):
             order.order_avrg = updated_order_list_data['order_avrg']
             order.order_exp = updated_order_list_data['order_exp']
             order.order_holt = updated_order_list_data['order_holt']
-            order.decided_order = updated_order_list_data['decided_order']
+            order.decided_order = float(updated_order_list_data['decided_order'])
 
             if order.decided_order > 0:
                 order.is_active = False
@@ -2285,7 +2289,7 @@ class EditOrderListView(APIView):
         except OrderList.DoesNotExist:
             return JsonResponse({"error": "Order not found"}, status=404)
 
-        return HttpResponse(status=204)
+        return JsonResponse({'message': "Your order successfully send to the Goods On Road."}, status=200)
 
 
 # endregion
@@ -2295,8 +2299,11 @@ class EditOrderListView(APIView):
 @receiver(post_save, sender=OrderList)
 def update_goods_on_road(sender, instance, created, **kwargs):
     if not created and instance.is_ordered:
-        product = Products.objects.get(product_code=instance.product_code)
+        product = Products.objects.get(product_code_ir=instance.product_code)
+        print(product)
+        print(instance.is_ordered)
         goods_on_road, created = GoodsOnRoad.objects.get_or_create(product_code=instance.product_code, is_terminated=False)
+        print(instance.is_ordered)
         goods_on_road.product_name_tr = product.description_tr
         goods_on_road.product_name_ir = product.description_ir
         goods_on_road.decided_order = instance.decided_order
@@ -2333,7 +2340,7 @@ class ApproveProductsToOrderView(APIView):
             if not truck:
                 return JsonResponse({'error': "No active truck found with the given Name."}, status=404)
 
-            if data.get("decided_order", 0) <= 0:
+            if float(data.get("decided_order", 0)) <= 0:
                 return JsonResponse({'error': "Decided order cannot be equal to or smaller than zero."}, status=400)
 
             goods_on_road = GoodsOnRoad.objects.get(product_code=data['product_code'], is_terminated=False)
@@ -2493,6 +2500,7 @@ class EditGoodsOnRoadView(APIView):
             return JsonResponse({'error': str(e)}, status=500)
 
     
+
 class ApproveArrivedTruckView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
@@ -2508,6 +2516,13 @@ class ApproveArrivedTruckView(APIView):
             truck = Trucks.objects.filter(truck_name=truck_name, is_ordered=True).first()
             if not truck:
                 return JsonResponse({'error': "No truck found with the given name and is_ordered=True."}, status=404)
+
+            goods_on_road = GoodsOnRoad.objects.filter(truck_name=truck_name, is_on_road=True)
+            for good in goods_on_road:
+                try:
+                    warehouse_product = Warehouse.objects.get(product_code=good.product_code)
+                except Warehouse.DoesNotExist:
+                   return JsonResponse({'error': f"Product with code {good.product_code} does not exist in the warehouse."}, status=500)
 
             truck.is_ordered = False
             truck.is_arrived = True

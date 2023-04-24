@@ -234,7 +234,7 @@ class GoodsOnRoad(models.Model):
     decided_order = models.FloatField(default=0, null=True)
     weight = models.FloatField(default=0, null=True)
     truck_name = models.CharField(max_length=100)
-    is_ordered = models.BooleanField()
+    is_ordered = models.BooleanField(default= False)
     is_terminated = models.BooleanField(default= False)
     is_on_truck = models.BooleanField(default= False)
     is_on_road = models.BooleanField(default= False)
