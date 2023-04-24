@@ -1168,7 +1168,7 @@ const [bonus, setBonus] = useState(null);
                                 product_code: rowToDelete [10],
                                 original_output_value: rowToDelete [16]
                               };
-                              console.log(data)
+                              
                               setDeleteData(data);
                               
                               /*

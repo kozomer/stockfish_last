@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Card, CardHeader, CardBody, CardTitle, Row, Col, Input, Form, FormGroup, Label, CardFooter } from 'reactstrap';
+import { Button, Card, CardHeader,Modal, ModalHeader, ModalBody, ModalFooter, CardBody, CardTitle, Row, Col, Input, Form, FormGroup, Label, CardFooter } from 'reactstrap';
 import { Link } from 'react-router-dom';
 import ReactTable from 'components/ReactTable/ReactTable.js';
 import localforage from 'localforage';
 import ReactBSAlert from "react-bootstrap-sweetalert";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck } from '@fortawesome/free-solid-svg-icons';
-import { faEdit } from '@fortawesome/free-solid-svg-icons';
+
+import { faCheck, faEdit, faSave } from '@fortawesome/free-solid-svg-icons';
 const DataTable = () => {
   const [dataTable, setDataTable] = useState([]);
   const [edit, setEdit] = useState({ row: -1, column: '' });
@@ -45,8 +45,12 @@ const DataTable = () => {
   });
 
   const [waitingTrucksData, setWaitingTrucksData] = useState([]);
-  const [editingRow, setEditingRow] = useState(null);
+ 
 const [data, setData] = useState(goodsOnRoadData);
+const [shouldFetchData, setShouldFetchData] = useState(true);
+const [fetchGoodData, setFetchGoodData] = useState(true);
+const [editingRow, setEditingRow] = useState(null);
+  const [updatedOrder, setUpdatedOrder] = useState(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -69,7 +73,55 @@ const [data, setData] = useState(goodsOnRoadData);
 
 
 
+  const handleEditClick = (row) => {
+    console.log(row.values["Product Code"])
+    setEditingRow(row.index);
+    setProductCode(row.values["Product Code"])
+  };
 
+  const handleSaveClick = async () => {
+    // Save the updated order value
+    console.log(productCode)
+    const updatedData = {
+      product_code: productCode,
+      new_decided_order: updatedOrder,
+    };
+    const access_token = await localforage.getItem('access_token');
+    const response = await fetch('http://127.0.0.1:8000/api/edit_goods_on_road/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + String(access_token)
+        // Add the appropriate headers for your API (e.g., Authorization)
+      },
+      body: JSON.stringify(updatedData),
+    })
+
+
+      .then((response) => {
+        if (!response.ok) {
+          return response.json().then(data => {
+            
+
+            errorUpload(data.error);
+          });
+        }
+
+        else {
+          return response.json().then(data => {
+
+            successEdit(data.message);
+            setFetchGoodData(true)
+            setEditingRow(null);
+            setUpdatedOrder(null);
+          })
+
+        }
+      })
+    // Reset the states
+    
+  };
+  
   const handleNewTruckInputChange = (e) => {
     setNewTruck({ ...newTruck, [e.target.name]: e.target.value });
   };
@@ -141,9 +193,13 @@ const [data, setData] = useState(goodsOnRoadData);
       setWaitingTrucksData(formattedData);
 
     }
+    if (shouldFetchData) {
+      fetchWaitingTrucksData();
+      setShouldFetchData(false);
+    
 
-    fetchWaitingTrucksData();
-  }, []);
+    }
+  }, [shouldFetchData]);
 
 
   const handleSubmit = async (e) => {
@@ -189,6 +245,7 @@ const [data, setData] = useState(goodsOnRoadData);
           return response.json().then(data => {
             setEditData(updatedData);
             successEdit(data.message);
+            setShouldFetchData(true); // Add this line
           })
 
         }
@@ -258,9 +315,11 @@ const [data, setData] = useState(goodsOnRoadData);
       }));
       setGoodsOnRoadData(formattedData);
     };
-
+    if (fetchGoodData) {
     fetchGoodsOnRoadData();
-  }, []);
+    setFetchGoodData(false);
+    }
+  }, [fetchGoodData]);
 
   const approveTruck = async (truckName) => {
     
@@ -812,6 +871,9 @@ const [data, setData] = useState(goodsOnRoadData);
         borderWidth: "3px",
         borderStyle: "solid",
         boxShadow: "0 6px 6px rgba(50, 205, 50, 0.2)",
+        maxWidth: "97%", // Add a maxWidth property here
+    marginLeft: "auto",
+    marginRight: "auto",
       }}
     >
       <CardHeader>
@@ -820,127 +882,119 @@ const [data, setData] = useState(goodsOnRoadData);
         </CardTitle>
       </CardHeader>
       <CardBody>
-        {goodsOnRoadData.length === 0 ? (
-          <p>There's no truck on the road</p>
-        ) : (
-          goodsOnRoadData.map((goodsOnRoadTruck, index) => (
-            <div
-              className="truck-table-container"
-              key={index}
-              style={{
-                marginBottom: index < goodsOnRoadData.length - 1 ? "2rem" : 0,
-                borderBottom:
-                  index < goodsOnRoadData.length - 1
-                    ? "1px solid #dee2e6"
-                    : "none",
-                paddingBottom: index < goodsOnRoadData.length - 1 ? "2rem" : 0,
-              }}
-            >
-              <div className="d-flex justify-content-between align-items-center">
-                <h5>{goodsOnRoadTruck.truck_name}</h5>
-                <div>
-                  <FontAwesomeIcon
-                    icon={faCheck}
-                    className="text-success cursor-pointer mr-3"
-                    onClick={() => approveTruck(goodsOnRoadTruck.truck_name)}
-                  />
-                </div>
-              </div>
-              <ReactTable
-                data={goodsOnRoadTruck.data.map((row, key) => {
-                  const newRow = {};
-                  Object.keys(row).forEach((column) => {
-                    if (
-                      ![
-                        "is_ordered",
-                        "is_terminated",
-                        "is_on_truck",
-                        "is_on_road",
-                        "is_arrived",
-                      ].includes(column)
-                    ) {
-                      const formattedKey = column
-                        .split("_")
-                        .map(
-                          (word) => word.charAt(0).toUpperCase() + word.slice(1)
-                        )
-                        .join(" ");
-                      newRow[formattedKey] = row[column];
-                    }
-                  });
-                  return newRow;
-                })}
-                columns={[
-                  ...Object.keys(goodsOnRoadTruck.data[0] || {})
-                    .filter(
-                      (key) =>
-                        ![
-                          "is_ordered",
-                          "is_terminated",
-                          "is_on_truck",
-                          "is_on_road",
-                          "is_arrived",
-                          "decided_order",
-                        ].includes(key)
+      {goodsOnRoadData.length === 0 ? (
+      <p>There's no truck on the road</p>
+    ) : (
+      goodsOnRoadData.map((goodsOnRoadTruck, index) => (
+        <div
+          className="truck-table-container"
+          key={index}
+          style={{
+            marginBottom: index < goodsOnRoadData.length - 1 ? "2rem" : 0,
+            borderBottom:
+              index < goodsOnRoadData.length - 1
+                ? "1px solid #dee2e6"
+                : "none",
+            paddingBottom: index < goodsOnRoadData.length - 1 ? "2rem" : 0,
+          }}
+        >
+          <div className="d-flex justify-content-between align-items-center">
+            <h5>{goodsOnRoadTruck.truck_name}</h5>
+            <div>
+              <FontAwesomeIcon
+                icon={faCheck}
+                className="text-success cursor-pointer mr-3"
+                onClick={() => approveTruck(goodsOnRoadTruck.truck_name)}
+              />
+            </div>
+          </div>
+          <ReactTable
+            data={goodsOnRoadTruck.data.map((row, key) => {
+              const newRow = {};
+              Object.keys(row).forEach((column) => {
+                if (
+                  ![
+                    "is_ordered",
+                    "is_terminated",
+                    "is_on_truck",
+                    "is_on_road",
+                    "is_arrived",
+                  ].includes(column)
+                ) {
+                  const formattedKey = column
+                    .split("_")
+                    .map(
+                      (word) => word.charAt(0).toUpperCase() + word.slice(1)
                     )
-                    .map((key) => {
-                      const formattedKey = key
-                        .split("_")
-                        .map(
-                          (word) => word.charAt(0).toUpperCase() + word.slice(1)
-                        )
-                        .join(" ");
-                      return { Header: formattedKey, accessor: formattedKey };
-                    }),
-                  {
-                    Header: "Decided Order",
-                    accessor: "Decided Order",
-                    Cell: ({ row, updateMyData, value }) => {   return editingRow === row._index ? (
-                      <input
-                        type="number"
-                        value={value}
-                        onChange={(e) => {
-                          updateMyData(row._index, "Decided Order", e.target.value);
-                        }}
-                      />
+                    .join(" ");
+                  newRow[formattedKey] = row[column];
+                }
+              });
+              return newRow;
+            })}
+            columns={[
+              ...Object.keys(goodsOnRoadTruck.data[0] || {})
+                .filter(
+                  (key) =>
+                    ![
+                      "is_ordered",
+                      "is_terminated",
+                      "is_on_truck",
+                      "is_on_road",
+                      "is_arrived",
+                      "decided_order",
+                    ].includes(key)
+                )
+                .map((key) => {
+                  const formattedKey = key
+                    .split("_")
+                    .map(
+                      (word) => word.charAt(0).toUpperCase() + word.slice(1)
+                    )
+                    .join(" ");
+                  return { Header: formattedKey, accessor: formattedKey };
+                }),
+                {
+                  Header: "Decided Order",
+                  id: "decidedOrder",
+                  Cell: ({ row }) =>
+                    editingRow === row.index ? (
+                      <div>
+                        <input
+                          type="text"
+                          defaultValue={row.original["Decided Order"]}
+                          onChange={(e) => setUpdatedOrder(e.target.value)}
+                        />
+                        <FontAwesomeIcon
+                          icon={faSave}
+                          className="text-success cursor-pointer ml-2"
+                          onClick={handleSaveClick}
+                        />
+                      </div>
                     ) : (
-                      value
-                    );
-                  },
+                      row.original["Decided Order"]
+                    ),
                 },
                 {
                   Header: "",
                   id: "edit",
                   Cell: ({ row }) => (
                     <div>
-                      {editingRow === row._index ? (
-                        <button
-                          onClick={() => {
-                            setEditingRow(null);
-                          }}
-                        >
-                          Save
-                        </button>
-                      ) : (
-                        <FontAwesomeIcon
-                          icon={faEdit}
-                          className="text-warning cursor-pointer"
-                          onClick={() => {
-                            setEditingRow(row._index);
-                          }}
-                        />
-                      )}
+                      <FontAwesomeIcon
+                        icon={faEdit}
+                        className="text-warning cursor-pointer"
+                        onClick={() => handleEditClick(row)}
+                      />
                     </div>
                   ),
                 },
               ]}
-              defaultPageSize={10}
-              className="-striped -highlight"
-              updateMyData={updateMyData}
-            />
-          </div>
-        ))
-      )}
+            defaultPageSize={10}
+            className="-striped -highlight"
+          />
+        </div>
+      ))
+    )}
     </CardBody>
   </Card>
         </Col>

@@ -2481,7 +2481,7 @@ class EditGoodsOnRoadView(APIView):
             good_on_road = GoodsOnRoad.objects.get(product_code=product_code)
 
             # Update decided_order
-            new_decided_order = data.get('new_decided_order')
+            new_decided_order = float(data.get('new_decided_order'))
             if new_decided_order is not None and new_decided_order >= 0:
                 good_on_road.decided_order = new_decided_order
             else:
