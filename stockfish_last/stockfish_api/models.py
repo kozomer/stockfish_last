@@ -1,6 +1,6 @@
 from django.db import models
 from django_jalali.db import models as jmodels
-from dirtyfields import DirtyFieldsMixin
+#from dirtyfields import DirtyFieldsMixin
 
 class Customers(models.Model):
     customer_code = models.CharField(max_length=100, unique=True)
@@ -13,7 +13,7 @@ class Customers(models.Model):
     def __str__(self):
         return self.customer_code
 
-class Sales(DirtyFieldsMixin,models.Model):
+class Sales(models.Model):
     no = models.PositiveIntegerField(unique=True, db_index= True)
     bill_number = models.PositiveIntegerField(null=True, blank=True)
     date = jmodels.jDateField()
