@@ -1,5 +1,5 @@
-Goods on the road edit
-Waiting Trucksa hemen düşmüyor products to order'dan
+Goods on the road edit(ok) - sola kayık(ok)
+Waiting Trucksa hemen düşmüyor products to order'dan(ok)
 
 Genel kontrol
 
@@ -7,4 +7,6 @@ Bonusta activity yollanmıyor ve hepsi editable olmalı
 
 Senelik hesap
 
-Site iconu
+Site iconu(ok)
+
+Tüm console'ları kapat(en son yap)
