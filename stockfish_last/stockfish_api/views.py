@@ -329,6 +329,7 @@ class AddSalesView(APIView):
                 try:
                     saler = Salers.objects.get(name= row["Saler"] )
                 except Exception as e:
+                    
                     return JsonResponse({'error': "No saler found"}, status=400)
                 
                 # Save the Sale object
@@ -396,7 +397,7 @@ class AddSalesView(APIView):
         except OperationalError as e:
             return JsonResponse({'error': f"Database error: {str(e)}"}, status=500)
         except Exception as e:
-            #traceback.print_exc()
+            traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
 
 
@@ -405,7 +406,6 @@ class ViewSalesView(APIView):
     authentication_classes = [JWTAuthentication,]
     def get(self, request, *args, **kwargs):
         sales = Sales.objects.values().all()
-        print("eee")
         sale_list = [[sale['no'], sale['bill_number'], sale['date'].strftime('%Y-%m-%d'), sale['psr'], sale['customer_code'],
                         sale['name'], sale['city'], sale['area'], sale['color_making_saler'], sale['group'], sale['product_code'], 
                         sale['product_name'], sale['unit'], sale['unit2'], sale['kg'], sale['original_value'], sale['original_output_value'], 
@@ -547,6 +547,7 @@ class EditSaleView(APIView):
             return JsonResponse({'error': str(e)}, status=400)
 
         except Exception as e:
+            traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
 
 class ExportSalesView(APIView):
@@ -1105,6 +1106,7 @@ class EditSalerView(APIView):
             return JsonResponse({'error': str(e)}, status=400)
 
         except Exception as e:
+            traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
 
 
@@ -1151,16 +1153,26 @@ class DeleteSalerView(APIView):
 @receiver(post_save, sender=Sales)
 def update_saler_performance_with_add_sale(sender, instance, created, **kwargs):
     # Get or create the SalerPerformance object
-    saler_performance, created = SalerPerformance.objects.get_or_create(
+    saler_performance, _ = SalerPerformance.objects.get_or_create(
         name=instance.saler,
         year=instance.date.year,
-        month= instance.date.month,
+        month=instance.date.month,
         day=instance.date.day
     )
 
     # Update the sale value for the SalerPerformance object
-    saler_performance.sale += instance.net_sales
+    if created:
+        saler_performance.sale += float(instance.net_sales)
+    else:
+        # Check which fields have been updated
+        dirty_fields = instance.get_dirty_fields()
+
+        # Update the corresponding attributes of the SalerPerformance instance based on the updated fields
+        if 'net_sales' in dirty_fields:
+            saler_performance.sale += float(instance.net_sales) - dirty_fields['net_sales']
+
     saler_performance.save()
+
 
 @receiver(post_delete, sender=Sales)
 def update_saler_performance_with_delete_sale(sender, instance, **kwargs):
@@ -1227,16 +1239,18 @@ def update_sale_summary_with_add_sale(sender, instance, created, **kwargs):
     else:
         # Check which fields have been updated
         dirty_fields = instance.get_dirty_fields()
+        print("dirty fields: ", dirty_fields)
+        print("dirtyyy")
 
         # Update the corresponding attributes of the SaleSummary instance based on the updated fields
         if 'net_sales' in dirty_fields:
-            sale_summary.sale += instance.net_sales - dirty_fields['net_sales']
+            sale_summary.sale += float(instance.net_sales) - dirty_fields['net_sales']
         if 'dollar_sepidar' in dirty_fields:
-            sale_summary.dollar_sepidar_sale += instance.dollar_sepidar - dirty_fields['dollar_sepidar']
+            sale_summary.dollar_sepidar_sale += float(instance.dollar_sepidar) - dirty_fields['dollar_sepidar']
         if 'dollar' in dirty_fields:
-            sale_summary.dollar_sale += instance.dollar - dirty_fields['dollar']
+            sale_summary.dollar_sale += float(instance.dollar) - dirty_fields['dollar']
         if 'kg' in dirty_fields:
-            sale_summary.kg_sale += instance.kg - dirty_fields['kg']
+            sale_summary.kg_sale += float(instance.kg) - dirty_fields['kg']
 
         sale_summary.save()
 
@@ -1326,19 +1340,31 @@ class SalesReportView(APIView):
 
 @receiver(post_save, sender=Sales)
 def update_monthly_product_sales_with_add_sale(sender, instance, created, **kwargs):
-    if created:
+    # Get or create the MonthlyProductSales object
+    monthly_sale, _ = MonthlyProductSales.objects.get_or_create(
+        product_code=instance.product_code,
+        year=instance.date.year,
+        month=instance.date.month
+    )
+    monthly_sale.date = instance.date
+    monthly_sale.product_name = instance.product_name
 
-        monthly_sale, created = MonthlyProductSales.objects.get_or_create(
-            product_code=instance.product_code,
-            year=instance.date.year,
-            month= instance.date.month
-        )
-        monthly_sale.date = instance.date
-        
-        monthly_sale.product_name = instance.product_name
-        monthly_sale.piece+= instance.original_output_value
+    if created:
+        # Update the MonthlyProductSales instance with the new sales information
+        monthly_sale.piece += instance.original_output_value
         monthly_sale.sale += instance.net_sales
-        monthly_sale.save()
+    else:
+        # Check which fields have been updated
+        dirty_fields = instance.get_dirty_fields()
+
+        # Update the corresponding attributes of the MonthlyProductSales instance based on the updated fields
+        if 'original_output_value' in dirty_fields:
+            monthly_sale.piece += float(instance.original_output_value) - dirty_fields['original_output_value']
+        if 'net_sales' in dirty_fields:
+            monthly_sale.sale += float(instance.net_sales) - dirty_fields['net_sales']
+
+    monthly_sale.save()
+
 
 @receiver(post_delete, sender=Sales)
 def update_monthly_product_sales_with_delete_sale(sender, instance, **kwargs):
@@ -1363,22 +1389,39 @@ def update_monthly_product_sales_with_delete_sale(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Sales)
 def update_customer_performance_with_add_sale(sender, instance, created, **kwargs):
-    if created:
-        # Get or create the CustomerPerformance object
-        find_month = instance.date.month
-        find_year = instance.date.year
-        customer_performance, created = CustomerPerformance.objects.get_or_create(
-             year= find_year, month = find_month, customer_code = instance.customer_code
-        )
+    # Get or create the CustomerPerformance object
+    find_month = instance.date.month
+    find_year = instance.date.year
+    customer_performance, _ = CustomerPerformance.objects.get_or_create(
+         year=find_year, month=find_month, customer_code=instance.customer_code
+    )
 
+    # Update the corresponding attributes of the CustomerPerformance instance based on the updated fields
+    customer_performance.customer_name = instance.name
+    customer_performance.customer_area = instance.area
+
+    if created:
         # Update the sale value for the CustomerPerformance object
-        customer_performance.customer_name = instance.name
-        customer_performance.customer_area = instance.area
         customer_performance.sale += instance.net_sales
         customer_performance.sale_amount += instance.original_output_value
         customer_performance.dollar += instance.dollar
         customer_performance.dollar_sepidar += instance.dollar_sepidar
-        customer_performance.save()
+    else:
+        # Check which fields have been updated
+        dirty_fields = instance.get_dirty_fields()
+
+        # Update the corresponding attributes of the CustomerPerformance instance based on the updated fields
+        if 'net_sales' in dirty_fields:
+            customer_performance.sale += float(instance.net_sales) - dirty_fields['net_sales']
+        if 'original_output_value' in dirty_fields:
+            customer_performance.sale_amount += float(instance.original_output_value) - dirty_fields['original_output_value']
+        if 'dollar' in dirty_fields:
+            customer_performance.dollar += float(instance.dollar) - dirty_fields['dollar']
+        if 'dollar_sepidar' in dirty_fields:
+            customer_performance.dollar_sepidar += float(instance.dollar_sepidar) - dirty_fields['dollar_sepidar']
+
+    customer_performance.save()
+
 
 @receiver(post_delete, sender=Sales)
 def update_customer_performance_with_delete_sale(sender, instance, **kwargs):
@@ -1465,19 +1508,32 @@ class TopCustomersView(APIView):
 
 @receiver(post_save, sender=Sales)
 def update_product_performance_with_add_sale(sender, instance, created, **kwargs):
-    if created:
-        # Get or create the ProductPerformance object
-        find_month = instance.date.month
-        find_year = instance.date.year
-        product_performance, created = ProductPerformance.objects.get_or_create(
-             year= find_year, month = find_month, product_code = instance.product_code
-        )
+    # Get or create the ProductPerformance object
+    find_month = instance.date.month
+    find_year = instance.date.year
+    product_performance, _ = ProductPerformance.objects.get_or_create(
+         year=find_year, month=find_month, product_code=instance.product_code
+    )
 
+    # Update the corresponding attributes of the ProductPerformance instance based on the updated fields
+    product_performance.product_name = instance.product_name
+
+    if created:
         # Update the sale value for the ProductPerformance object
-        product_performance.product_name = instance.product_name
         product_performance.sale_amount += instance.original_output_value
         product_performance.sale += instance.net_sales
-        product_performance.save()
+    else:
+        # Check which fields have been updated
+        dirty_fields = instance.get_dirty_fields()
+
+        # Update the corresponding attributes of the ProductPerformance instance based on the updated fields
+        if 'original_output_value' in dirty_fields:
+            product_performance.sale_amount += float(instance.original_output_value) - dirty_fields['original_output_value']
+        if 'net_sales' in dirty_fields:
+            product_performance.sale += float(instance.net_sales) - dirty_fields['net_sales']
+
+    product_performance.save()
+
 
 @receiver(post_delete, sender=Sales)
 def update_product_performance_with_delete_sale(sender, instance, **kwargs):
@@ -1637,7 +1693,9 @@ class SalerDataView(APIView):
                     yearly_sale / 10
                 ])
 
+        print(combined_data)
         response_data = {"jalali_date": jalali_date_now_str, "sales_data": combined_data}
+        print("RESPONSE DATA: ",response_data)
 
         return JsonResponse(response_data, safe=False)
         
@@ -2204,7 +2262,9 @@ def create_sales_signal(sender, instance, created, **kwargs):
         orders = {'average': 0, 'holt': 0, 'exp': 0}
         product_code = instance.product_code
         product_values = ProductPerformance.objects.filter(product_code=product_code)
-        weight = Products.objects.get(product_code = product_code)
+        product_values = [[1, item.month, item.year, item.product_code, item.sale_amount] for item in product_values]
+        print(product_values)
+        weight = Products.objects.get(product_code_ir = product_code)
         try:
             last_sales = MonthlyProductSales.objects.filter(product_code=product_code).values("date").latest("date")
             last_sale_date = last_sales["date"].strftime('%Y-%m-%d')
@@ -2300,10 +2360,7 @@ class EditOrderListView(APIView):
 def update_goods_on_road(sender, instance, created, **kwargs):
     if not created and instance.is_ordered:
         product = Products.objects.get(product_code_ir=instance.product_code)
-        print(product)
-        print(instance.is_ordered)
         goods_on_road, created = GoodsOnRoad.objects.get_or_create(product_code=instance.product_code, is_terminated=False)
-        print(instance.is_ordered)
         goods_on_road.product_name_tr = product.description_tr
         goods_on_road.product_name_ir = product.description_ir
         goods_on_road.decided_order = instance.decided_order

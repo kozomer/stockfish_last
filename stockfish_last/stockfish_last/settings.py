@@ -25,7 +25,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-0n#6q-+h&+8o3lb&%&5afiger05--w5d$9j9bmq%f!1j184orx'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+#! True for developement environment
+#! False for production environment
+DEBUG = True
 
 ALLOWED_HOSTS = ["192.168.1.192","127.0.0.1","localhost","179.61.219.154", "vividstockfish.com", "www.vividstockfish.com"]
 
@@ -137,6 +139,8 @@ WSGI_APPLICATION = 'stockfish_last.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
+#! Add two seperate database for production and developement !!
+#! Also add database to .gitignore file.  
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -191,23 +195,30 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+#! Comment logging for production environment
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
     'handlers': {
         'file': {
-            'level': 'DEBUG',
+            'level': 'WARNING',
             'class': 'logging.FileHandler',
             'filename': 'django.log',
+            'formatter': 'verbose',
         },
     },
     'loggers': {
         'django': {
             'handlers': ['file'],
-            'level': 'DEBUG',
+            'level': 'INFO',
             'propagate': True,
         },
     },
 }
-
 

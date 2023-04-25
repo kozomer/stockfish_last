@@ -79,6 +79,8 @@ def generate_year_month_sequence(start_year, start_month, end_year, end_month):
     return [(year, month) for year, month in product(years, months) if (int(year), int(month)) >= (int(start_year), int(start_month)) and (int(year), int(month)) <= (int(end_year), int(end_month))]
 def convert_daily_to_monthly(daily_sales):
     daily_sales.sort(key=lambda x: (x[2], x[1], x[0]))  # Sort daily sales by date
+    print(daily_sales)
+
     _, start_month, start_year, _, _ = daily_sales[0]
     _, end_month, end_year, _, _ = daily_sales[-1]
     year_month_sequence = generate_year_month_sequence(start_year, start_month, end_year, end_month)
@@ -159,8 +161,11 @@ def dynamic_correction(monthly_sales, current_date):
 def get_model(model, is_dynamic, current_date, product_code, product_sales, current_stock, lead_time, service_level, prev_forecast_period, future_forecast_period):
     lead_time = lead_time
     service_level = service_level
+    print("product_sales_first: ", product_sales)
     bools = filter_product_sales(product_sales, product_code, dim=3)
+    print("bools: ", bools)
     product_sales = remove_product_sales_by_boolean(product_sales, bools)
+    print("product_sales: ",product_sales )
     monthly_sales = convert_daily_to_monthly(product_sales)
     if is_dynamic:
         monthly_sales = dynamic_correction(monthly_sales, current_date)
