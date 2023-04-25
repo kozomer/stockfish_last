@@ -8,7 +8,7 @@ from django.http import JsonResponse, HttpResponse
 import json
 from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
-from .definitions import jalali_to_greg, greg_to_jalali, calculate_experience_rating, calculate_sale_rating, current_jalali_date, get_exchange_rate, get_model, generate_future_forecast_dates
+from .definitions import jalali_to_greg, greg_to_jalali, calculate_experience_rating, calculate_sale_rating, current_jalali_date, get_exchange_rate, get_model, generate_future_forecast_dates, the_man_from_future
 from datetime import datetime
 import datetime
 import jdatetime
@@ -93,7 +93,7 @@ class AddCustomersView(APIView):
             file = request.FILES['file']
             kind = filetype.guess(file.read())
             if kind is None or kind.mime not in ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']:
-                return JsonResponse({'error': "The uploaded file is not a valid Excel file1"}, status=400)
+                return JsonResponse({'error': "The uploaded file is not a valid Excel file!"}, status=400)
 
             data = pd.read_excel(file)
             if data.empty:
@@ -162,12 +162,15 @@ class EditCustomerView(APIView):
                     customer.customer_code = new_customer_code
 
             # Update other customer fields
-            for field in ['description', 'quantity', 'area_code', 'code', 'city', 'area']:
-                value = data.get(f'new_{field}')
-                if value is not None and value != '':
-                    setattr(customer, field, value)
-                else: 
-                    return JsonResponse({'error': "One or more data field is empty!"}, status=400)
+            try:
+                for field in ['description', 'quantity', 'area_code', 'code', 'city', 'area']:
+                    value = data.get(f'new_{field}')
+                    if value is not None and value != '':
+                        setattr(customer, field, value)
+                    else: 
+                        return JsonResponse({'error': "One or more data field is empty!"}, status=400)
+            except Exception as e:
+                return JsonResponse({'error': str(e)}, status=400)
 
 
             customer.save()
@@ -650,7 +653,12 @@ class AddWarehouseView(APIView):
             count = 0
             for i, row in data.iterrows():
                 try:
-                    product_code = row["Product Code"]
+                    product_code = int(row["Product Code"])
+                    try:
+                        product = Products.objects.get(product_code_ir = product_code)
+                    except Products.DoesNotExist:
+                        return JsonResponse({'error': f"Product Code: '{product_code}' not found in the Products Table. If there is no mistake, please add '{product_code}' to the Products Table first. "}, status=400)
+
                     if Warehouse.objects.filter(product_code=product_code).exists():
                         continue
                     count+=1
@@ -707,6 +715,10 @@ class EditWarehouseView(APIView):
                 if Warehouse.objects.filter(product_code=new_product_code).exists():
                     return JsonResponse({'error': f"The product code '{new_product_code}' already exists in the warehouse."}, status=400)
                 else:
+                    try:
+                        product = Products.objects.get(product_code_ir = new_product_code)
+                    except Products.DoesNotExist:
+                        return JsonResponse({'error': f"Your new Product Code: '{new_product_code}' not found in the Products Table. If there is no mistake, please add '{new_product_code}' to the Products Table first. "}, status=400)
                     warehouse_item.product_code = new_product_code
 
             # Update other warehouse item fields
@@ -803,7 +815,7 @@ class AddProductsView(APIView):
     def post(self, request, *args, **kwargs):
         try:
             if 'file' not in request.FILES:
-                raise ValidationError("No file uploaded")
+                return JsonResponse({'error': "No file uploaded"}, status=400)
             file = request.FILES['file']
             kind = filetype.guess(file.read())
             if kind is None or kind.mime not in ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']:
@@ -1028,6 +1040,7 @@ class AddSalerView(APIView):
         try:
             data = json.loads(request.body)
             jalali_date = data.get("job_start_date").split("-")
+            jalali_current_date = current_jalali_date()
             try:
                 jalali_date = jdatetime.date(int(jalali_date[0]), int(jalali_date[1]), int(jalali_date[2]))
             except ValueError:
@@ -1036,6 +1049,8 @@ class AddSalerView(APIView):
                 return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD'"}, status=400)
             except Exception as e:
                 return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD'"}, status=400)
+            if the_man_from_future(jalali_date):
+                return JsonResponse({'error': "HERE'S THE MAN FROM THE FUTURE TO SAVE US ALL!!!! Job Start Date cannot be future time, please check it :) "}, status=400)
 
             saler = Salers(
                 name = data.get("name"),
