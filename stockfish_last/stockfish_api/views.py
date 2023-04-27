@@ -177,7 +177,7 @@ class EditCustomerView(APIView):
             return JsonResponse({'message': "Your changes have been successfully saved"}, status=200)
 
         except Customers.DoesNotExist:
-            return JsonResponse({'error': "Customernot found!"}, status=400)
+            return JsonResponse({'error': "Customer not found!"}, status=400)
 
         except ValueError as e:
             return JsonResponse({'error': str(e)}, status=400)
@@ -1130,19 +1130,19 @@ class CollapsedSalerView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
     def get(self, request, *args, **kwargs):
-        salers = Salers.objects.values().all()
+        salers = Salers.objects.filter(is_deleted = False)
         salers_list = [[saler['id'], saler['name'], saler['is_active']] for saler in salers]
         return JsonResponse(salers_list, safe=False)
 
     
  # Everyday experience rating must be automatically updated !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   
-class SalerView(APIView):
+class SalerCardView(APIView):
     permission_classes = (IsAuthenticated,) 
     authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
         id = data.get('id')
-        saler = Salers.objects.get(id=id)
+        saler = Salers.objects.get(id=id, is_deleted = False)
         jalali_current_date = current_jalali_date()
         try:
             saler_monthly_ratings = SalerMonthlySaleRating.objects.get(name=saler.name, month = jalali_current_date.month, year= jalali_current_date.year )
@@ -1155,13 +1155,28 @@ class SalerView(APIView):
         # Return the list of output_values as a JSON response
         return JsonResponse(response_data, safe=False)
 
+class SalerTableView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def get(self, request, *args, **kwargs):
+        salers = Salers.objects.filter(is_deleted=False).values()
+        saler_list = [[s['id'], s['name'], s['job_start_date'], s['manager_performance_rating'],
+                       s['experience_rating'], s['monthly_total_sales_rating'], s['receipment_rating'], s['is_active']] for s in salers]
+        
+        
+        return JsonResponse(saler_list, safe=False)
+
 class DeleteSalerView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
         id = data.get('id')
-        Salers.objects.get(id=id).delete()
+        saler = Salers.objects.get(id=id)
+        saler.is_deleted = True
+        saler.is_active = False
+
         return HttpResponse('OK')
 
 
@@ -1216,13 +1231,15 @@ def update_month_sale_rating(sender, instance, **kwargs):
     ).aggregate(monthly_sale=Sum('sale'))
     monthly_sale = float(aggregated_sales['monthly_sale'] or 0)
     monthly_sale_rating = calculate_sale_rating(monthly_sale / 10000000)
-    saler, created = SalerMonthlySaleRating.objects.get_or_create(
+    saler_rating, created = SalerMonthlySaleRating.objects.get_or_create(
         name=instance.name, 
         year=instance.year,
         month=instance.month
         )
-    saler.sale_rating = monthly_sale_rating
-    saler.save()
+    saler_rating.sale_rating = monthly_sale_rating
+    saler_rating.save()
+    saler = Salers.objects.get(name=instance.name)
+    saler.monthly_total_sales_rating = monthly_sale_rating
 
 
 
