@@ -2231,23 +2231,26 @@ class ROPView(APIView):
     authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
+        print(data)
         product_code = data.get('product_code')
         lead_time = int(data.get('lead_time'))
         service_level = float(data.get('service_level'))
         forecast_period = int(data.get('forecast_period'))
         product_values = ProductPerformance.objects.filter(product_code=product_code)
+       
         try:
             last_sales = MonthlyProductSales.objects.filter(product_code=product_code).values("date").latest("date")
             last_sale_date = last_sales["date"].strftime('%Y-%m-%d')
             jalali_date = current_jalali_date()
             jalali_date_str = jalali_date.strftime('%Y-%m-%d').split("-")
         except MonthlyProductSales.DoesNotExist:
-            return JsonResponse({"error" : f"There is no product sales data with product code: {product_code} "})
+            return JsonResponse({"error" : f"There is no product sales data with product code: {product_code} "}, status=400)
         try: 
             warehouse = Warehouse.objects.get(product_code = product_code)
             stock = warehouse.stock
         except Warehouse.DoesNotExist:
-            return JsonResponse({"error" : f"There is no product in warehouse with product code: {product_code} "})
+            print("sadasdaasd")
+            return JsonResponse({"error" : f"There is no product in warehouse with product code: {product_code} "}, status=400)
         
         dates_for_sales = [jdatetime.date(item.year, item.month, 1).strftime('%Y-%m-%d') for item in product_values]
         sales = [item.sale_amount for item in product_values]
