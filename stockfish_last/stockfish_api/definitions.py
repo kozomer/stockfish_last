@@ -52,6 +52,7 @@ def the_man_from_future(job_start_date):
         return False
 
 def calculate_sale_rating(sale_amount):
+    print("sale_amount: ",sale_amount)
     if 1000 <= sale_amount:
         return 1.30
     elif 750 <= sale_amount < 1000:
@@ -195,17 +196,22 @@ def get_model(model, is_dynamic, current_date, product_code, product_sales, curr
 
 def generate_future_forecast_dates(num_months):
     current_date = current_jalali_date()
-    future_dates = [current_date]
+    print("current_date: ", current_date)
+    future_dates_with_current = [current_date]
+    future_dates = []
 
-    for i in range(1, num_months):
-        last_date = future_dates[-1]
+    for i in range(0, num_months):
+        
+        last_date = future_dates_with_current[-1]
         month = int(last_date.month) + 1
         year = last_date.year
         if month > 12:
             month = 1
             year += 1
+        future_dates_with_current.append(jdatetime.date(year, month, 1))
         future_dates.append(jdatetime.date(year, month, 1))
 
+    print("future_dates: ", [date.strftime('%Y-%m-%d') for date in future_dates])
     return [date.strftime('%Y-%m-%d') for date in future_dates]
 
 # product_code = 15202103

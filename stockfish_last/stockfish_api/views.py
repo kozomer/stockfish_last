@@ -2189,6 +2189,7 @@ class ROPView(APIView):
         exp_future_forecast_dates = generate_future_forecast_dates(len(exp_future_sales))
         holt_future_forecast_dates = generate_future_forecast_dates(len(holt_future_sales))
         print("avrg_future_forecast_dates: ", avrg_future_forecast_dates)
+        print("holt_future_forecast_dates: ", holt_future_forecast_dates)
         print("holt_order: ", holt_order)
         item = ROP.objects.get(product_code_ir = product_code)
         rop_list = rop_list = [
@@ -2303,23 +2304,44 @@ def create_sales_signal(sender, instance, created, **kwargs):
 
         is_active = any(order_flags.values())
 
+        try:
+            existing_order_list = OrderList.objects.get(product_code=product_code, is_active=True)
+        except OrderList.DoesNotExist:
+            existing_order_list = None
+
         if is_active:
-            order_list = OrderList(
-                product_code=product_code,
-                order_flag_avrg=order_flags['average'],
-                order_flag_exp=order_flags['exp'],
-                order_flag_holt=order_flags['holt'],
-                order_avrg=orders['average'],
-                order_exp=orders['exp'],
-                order_holt=orders['holt'],
-                current_date=jalali_date,
-                current_stock=stock,
-                weight=weight,
-                average_sale=np.mean(all_sales),
-                is_active=is_active,
-                is_ordered= False
-            )
-            order_list.save()
+            if existing_order_list:
+                # Update the existing OrderList object
+                existing_order_list.order_flag_avrg = order_flags['average']
+                existing_order_list.order_flag_exp = order_flags['exp']
+                existing_order_list.order_flag_holt = order_flags['holt']
+                existing_order_list.order_avrg = orders['average']
+                existing_order_list.order_exp = orders['exp']
+                existing_order_list.order_holt = orders['holt']
+                existing_order_list.current_date = jalali_date
+                existing_order_list.current_stock = stock
+                existing_order_list.weight = weight
+                existing_order_list.average_sale = np.mean(all_sales)
+                existing_order_list.is_ordered = False
+                existing_order_list.save()
+            else:
+                # Create a new OrderList object
+                order_list = OrderList(
+                    product_code=product_code,
+                    order_flag_avrg=order_flags['average'],
+                    order_flag_exp=order_flags['exp'],
+                    order_flag_holt=order_flags['holt'],
+                    order_avrg=orders['average'],
+                    order_exp=orders['exp'],
+                    order_holt=orders['holt'],
+                    current_date=jalali_date,
+                    current_stock=stock,
+                    weight=weight,
+                    average_sale=np.mean(all_sales),
+                    is_active=is_active,
+                    is_ordered=False
+                )
+                order_list.save()
 
 class OrderListView(APIView):
     permission_classes = (IsAuthenticated,)
