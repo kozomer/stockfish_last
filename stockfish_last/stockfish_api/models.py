@@ -146,6 +146,10 @@ class Salers(models.Model):
     monthly_total_sales_rating = models.FloatField(null=True)
     receipment_rating = models.FloatField(null=True)
     is_active = models.BooleanField(default=True)
+    is_deleted = models.BooleanField(default=False)
+    is_active_saler = models.BooleanField()
+    is_passive_saler = models.BooleanField()
+
 
 class SalerPerformance(models.Model):
     name = models.CharField(max_length=100)

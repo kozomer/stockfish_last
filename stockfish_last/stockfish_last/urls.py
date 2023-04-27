@@ -16,7 +16,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from stockfish_api.views import ( AddCustomersView, AddSalesView, AddProductsView, AddWarehouseView, AddSalerView,
-                                 ViewSalesView,  ViewWarehouseView, ViewProductsView, ChartView, ItemListView, ViewCustomersView, CollapsedSalerView, SalerView, SalesReportView, ROPView, OrderListView,
+                                 ViewSalesView,  ViewWarehouseView, ViewProductsView, ChartView, ItemListView, ViewCustomersView, CollapsedSalerView, SalerCardView, SalerTableView, SalesReportView, ROPView, OrderListView,
                                  DeleteSaleView, DeleteCustomerView, DeleteProductView, DeleteSalerView, DeleteWarehouseView,
                                  EditProductView, EditCustomerView, EditSaleView, EditWarehouseView,  EditSalerView, EditOrderListView,  EditGoodsOnRoadView,
                                  LoginView, LogoutView,
@@ -55,7 +55,8 @@ urlpatterns = [
     path('api/warehouse/', ViewWarehouseView.as_view(), name='view_warehouse'),
     path('api/charts/', ChartView.as_view(), name='view_charts'),
     path('api/products/', ViewProductsView.as_view(), name='view_pricelists'),
-    path('api/salers/', SalerView.as_view(), name='view_saler'),
+    path('api/salers_card/', SalerCardView.as_view(), name='view_saler_card'),
+    path('api/salers_table/', SalerTableView.as_view(), name='view_saler_table'),
     path('api/collapsed_salers/', CollapsedSalerView.as_view(), name='view_saler_collapsed'),
     path('api/rop/', ROPView.as_view(), name='view_rop'),
     path('api/order_list/', OrderListView.as_view(), name='order_list'),
