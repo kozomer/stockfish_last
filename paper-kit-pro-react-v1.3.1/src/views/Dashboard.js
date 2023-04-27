@@ -770,7 +770,7 @@ function Dashboard() {
               <Row>
                 <Col xs="5">
                   <CardHeader>
-                    <CardTitle tag="h4">Top Five Products</CardTitle>
+                    <CardTitle tag="h4">Top Five Areas</CardTitle>
 
                   </CardHeader>
                 </Col>

@@ -659,10 +659,10 @@ const [editingRow, setEditingRow] = useState(null);
                     onChange={handleNewTruckInputChange}
                   />
                 </FormGroup>
-                <Button onClick={handleNewTruckSubmit} color="primary">
+                <Button  className="btn-round" color="success" type="submit" onClick={handleNewTruckSubmit} >
                   Submit
                 </Button>
-                <Button onClick={handleCancelForm} color="secondary">
+                <Button className="btn-round" color="danger" type="submit" onClick={handleCancelForm} >
                   Cancel
                 </Button>
               </Form>
