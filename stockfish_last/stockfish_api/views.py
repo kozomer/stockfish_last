@@ -1051,18 +1051,9 @@ class AddSalerView(APIView):
     def post(self, request, *args, **kwargs):
         try:
             data = json.loads(request.body)
+            print(data)
             jalali_date = data.get("job_start_date").split("-")
             saler_type = data.get("saler_type")
-            if saler_type == "Active":
-                bool_active_saler = True
-                bool_passive_saler = False
-                experience_rating = calculate_experience_rating(jalali_date)
-            else:
-                bool_active_saler = False
-                bool_passive_saler = True
-                experience_rating = calculate_passive_saler_experience_rating(jalali_date)
-                
-            jalali_current_date = current_jalali_date()
             try:
                 jalali_date = jdatetime.date(int(jalali_date[0]), int(jalali_date[1]), int(jalali_date[2]))
             except ValueError:
@@ -1073,6 +1064,18 @@ class AddSalerView(APIView):
                 return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD'"}, status=400)
             if the_man_from_future(jalali_date):
                 return JsonResponse({'error': "HERE'S THE MAN FROM THE FUTURE TO SAVE US ALL!!!! Job Start Date cannot be future time, please check it :) "}, status=400)
+            
+            if saler_type == "Active":
+                bool_active_saler = True
+                bool_passive_saler = False
+                experience_rating = calculate_experience_rating(jalali_date)
+            else:
+                bool_active_saler = False
+                bool_passive_saler = True
+                experience_rating = calculate_passive_saler_experience_rating(jalali_date)
+                
+            jalali_current_date = current_jalali_date()
+           
 
             saler = Salers(
                 name = data.get("name"),
@@ -1092,7 +1095,8 @@ class AddSalerView(APIView):
         except ValueError as e:
             return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD' "}, status=400)
         except Exception as e:
-             return JsonResponse({'error': str(e)}, status=500)
+            traceback.print_exc()
+            return JsonResponse({'error': str(e)}, status=500)
 
 class EditSalerView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -1101,6 +1105,7 @@ class EditSalerView(APIView):
     def post(self, request, *args, **kwargs):
         try:
             data = json.loads(request.body)
+            print(data)
 
             old_data = data.get('old_data')
             new_data = data.get('new_data')
@@ -1108,11 +1113,12 @@ class EditSalerView(APIView):
             # Check if name is provided
             name = new_data['name']
             if not name:
+                traceback.print_exc()
                 return JsonResponse({'error': "Missing required parameter: 'name'"}, status=400)
             
             # Get the saler object
             saler = Salers.objects.get(id=old_data['id'])
-
+            print(saler)
             
             if saler.is_active_saler == True and saler.is_active_saler == False:
                 # Update other saler fields
@@ -1122,51 +1128,64 @@ class EditSalerView(APIView):
                             new_date =new_data['job_start_date'].split("-")
                             date = jdatetime.date(int(new_date[0]), int(new_date[1]), int(new_date[2]))
                             saler.experience_rating = calculate_experience_rating(date)
+                            print("active: ",saler.experience_rating)
                         except ValueError:
                             return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD'"}, status=400)
                         except IndexError as e:
                             return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD'"}, status=400)
                         except Exception as e:
+                            traceback.print_exc()
                             return JsonResponse({'error': str(e)}, status=400)
                     value = new_data[f'{field}']
 
                     if value is not None and value != '':
                         setattr(saler, field, value)
-                    else: 
+                    else:
+                        traceback.print_exc() 
                         return JsonResponse({'error': "One or more data field is empty!"}, status=400)
 
 
                 saler.save()
                 return JsonResponse({'message': "Your changes have been successfully saved"}, status=200)
             else:
-                # Update other saler fields
-                for field in ['name', 'job_start_date', 'manager_performance_rating', 'is_active']:
-                    if field == "job_start_date":
-                        try:
-                            new_date =new_data['job_start_date'].split("-")
-                            date = jdatetime.date(int(new_date[0]), int(new_date[1]), int(new_date[2]))
-                            saler.experience_rating = calculate_passive_saler_experience_rating(date)
-                        except ValueError:
-                            return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD'"}, status=400)
-                        except IndexError as e:
-                            return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD'"}, status=400)
-                        except Exception as e:
-                            return JsonResponse({'error': str(e)}, status=400)
-                    value = new_data[f'{field}']
+                try:
+                    # Update other saler fields
+                    for field in ['name', 'job_start_date', 'manager_performance_rating', 'is_active']:
+                        if field == "job_start_date":
+                            try:
+                                new_date =new_data['job_start_date'].split("-")
+                                date = jdatetime.date(int(new_date[0]), int(new_date[1]), int(new_date[2]))
+                                print("date:",date)
+                                saler.experience_rating = calculate_passive_saler_experience_rating(date)
+                                print("passive: ",saler.experience_rating)
+                            except ValueError:
+                                return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD'"}, status=400)
+                            except IndexError as e:
+                                return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD'"}, status=400)
+                            except Exception as e:
+                                return JsonResponse({'error': str(e)}, status=400)
+                        value = new_data[f'{field}']
 
-                    if value is not None and value != '':
-                        setattr(saler, field, value)
-                    else: 
-                        return JsonResponse({'error': "One or more data field is empty!"}, status=400)
+                        if value is not None and value != '':
+                            setattr(saler, field, value)
+                        else:
+                            traceback.print_exc() 
+                            return JsonResponse({'error': "One or more data field is empty!"}, status=400)
 
 
-                saler.save()
-                return JsonResponse({'message': "Your changes have been successfully saved"}, status=200)
+                    saler.save()
+                    return JsonResponse({'message': "Your changes have been successfully saved"}, status=200)
+                except Exception as e:
+                    traceback.print_exc()
+                    return JsonResponse({'error': str(e)}, status=500)
+
 
         except Salers.DoesNotExist:
+            traceback.print_exc()
             return JsonResponse({'error': "Saler not found"}, status=400)
 
         except ValueError as e:
+            traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=400)
 
         except Exception as e:
@@ -1178,13 +1197,17 @@ class EditSalerView(APIView):
 class CollapsedSalerView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
+    
     def get(self, request, *args, **kwargs):
-        active_salers = Salers.objects.filter(is_deleted = False, is_active_saler = True)
-        active_salers_list = [[saler['id'], saler['name'], saler['is_active']] for saler in active_salers]
-        passive_salers = Salers.objects.filter(is_deleted = False, is_passive_saler = True)
-        passive_salers_list = [[saler['id'], saler['name'], saler['is_active']] for saler in passive_salers]
+        active_salers = Salers.objects.filter(is_deleted=False, is_active_saler=True)
+        print(active_salers)
+        active_salers_list = [[saler.id, saler.name, saler.is_active] for saler in active_salers]
+        passive_salers = Salers.objects.filter(is_deleted=False, is_passive_saler=True)
+        passive_salers_list = [[saler.id, saler.name, saler.is_active] for saler in passive_salers]
+        
         return JsonResponse({"active_salers_list": active_salers_list,
                              "passive_salers_list": passive_salers_list}, safe=False)
+
 
     
  # Everyday experience rating must be automatically updated !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   
@@ -1218,10 +1241,10 @@ class SalerTableView(APIView):
 
     def get(self, request, *args, **kwargs):
         salers = Salers.objects.filter(is_deleted=False).values()
-        saler_list = [[s['id'], s['name'], s['job_start_date'], s['manager_performance_rating'],
-                       s['experience_rating'], s['monthly_total_sales_rating'], s['receipment_rating'], s['is_active'], s['is_active_saler'] ,s['is_passivee_saler']] for s in salers]
+        saler_list = [[s['id'], s['name'], s['job_start_date'].strftime('%Y-%m-%d'), s['manager_performance_rating'],
+                       s['experience_rating'], s['monthly_total_sales_rating'], s['receipment_rating'], s['is_active'], s['is_active_saler'] ,s['is_passive_saler']] for s in salers]
         
-        
+        print(saler_list)
         return JsonResponse(saler_list, safe=False)
 
 class DeleteSalerView(APIView):
@@ -1232,8 +1255,10 @@ class DeleteSalerView(APIView):
             data = json.loads(request.body)
             id = data.get('id')
             saler = Salers.objects.get(id=id)
+            print("saler: ", saler)
             saler.is_deleted = True
             saler.is_active = False
+            saler.save()
 
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)

@@ -37,6 +37,7 @@ import Switch from "react-bootstrap-switch";
 import '../../assets/css/Table.css';
 import ReactBSAlert from "react-bootstrap-sweetalert";
 import localforage from 'localforage';
+import ReactTable from 'components/ReactTable/ReactTable.js';
 
 function UserProfile() {
 
@@ -56,6 +57,9 @@ function UserProfile() {
 
   const [isActive, setIsActive] = useState("");
   const [activity, setActivity] = useState(false);
+  const [newSalerType, setNewSalerType] = useState("active");
+  const [salerTableData, setSalerTableData] = useState([]);
+
   const handleSelectMember = async (member) => {
 
     setSelectedSaler(member);
@@ -65,7 +69,7 @@ function UserProfile() {
     console.log(saler_id)
 
     const access_token = await localforage.getItem('access_token');
-    fetch('http://127.0.0.1:8000/api/salers/', {
+    fetch('http://127.0.0.1:8000/api/salers_card/', {
       method: 'POST',
       body: JSON.stringify(saler_id),
       headers: {
@@ -91,7 +95,7 @@ function UserProfile() {
     const newSaler = {
       name: newSalerName,
       job_start_date: newSalerStatus,
-
+      saler_type: newSalerType,
     };
     console.log(newSaler)
     fetch("http://127.0.0.1:8000/api/add_salers/", {
@@ -107,7 +111,7 @@ function UserProfile() {
           return response.json().then(data => {
             console.log(data.error)
             errorUpload(data.error);
-            throw new Error(data.error);
+
           });
         } else {
           return response.json().then(data => {
@@ -135,8 +139,12 @@ function UserProfile() {
     })
       .then(response => response.json())
       .then(data => {
-        setSalers(data);
-        console.log(data[3])
+        console.log(data)
+        setSalers({
+          active_salers_list: data.active_salers_list,
+          passive_salers_list: data.passive_salers_list,
+        });
+
       })
       .catch(error => console.log(error));
   }
@@ -145,37 +153,72 @@ function UserProfile() {
     fetchSalersData();
   }, []);
 
+
+  const fetchSalerTableData = async () => {
+    const access_token = await localforage.getItem('access_token');
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/salers_table/", {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + String(access_token)
+        },
+      });
+      const data = await response.json();
+      console.log(data)
+      setSalerTableData(data);
+    } catch (error) {
+      console.error("Error fetching saler table data:", error);
+    }
+  };
   // Whenever sales data is updated, call the fetchSalersData function
   function handleSalesDataChange() {
     // update sales data
     fetchSalersData();
   }
 
+  useEffect(() => {
+    fetchSalerTableData();
+  }, []);
 
   const handleInputChange = (event) => {
-
-
     const { name, value } = event.target;
     console.log(name, value);
-    const newValue = parseFloat(value);
-
-
-    setFormData((prevFormData) => ({ ...prevFormData, [name]: newValue }));
-
+  
+    // Check if the field requires a float value
+    const floatFields = [
+      "experience_rating",
+      "monthly_total_sales_rating",
+      "receipment_rating",
+      "manager_performance_rating",
+    ];
+  
+    if (floatFields.includes(name)) {
+      const newValue = parseFloat(value);
+      setFormData((prevFormData) => ({ ...prevFormData, [name]: newValue }));
+    } else {
+      setFormData((prevFormData) => ({ ...prevFormData, [name]: value }));
+    }
   };
+  
 
 
   const handleSave = () => {
     // Create an object with the new data
     console.log(isActive)
     if (isActive === "") {
-      console.log("asdadasdas")
+      console.log("asdadasdas");
       setIsActive(salersWholeData["is_active"]);
-      console.log(salersWholeData["is_active"])
+      console.log(salersWholeData["is_active"]);
     }
-    // Do something with the new data, e.g. send it to the server
-    // ...
-    const newData = { ...formData, is_active: isActive };
+  
+    // Update the formData with the latest values
+    const newData = {
+      ...salersWholeData,
+      ...formData,
+      is_active: isActive,
+    };
+
+
     editSalers()
     async function editSalers() {
 
@@ -353,65 +396,137 @@ function UserProfile() {
               </CardHeader>
               <CardBody>
                 <ul className="list-unstyled team-members">
-                  {salers.map((saler) => (
-                    <li key={saler[0]}>
-                      <div className="mb-3">
-                        <Row className="align-items-center" style={{ marginBottom: "10px" }}>
-                          <Col md="1" xs="1" className="d-flex justify-content-center">
-                            <div
-                              style={{
-                                backgroundColor: saler[2] ? "light-green" : "red",
-                                width: "10px",
-                                height: "10px",
-                                borderRadius: "50%",
-                              }}
-                            />
-                          </Col>
-                          <Col md="7" xs="7" className="d-flex align-items-center" style={{ marginRight: "10px" }}>
-                            <span style={{ fontWeight: "bold" }}>{saler[1].toUpperCase()}</span>{" "}
-                            <br />
-                            <span className="text-muted">
-                              {saler[2] ? (
-                                <small style={{ marginLeft: "15px" }}>active</small>
-                              ) : (
-                                <small style={{ marginLeft: "15px" }}>inactive</small>
-                              )}
-                            </span>
-                          </Col>
-                          <Col
-                            className="text-left d-flex justify-content-center"
-                            md="3"
-                            xs="3"
-                            style={{ marginBottom: "3px", marginTop: "3px", paddingBottom: "5px" }}
-                          >
-                            <FormGroup check>
-                              <Label check>
-                                <Input
-                                  type="checkbox"
-                                  checked={selectedSaler === saler[0]}
-                                  onChange={() => handleSelectMember(saler[0])}
+
+                  {salers && salers.active_salers_list && (
+                    <>
+                      <h6 className="subheader">Active</h6>
+                      {salers.active_salers_list.map((saler) => (
+                        <li key={saler[0]}>
+                          <div className="mb-3">
+                            <Row className="align-items-center" style={{ marginBottom: "10px" }}>
+                              <Col md="1" xs="1" className="d-flex justify-content-center">
+                                <div
+                                  style={{
+                                    backgroundColor: saler[2] ? "light-green" : "red",
+                                    width: "10px",
+                                    height: "10px",
+                                    borderRadius: "50%",
+                                  }}
                                 />
-                                <span className="form-check-sign" />
-                              </Label>
-                            </FormGroup>
-                            <Button
-                              className="btn-round btn-icon"
-                              color="danger"
-                              size="sm"
-                              style={{ top: "2.5px" }}
-                              onClick={() => warningWithConfirmAndCancelMessage(saler[0])}
-                              outline
-                            >
-                              <i className="nc-icon nc-simple-remove" />
-                            </Button>
-                          </Col>
-                        </Row>
+                              </Col>
+                              <Col md="7" xs="7" className="d-flex align-items-center" style={{ marginRight: "10px" }}>
+                                <span style={{ fontWeight: "bold" }}>{saler[1].toUpperCase()}</span>{" "}
+                                <br />
+                                <span className="text-muted">
+                                  {saler[2] ? (
+                                    <small style={{ marginLeft: "15px" }}>active</small>
+                                  ) : (
+                                    <small style={{ marginLeft: "15px" }}>inactive</small>
+                                  )}
+                                </span>
+                              </Col>
+                              <Col
+                                className="text-left d-flex justify-content-center"
+                                md="3"
+                                xs="3"
+                                style={{ marginBottom: "3px", marginTop: "3px", paddingBottom: "5px" }}
+                              >
+                                <FormGroup check>
+                                  <Label check>
+                                    <Input
+                                      type="checkbox"
+                                      checked={selectedSaler === saler[0]}
+                                      onChange={() => handleSelectMember(saler[0])}
+                                    />
+                                    <span className="form-check-sign" />
+                                  </Label>
+                                </FormGroup>
+                                <Button
+                                  className="btn-round btn-icon"
+                                  color="danger"
+                                  size="sm"
+                                  style={{ top: "2.5px" }}
+                                  onClick={() => warningWithConfirmAndCancelMessage(saler[0])}
+                                  outline
+                                >
+                                  <i className="nc-icon nc-simple-remove" />
+                                </Button>
+                              </Col>
+                            </Row>
 
 
-                      </div>
+                          </div>
 
-                    </li>
-                  ))}
+                        </li>
+                      ))}
+                    </>
+                  )}
+
+                  {salers && salers.passive_salers_list && (
+                    <>
+                      <h6 className="subheader">Passive</h6>
+                      {salers.passive_salers_list.map((saler) => (
+                        <li key={saler[0]}>
+                          <div className="mb-3">
+                            <Row className="align-items-center" style={{ marginBottom: "10px" }}>
+                              <Col md="1" xs="1" className="d-flex justify-content-center">
+                                <div
+                                  style={{
+                                    backgroundColor: saler[2] ? "light-green" : "red",
+                                    width: "10px",
+                                    height: "10px",
+                                    borderRadius: "50%",
+                                  }}
+                                />
+                              </Col>
+                              <Col md="7" xs="7" className="d-flex align-items-center" style={{ marginRight: "10px" }}>
+                                <span style={{ fontWeight: "bold" }}>{saler[1].toUpperCase()}</span>{" "}
+                                <br />
+                                <span className="text-muted">
+                                  {saler[2] ? (
+                                    <small style={{ marginLeft: "15px" }}>active</small>
+                                  ) : (
+                                    <small style={{ marginLeft: "15px" }}>inactive</small>
+                                  )}
+                                </span>
+                              </Col>
+                              <Col
+                                className="text-left d-flex justify-content-center"
+                                md="3"
+                                xs="3"
+                                style={{ marginBottom: "3px", marginTop: "3px", paddingBottom: "5px" }}
+                              >
+                                <FormGroup check>
+                                  <Label check>
+                                    <Input
+                                      type="checkbox"
+                                      checked={selectedSaler === saler[0]}
+                                      onChange={() => handleSelectMember(saler[0])}
+                                    />
+                                    <span className="form-check-sign" />
+                                  </Label>
+                                </FormGroup>
+                                <Button
+                                  className="btn-round btn-icon"
+                                  color="danger"
+                                  size="sm"
+                                  style={{ top: "2.5px" }}
+                                  onClick={() => warningWithConfirmAndCancelMessage(saler[0])}
+                                  outline
+                                >
+                                  <i className="nc-icon nc-simple-remove" />
+                                </Button>
+                              </Col>
+                            </Row>
+
+
+                          </div>
+
+                        </li>
+                      ))}
+
+                    </>
+                  )}
                   <li>
                     <Row className="text-left align-items-center" >
                       <Col md="2" xs="2">
@@ -448,12 +563,25 @@ function UserProfile() {
                           <FormGroup>
                             <Label for="newSalerStatus">Job Start Date (YYYY-MM-DD)</Label>
                             <Input
-
                               type="text"
                               id="newSalerStatus"
+                              
                               value={newSalerStatus}
                               onChange={(e) => setNewSalerStatus(e.target.value)}
                             />
+                          </FormGroup>
+                          {/* Add new FormGroup for the dropdown */}
+                          <FormGroup>
+                            <Label for="newSalerType">Saler Type</Label>
+                            <Input
+                              type="select"
+                              id="newSalerType"
+                              value={newSalerType}
+                              onChange={(e) => setNewSalerType(e.target.value)}
+                            >
+                              <option value="active">Active</option>
+                              <option value="passive">Passive</option>
+                            </Input>
                           </FormGroup>
                           <Button className="btn-round" color="success" type="submit" onClick={handleAddSaler} disabled={!newSalerName || !newSalerStatus}>
                             Save
@@ -465,6 +593,7 @@ function UserProfile() {
                       </Row>
                     </li>
                   )}
+
                 </ul>
               </CardBody>
             </Card>
@@ -477,6 +606,10 @@ function UserProfile() {
                 <h5 className="title" style={{ textTransform: "uppercase" }}>
                   {salersWholeData["name"]}
                 </h5>
+                <small className="text-muted" 
+                 style={{ fontSize: "1.1em", fontWeight: "bold" }}>
+    {salersWholeData["active_or_passive"] === "Active" ? "Active Saler" : "Passive Saler"}
+  </small>
 
               </CardHeader>
               <CardBody>
@@ -499,18 +632,18 @@ function UserProfile() {
                         <label>Activity</label>
                         <br></br>
                         <Input
-                          name="activity"
-                          type="select"
-                          value={salersWholeData["is_active"] ? "Active" : "Inactive"}
-                          onChange={(e) => {
-                            const value = e.target.value === "Active";
-                            setIsActive(value);
-                          }}
-                        >
-
-                          <option value="Active">Active</option>
-                          <option value="Inactive">Inactive</option>
-                        </Input>
+  name="activity"
+  type="select"
+  value={salersWholeData["is_active"] ? "Active" : "Inactive"}
+  onChange={(e) => {
+    const value = e.target.value === "Active";
+    setIsActive(value);
+    setSalersWholeData({ ...salersWholeData, is_active: value });
+  }}
+>
+  <option value="Active">Active</option>
+  <option value="Inactive">Inactive</option>
+</Input>
 
 
 
@@ -523,7 +656,7 @@ function UserProfile() {
                       <FormGroup>
                         <label>Experience Rating</label>
                         <Input
-                          
+
                           defaultValue={salersWholeData["experience_rating"]}
                           onChange={handleInputChange}
                           placeholder="Exp. Rating"
@@ -535,7 +668,7 @@ function UserProfile() {
                       <FormGroup>
                         <label>Monthly Total Sales Rating</label>
                         <Input
-                          
+
                           defaultValue={salersWholeData["monthly_total_sales_rating"]}
                           onChange={handleInputChange}
                           placeholder="Mont. Tot. Sales Rating"
@@ -549,7 +682,7 @@ function UserProfile() {
                       <FormGroup>
                         <label>Receipment Rating</label>
                         <Input
-                          
+
                           defaultValue={salersWholeData["receipment_rating"]}
                           onChange={handleInputChange}
                           placeholder="Receipment Rating"
@@ -580,8 +713,89 @@ function UserProfile() {
                 <Button className="btn-round" color="success" type="submit" onClick={handleSave}>Save</Button>
               </CardFooter>
             </Card>
-          </Col>
+          
+
+        
+          
+            <Card>
+              <CardHeader >
+                <h5 className="title" >
+                  SALERS
+                </h5>
+
+              </CardHeader>
+              <CardBody>
+
+
+
+                <ReactTable
+                  data={salerTableData.map((row) => ({
+                    id: row[0],
+                    name: row[1],
+                    job_start_date: row[2],
+                    manager_performance_rating: row[3],
+                    experience_rating: row[4],
+                    monthly_total_sales_rating: row[5],
+                    receipment_rating: row[6],
+                    is_active: row[7],
+                    is_active_saler: row[8],
+                    is_passivee_saler: row[9],
+                  }))}
+                  columns={[
+                    {
+                      Header: "ID",
+                      accessor: "id",
+                    },
+                    {
+                      Header: "Name",
+                      accessor: "name",
+                    },
+                    {
+                      Header: "Job Start Date",
+                      accessor: "job_start_date",
+                    },
+                    {
+                      Header: "M. Performance Rating",
+                      accessor: "manager_performance_rating",
+                    },
+                    {
+                      Header: "Experience Rating",
+                      accessor: "experience_rating",
+                    },
+                    {
+                      Header: "Monthly Total Sales Rating",
+                      accessor: "monthly_total_sales_rating",
+                    },
+                    {
+                      Header: "Receipment Rating",
+                      accessor: "receipment_rating",
+                    },
+                    {
+                      Header: "Is Active",
+                      accessor: "is_active",
+                      Cell: ({ value }) => (value ? "Active" : "Inactive"),
+                    },
+                    {
+                      Header: "Is Active Saler",
+                      accessor: "is_active_saler",
+                      Cell: ({ value }) => (value ? "Yes" : "No"),
+                    },
+                    {
+                      Header: "Is Passive Saler",
+                      accessor: "is_passivee_saler",
+                      Cell: ({ value }) => (value ? "Yes" : "No"),
+                    },
+                  ]}
+                  defaultPageSize={10}
+                  className="-striped -highlight"
+                />
+
+              </CardBody>
+
+            </Card>
+            </Col>
         </Row>
+        
       </div>
     </>
   );
