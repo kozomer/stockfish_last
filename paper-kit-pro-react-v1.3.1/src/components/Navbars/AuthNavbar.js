@@ -41,8 +41,13 @@ function AuthNavbar(props) {
     >
       <Container>
         <div className="navbar-wrapper">
-          <NavbarBrand href="#pablo" onClick={(e) => e.preventDefault()}>
-            STOCKFISH
+          <NavbarBrand href="#pablo" onClick={(e) => e.preventDefault()}
+          style={{ color: 'white',
+          fontWeight: 'bold',
+          fontSize: '2.2rem', // Adjust the size as desired
+         
+          paddingBottom: '5px'  }}>
+            VIVID STOCKFISH
           </NavbarBrand>
         </div>
         <button
@@ -54,9 +59,7 @@ function AuthNavbar(props) {
           type="button"
           onClick={toggleCollapse}
         >
-          <span className="navbar-toggler-bar navbar-kebab" />
-          <span className="navbar-toggler-bar navbar-kebab" />
-          <span className="navbar-toggler-bar navbar-kebab" />
+         
         </button>
         <Collapse isOpen={collapseOpen} className="justify-content-end" navbar>
           {showNavbarItems && (

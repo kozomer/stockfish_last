@@ -96,74 +96,76 @@ function Login({ history }) {
 
   return (
     <div className="login-page">
-      <Container>
-        <Row>
-          <Col className="ml-auto mr-auto" lg="4" md="6">
-            <Form action="" className="form" method="">
-              <Card className="card-login" >
-                <CardHeader>
-                  <CardHeader>
-                    <h3 className="header text-center">Login</h3>
-                  </CardHeader>
-                </CardHeader>
-                <CardBody style={{marginLeft:"10px", marginRight:"10px"}} >
-                  <InputGroup>
-                   
-                    <Input
-                      placeholder="Username"
-                      type="suername"
-                      value={username}
-                      onChange={handleEmailChange}
-                      style={{ 
-                       
-                        borderLeft:"1px solid #dedede",
-                        borderRight:"1px solid #dedede"
-                      }}
-                    />
-                  </InputGroup>
-                  <InputGroup >
+     <Container>
+  <Row>
+    <Col className="ml-auto mr-auto" lg="4" md="6">
+      <Form
+        action=""
+        className="form"
+        method=""
+        
+        
+      >
+        <Card className="card-login">
+          <CardHeader>
+            <CardHeader>
+              <h3 className="header text-center">Login</h3>
+            </CardHeader>
+          </CardHeader>
+          <CardBody style={{ marginLeft: "10px", marginRight: "10px" }}>
+            <InputGroup>
+              <Input
+                placeholder="Username"
+                type="suername"
+                value={username}
+                onChange={handleEmailChange}
+                style={{
+                  borderLeft: "1px solid #dedede",
+                  borderRight: "1px solid #dedede",
+                }}
+              />
+            </InputGroup>
+            <InputGroup>
+              <Input
+                placeholder="Password"
+                type="password"
+                autoComplete="off"
+                value={password}
+                onChange={handlePasswordChange}
+                style={{
+                  border: error ? "0.5px solid #D32F2F" : "",
+                  boxShadow: error ? "0 0 10px rgba(255, 0, 0, 0.5)" : "",
+                  borderLeft: "1px solid #dedede",
+                  borderRight: "1px solid #dedede",
+                }}
+                onKeyPress={(event) => {
+                  if (event.key === "Enter") {
+                    handleSubmit(event);
                     
+                  }
+                }}
+              />
+            </InputGroup>
+            {error && <p style={{ color: "red" }}>{error}</p>}
+            <br />
+          </CardBody>
+          <CardFooter className="d-flex justify-content-center">
+            <Button type="submit" className="my-button-class" color="primary" onClick={handleSubmit}>
+              LOGIN
+            </Button>
+          </CardFooter>
+        </Card>
+      </Form>
+    </Col>
+  </Row>
+</Container>
+<div
+  className="full-page-background"
+  style={{
+    backgroundImage: `url(${require("assets/img/bg/fabio-mangione.jpg")})`,
+  }}
+/>
 
-                    <Input
-    placeholder="Password"
-    type="password"
-    autoComplete="off"
-    value={password}
-    onChange={handlePasswordChange}
-    style={{ 
-      border: error ? '0.5px solid #D32F2F' : '',
-      boxShadow: error ? '0 0 10px rgba(255, 0, 0, 0.5)' : '',
-      borderLeft:"1px solid #dedede",
-      borderRight:"1px solid #dedede"
-    }}
-    onKeyPress={(event) => {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        handleSubmit();
-      }
-    }}
-  />
-                  </InputGroup>
-                  {error && <p style={{ color: 'red' }}>{error}</p>}
-                  <br />
-                
-                </CardBody>
-                <CardFooter  className="d-flex justify-content-center">
-                  <Button onClick={handleSubmit}  className="my-button-class" color="primary">
-                    LOGIN
-                  </Button>
-                </CardFooter>
-              </Card>
-            </Form>
-          </Col>
-        </Row>
-      </Container>
-      <div
-        className="full-page-background"
-        style={{
-          backgroundImage: `url(${require("assets/img/bg/fabio-mangione.jpg")})`
-        }}
-      />
     </div>
   );
 }
