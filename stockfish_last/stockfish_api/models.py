@@ -191,7 +191,7 @@ class MonthlyProductSales(models.Model):
 
 class CustomerPerformance(models.Model):
     objects = jmodels.jManager()
-    customer_code = models.IntegerField(unique= True)
+    customer_code = models.IntegerField()
     customer_name = models.CharField(max_length=100)
     customer_area = models.CharField(max_length=100)
     year = models.IntegerField(null=True)

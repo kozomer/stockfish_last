@@ -52,8 +52,6 @@ def the_man_from_future(job_start_date):
         return False
 
 def calculate_sale_rating(sale_amount):
-    print(type(sale_amount))
-
     if 1000 <= sale_amount:
         return 1.30
     elif 750 <= sale_amount < 1000:
@@ -91,7 +89,6 @@ def generate_year_month_sequence(start_year, start_month, end_year, end_month):
     return [(year, month) for year, month in product(years, months) if (int(year), int(month)) >= (int(start_year), int(start_month)) and (int(year), int(month)) <= (int(end_year), int(end_month))]
 def convert_daily_to_monthly(daily_sales):
     daily_sales.sort(key=lambda x: (x[2], x[1], x[0]))  # Sort daily sales by date
-    print(daily_sales)
 
     _, start_month, start_year, _, _ = daily_sales[0]
     _, end_month, end_year, _, _ = daily_sales[-1]
@@ -113,7 +110,6 @@ def get_sale_array(product_sales, dim):
     return [sublist[dim] for sublist in product_sales]
 def forecast_by_average(sales, prev_forecast_period, future_forecast_period):
     ave = np.mean(sales[-prev_forecast_period:])
-    print(sales[-prev_forecast_period:])
     return [ave for _ in range(future_forecast_period)]
 def forecast_by_exp(sales, prev_forecast_period, future_forecast_period):
     fit_data = SimpleExpSmoothing(sales, initialization_method = "estimated").fit()
@@ -173,16 +169,12 @@ def dynamic_correction(monthly_sales, current_date):
 def get_model(model, is_dynamic, current_date, product_code, product_sales, current_stock, lead_time, service_level, prev_forecast_period, future_forecast_period):
     lead_time = lead_time
     service_level = service_level
-    print("product_sales_first: ", product_sales)
     bools = filter_product_sales(product_sales, product_code, dim=3)
-    print("bools: ", bools)
     product_sales = remove_product_sales_by_boolean(product_sales, bools)
-    print("product_sales: ",product_sales )
     monthly_sales = convert_daily_to_monthly(product_sales)
     if is_dynamic:
         monthly_sales = dynamic_correction(monthly_sales, current_date)
     prev_sales = get_sale_array(monthly_sales, dim=2)
-    print('prev_sales:', prev_sales)
     if model == 'average':
         future_sales = forecast_by_average(prev_sales,prev_forecast_period, future_forecast_period)
     elif model == 'holt':
@@ -191,6 +183,7 @@ def get_model(model, is_dynamic, current_date, product_code, product_sales, curr
         future_sales = forecast_by_exp(prev_sales,prev_forecast_period, future_forecast_period)
     future_stocks = simulate_future_stocks(current_stock,future_sales)
     all_sales = np.concatenate((prev_sales, future_sales))
+    print("service_level: ",create_service_level_service_factor(service_level) )
     safety_stock = create_service_level_service_factor(service_level) * np.std(all_sales)
 
     order_flag = any(num < safety_stock for num in future_stocks[0:lead_time])

@@ -1254,8 +1254,6 @@ def update_sale_summary_with_add_sale(sender, instance, created, **kwargs):
     else:
         # Check which fields have been updated
         dirty_fields = instance.get_dirty_fields()
-        print("dirty fields: ", dirty_fields)
-        print("dirtyyy")
 
         # Update the corresponding attributes of the SaleSummary instance based on the updated fields
         if 'net_sales' in dirty_fields:
@@ -1708,9 +1706,7 @@ class SalerDataView(APIView):
                     yearly_sale / 10
                 ])
 
-        print(combined_data)
         response_data = {"jalali_date": jalali_date_now_str, "sales_data": combined_data}
-        print("RESPONSE DATA: ",response_data)
 
         return JsonResponse(response_data, safe=False)
         
@@ -2192,6 +2188,8 @@ class ROPView(APIView):
         avrg_future_forecast_dates = generate_future_forecast_dates(len(avrg_future_sales))
         exp_future_forecast_dates = generate_future_forecast_dates(len(exp_future_sales))
         holt_future_forecast_dates = generate_future_forecast_dates(len(holt_future_sales))
+        print("avrg_future_forecast_dates: ", avrg_future_forecast_dates)
+        print("holt_order: ", holt_order)
         item = ROP.objects.get(product_code_ir = product_code)
         rop_list = rop_list = [
                 item.group,
@@ -2278,8 +2276,7 @@ def create_sales_signal(sender, instance, created, **kwargs):
         product_code = instance.product_code
         product_values = ProductPerformance.objects.filter(product_code=product_code)
         product_values = [[1, item.month, item.year, item.product_code, item.sale_amount] for item in product_values]
-        print(product_values)
-        weight = Products.objects.get(product_code_ir = product_code)
+        weight = Products.objects.get(product_code_ir = product_code).weight
         try:
             last_sales = MonthlyProductSales.objects.filter(product_code=product_code).values("date").latest("date")
             last_sale_date = last_sales["date"].strftime('%Y-%m-%d')
@@ -2319,7 +2316,8 @@ def create_sales_signal(sender, instance, created, **kwargs):
                 current_stock=stock,
                 weight=weight,
                 average_sale=np.mean(all_sales),
-                is_active=is_active
+                is_active=is_active,
+                is_ordered= False
             )
             order_list.save()
 
