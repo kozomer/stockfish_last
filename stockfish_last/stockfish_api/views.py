@@ -8,7 +8,7 @@ from django.http import JsonResponse, HttpResponse
 import json
 from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
-from .definitions import jalali_to_greg, greg_to_jalali, calculate_experience_rating, calculate_sale_rating, current_jalali_date, get_exchange_rate, get_model, generate_future_forecast_dates, the_man_from_future
+from .definitions import jalali_to_greg, greg_to_jalali, calculate_experience_rating, calculate_sale_rating, calculate_passive_saler_experience_rating, current_jalali_date, get_exchange_rate, get_model, generate_future_forecast_dates, the_man_from_future
 from datetime import datetime
 import datetime
 import jdatetime
@@ -130,9 +130,12 @@ class DeleteCustomerView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
-        customer_code = request.POST.get('customer_code')
-        Customers.objects.filter(customer_code=customer_code).delete()
-        return HttpResponse('OK')
+        try:
+            customer_code = request.POST.get('customer_code')
+            Customers.objects.filter(customer_code=customer_code).delete()
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+        return JsonResponse({'message': "Customer object has been successfully deleted"}, status=200)
 
 
 class EditCustomerView(APIView):
@@ -392,7 +395,7 @@ class AddSalesView(APIView):
                     warehouse_item.stock -= sale.original_output_value
                     warehouse_item.save()
                 except Warehouse.DoesNotExist:
-                    pass #TODO: Further add a error message that is "this item does not exist in warehouse"
+                    return JsonResponse({'error': f"No product found with code '{row['Good Code']}' in warehouse"}, status=400)
 
                 count += 1
             return JsonResponse({'message': f"{count} sales data added successfully"}, status=200)
@@ -425,17 +428,20 @@ class DeleteSaleView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
-        no = request.POST.get('no', None)
-        product_code = request.POST.get('product_code', None)
-        original_output_value = request.POST.get('original_output_value', None)
-        Sales.objects.filter(no=no).delete()
         try:
-            warehouse_item = Warehouse.objects.get(product_code=product_code)
-            warehouse_item.stock += float(original_output_value)
-            warehouse_item.save()
-        except Warehouse.DoesNotExist:
-            warehouse_item = None #! give an error
-        return HttpResponse('OK')
+            no = request.POST.get('no', None)
+            product_code = request.POST.get('product_code', None)
+            original_output_value = request.POST.get('original_output_value', None)
+            Sales.objects.filter(no=no).delete()
+            try:
+                warehouse_item = Warehouse.objects.get(product_code=product_code)
+                warehouse_item.stock += float(original_output_value)
+                warehouse_item.save()
+            except Warehouse.DoesNotExist:
+                return JsonResponse({'error': f"No product found with code '{product_code}' in warehouse"}, status=400)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+        return JsonResponse({'message': "Sale object has been successfully deleted"}, status=200)
 
 class EditSaleView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -686,9 +692,12 @@ class DeleteWarehouseView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
-        product_code = request.POST.get('product_code')
-        Warehouse.objects.filter(product_code=product_code).delete()
-        return HttpResponse('OK')
+        try:
+            product_code = request.POST.get('product_code')
+            Warehouse.objects.filter(product_code=product_code).delete()
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+        return JsonResponse({'message': "Warehouse object has been successfully deleted"}, status=200)
 
 
 class EditWarehouseView(APIView):
@@ -870,9 +879,12 @@ class DeleteProductView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
-        product_code_ir = request.POST.get('product_code_ir')
-        Products.objects.filter(product_code_ir=product_code_ir).delete()
-        return HttpResponse('OK')
+        try:
+            product_code_ir = request.POST.get('product_code_ir')
+            Products.objects.filter(product_code_ir=product_code_ir).delete()
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+        return JsonResponse({'message': "Product object has been successfully deleted"}, status=200)
 
 class EditProductView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -1040,6 +1052,16 @@ class AddSalerView(APIView):
         try:
             data = json.loads(request.body)
             jalali_date = data.get("job_start_date").split("-")
+            saler_type = data.get("saler_type")
+            if saler_type == "Active":
+                bool_active_saler = True
+                bool_passive_saler = False
+                experience_rating = calculate_experience_rating(jalali_date)
+            else:
+                bool_active_saler = False
+                bool_passive_saler = True
+                experience_rating = calculate_passive_saler_experience_rating(jalali_date)
+                
             jalali_current_date = current_jalali_date()
             try:
                 jalali_date = jdatetime.date(int(jalali_date[0]), int(jalali_date[1]), int(jalali_date[2]))
@@ -1056,10 +1078,12 @@ class AddSalerView(APIView):
                 name = data.get("name"),
                 job_start_date = jalali_date,
                 manager_performance_rating = 1,
-                experience_rating = calculate_experience_rating(jalali_date),
+                experience_rating = experience_rating,
                 monthly_total_sales_rating = 1, #will be calculated!!!!!!!!!!!!!!!!!!!!!!
                 receipment_rating = 1, #will be calculated!!!!!!!!!!!!!!!!!!!!!!
                 is_active =  True,
+                is_active_saler = bool_active_saler,
+                is_passive_saler = bool_passive_saler   
             )
             saler.save()
             return JsonResponse({'message': "Saler added successfully"}, status=200)
@@ -1090,29 +1114,54 @@ class EditSalerView(APIView):
             saler = Salers.objects.get(id=old_data['id'])
 
             
-            
-            # Update other saler fields
-            for field in ['name', 'job_start_date', 'manager_performance_rating', 'is_active']:
-                if field == "job_start_date":
-                    try:
-                        new_date =new_data['job_start_date'].split("-")
-                        date = jdatetime.date(int(new_date[0]), int(new_date[1]), int(new_date[2]))
-                    except ValueError:
-                        return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD'"}, status=400)
-                    except IndexError as e:
-                        return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD'"}, status=400)
-                    except Exception as e:
-                        return JsonResponse({'error': str(e)}, status=400)
-                value = new_data[f'{field}']
+            if saler.is_active_saler == True and saler.is_active_saler == False:
+                # Update other saler fields
+                for field in ['name', 'job_start_date', 'manager_performance_rating', 'is_active']:
+                    if field == "job_start_date":
+                        try:
+                            new_date =new_data['job_start_date'].split("-")
+                            date = jdatetime.date(int(new_date[0]), int(new_date[1]), int(new_date[2]))
+                            saler.experience_rating = calculate_experience_rating(date)
+                        except ValueError:
+                            return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD'"}, status=400)
+                        except IndexError as e:
+                            return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD'"}, status=400)
+                        except Exception as e:
+                            return JsonResponse({'error': str(e)}, status=400)
+                    value = new_data[f'{field}']
 
-                if value is not None and value != '':
-                    setattr(saler, field, value)
-                else: 
-                    return JsonResponse({'error': "One or more data field is empty!"}, status=400)
+                    if value is not None and value != '':
+                        setattr(saler, field, value)
+                    else: 
+                        return JsonResponse({'error': "One or more data field is empty!"}, status=400)
 
 
-            saler.save()
-            return JsonResponse({'message': "Your changes have been successfully saved"}, status=200)
+                saler.save()
+                return JsonResponse({'message': "Your changes have been successfully saved"}, status=200)
+            else:
+                # Update other saler fields
+                for field in ['name', 'job_start_date', 'manager_performance_rating', 'is_active']:
+                    if field == "job_start_date":
+                        try:
+                            new_date =new_data['job_start_date'].split("-")
+                            date = jdatetime.date(int(new_date[0]), int(new_date[1]), int(new_date[2]))
+                            saler.experience_rating = calculate_passive_saler_experience_rating(date)
+                        except ValueError:
+                            return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD'"}, status=400)
+                        except IndexError as e:
+                            return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD'"}, status=400)
+                        except Exception as e:
+                            return JsonResponse({'error': str(e)}, status=400)
+                    value = new_data[f'{field}']
+
+                    if value is not None and value != '':
+                        setattr(saler, field, value)
+                    else: 
+                        return JsonResponse({'error': "One or more data field is empty!"}, status=400)
+
+
+                saler.save()
+                return JsonResponse({'message': "Your changes have been successfully saved"}, status=200)
 
         except Salers.DoesNotExist:
             return JsonResponse({'error': "Saler not found"}, status=400)
@@ -1130,9 +1179,12 @@ class CollapsedSalerView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
     def get(self, request, *args, **kwargs):
-        salers = Salers.objects.filter(is_deleted = False)
-        salers_list = [[saler['id'], saler['name'], saler['is_active']] for saler in salers]
-        return JsonResponse(salers_list, safe=False)
+        active_salers = Salers.objects.filter(is_deleted = False, is_active_saler = True)
+        active_salers_list = [[saler['id'], saler['name'], saler['is_active']] for saler in active_salers]
+        passive_salers = Salers.objects.filter(is_deleted = False, is_passive_saler = True)
+        passive_salers_list = [[saler['id'], saler['name'], saler['is_active']] for saler in passive_salers]
+        return JsonResponse({"active_salers_list": active_salers_list,
+                             "passive_salers_list": passive_salers_list}, safe=False)
 
     
  # Everyday experience rating must be automatically updated !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   
@@ -1149,9 +1201,14 @@ class SalerCardView(APIView):
             monthly_sale_rating = saler_monthly_ratings.sale_rating
         except SalerMonthlySaleRating.DoesNotExist:
             monthly_sale_rating = 1
-        response_data = {'id': id , 'name': saler.name, 'job_start_date': saler.job_start_date.strftime('%Y-%m-%d'), 'manager_performance_rating': saler.manager_performance_rating,
-                          'experience_rating': saler.experience_rating, 'monthly_total_sales_rating': monthly_sale_rating, 'receipment_rating':saler.receipment_rating,
-                          'is_active': saler.is_active}
+        if saler.is_active_saler:
+            response_data = {'id': id , 'name': saler.name, 'job_start_date': saler.job_start_date.strftime('%Y-%m-%d'), 'manager_performance_rating': saler.manager_performance_rating,
+                            'experience_rating': saler.experience_rating, 'monthly_total_sales_rating': monthly_sale_rating, 'receipment_rating':saler.receipment_rating,
+                            'is_active': saler.is_active, "active_or_passive": "Active" }
+        else:
+            response_data = {'id': id , 'name': saler.name, 'job_start_date': saler.job_start_date.strftime('%Y-%m-%d'), 'manager_performance_rating': saler.manager_performance_rating,
+                            'experience_rating': saler.experience_rating, 'monthly_total_sales_rating': monthly_sale_rating, 'receipment_rating':saler.receipment_rating,
+                            'is_active': saler.is_active, "active_or_passive": "Passive" }
         # Return the list of output_values as a JSON response
         return JsonResponse(response_data, safe=False)
 
@@ -1162,7 +1219,7 @@ class SalerTableView(APIView):
     def get(self, request, *args, **kwargs):
         salers = Salers.objects.filter(is_deleted=False).values()
         saler_list = [[s['id'], s['name'], s['job_start_date'], s['manager_performance_rating'],
-                       s['experience_rating'], s['monthly_total_sales_rating'], s['receipment_rating'], s['is_active']] for s in salers]
+                       s['experience_rating'], s['monthly_total_sales_rating'], s['receipment_rating'], s['is_active'], s['is_active_saler'] ,s['is_passivee_saler']] for s in salers]
         
         
         return JsonResponse(saler_list, safe=False)
@@ -1171,13 +1228,16 @@ class DeleteSalerView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
-        data = json.loads(request.body)
-        id = data.get('id')
-        saler = Salers.objects.get(id=id)
-        saler.is_deleted = True
-        saler.is_active = False
+        try:    
+            data = json.loads(request.body)
+            id = data.get('id')
+            saler = Salers.objects.get(id=id)
+            saler.is_deleted = True
+            saler.is_active = False
 
-        return HttpResponse('OK')
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+        return JsonResponse({'message': "Saler object has been successfully deleted"}, status=200)
 
 
 @receiver(post_save, sender=Sales)

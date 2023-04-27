@@ -39,6 +39,22 @@ def calculate_experience_rating(job_start_date):
     else:
         return 1.00
 
+def calculate_passive_saler_experience_rating(job_start_date):
+    current_date = datetime.now().date()
+    jalali_current_date = greg_to_jalali(current_date.year,current_date.month,current_date.day)
+    year_diff = jalali_current_date.year - job_start_date.year
+    month_diff = jalali_current_date.month - job_start_date.month
+    total_diff = (month_diff + (year_diff * 12))/12
+    
+    if total_diff > 3:
+        return 1.30
+    elif 2 <= total_diff <= 3:
+        return 1.2
+    elif 1 <= total_diff < 2:
+        return 1.1
+    else:
+        return 1.00
+
 def the_man_from_future(job_start_date):
     current_date = datetime.now().date()
     jalali_current_date = greg_to_jalali(current_date.year,current_date.month,current_date.day)
