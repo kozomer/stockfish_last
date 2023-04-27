@@ -19,6 +19,7 @@ import React, { useEffect, useState,useMemo} from "react";
 // react plugin used to create charts
 import { Line, Bar, Pie } from "react-chartjs-2";
 import Select from "react-select";
+import ReactBSAlert from "react-bootstrap-sweetalert";
 import '../../assets/css/Table.css';
 
 // reactstrap components
@@ -66,6 +67,7 @@ function Charts() {
   const [orderHolt, setOrderHolt] = useState('');
   const [orderFlagExp, setOrderFlagExp] = useState(false);
   const [orderExp, setOrderExp] = useState('');
+  const [alert, setAlert] = useState(null);
   const [tableData, setTableData] = useState({
     group: "",
     subgroup: "",
@@ -177,6 +179,7 @@ function Charts() {
 
   const location = useLocation();
   const productCode = location.pathname.split('/').pop();
+  
 
 
   useEffect(() => {
@@ -223,6 +226,7 @@ function Charts() {
 
   useEffect(() => {
     if (productCode) {
+      console.log("aaaaa")
       const parsedProductCode = parseInt(productCode, 10);
       setSelectedItem({ value: parsedProductCode });
       setLeadTime(2);
@@ -234,6 +238,7 @@ function Charts() {
 
   useEffect(() => {
     if (selectedItem && selectedItem.value) {
+      
       handleSave();
     }
   }, [selectedItem]);
@@ -250,7 +255,7 @@ function Charts() {
   const handleSave = async () => {
     // handle the save logic here
     
-  
+    console.log("aaaaa")
     const access_token = await localforage.getItem('access_token');
     
     const selectData = { product_code: selectedItem.value, lead_time: leadTime, service_level:serviceLevel, forecast_period: forecast};
@@ -263,21 +268,37 @@ function Charts() {
       body: JSON.stringify(selectData),
      
     })
-      .then(response => response.json())
-      .then(data => {
-        
-        setTableData(data.rop_list);
-        setResult(data);
-        setOrder(data.avrg_order);
-        setOrderFlag(data.avrg_order_flag)
 
-        setOrderHolt(data.holt_order);
-        setOrderFlagHolt(data.holt_order_flag)
+    .then((response) => {
+      if (!response.ok) {
+        return response.json().then(data => {
 
-        setOrderExp(data.exp_order);
-        setOrderFlagExp(data.exp_order_flag)
-        
-      }) 
+          console.log(data)
+          errorUpload(data.error);
+        });
+      }
+
+      else {
+        return response.json().then(data => {
+          setTableData(data.rop_list);
+          setResult(data);
+          setOrder(data.avrg_order);
+          setOrderFlag(data.avrg_order_flag)
+  
+          setOrderHolt(data.holt_order);
+          setOrderFlagHolt(data.holt_order_flag)
+  
+          setOrderExp(data.exp_order);
+          setOrderFlagExp(data.exp_order_flag)
+          
+
+         
+        })
+
+      }
+    })
+
+     
   };
 
   const handleSelect = async (selectedOption) => {
@@ -528,12 +549,54 @@ function Charts() {
   }
   
  
+  const successEdit = (s) => {
+
+    setAlert(
+      <ReactBSAlert
+        success
+        style={{ display: "block", marginTop: "-100px" }}
+        title="Saved!"
+        onConfirm={() => {
+          hideAlert()
+          
+        }
+        }
+        onCancel={() => hideAlert()}
+        confirmBtnBsStyle="info"
+        btnSize=""
+      >
+        {s}
+      </ReactBSAlert>
+    );
+    
+  };
+
+  const errorUpload = (e) => {
+    setAlert(
+      <ReactBSAlert
+        danger
+        style={{ display: "block", marginTop: "-100px" }}
+        title="Error"
+        onConfirm={() => hideAlert()}
+        onCancel={() => hideAlert()}
+        confirmBtnBsStyle="info"
+        btnSize=""
+      >
+        {e}
+      </ReactBSAlert>
+    );
+  };
+
+  const hideAlert = () => {
+    setAlert(null);
+  };
 
   return (
     <>
 
 
       <div className="content">
+      {alert}
       <Card>
       <CardHeader>
         <CardTitle tag='h4'>REORDER POINTS</CardTitle>

@@ -169,7 +169,7 @@ const DataTable = () => {
       </ReactBSAlert>
     );
   };
-  const successEdit = () => {
+  const successEdit = (s) => {
     console.log("edit success")
     setAlert(
       <ReactBSAlert
@@ -184,7 +184,7 @@ const DataTable = () => {
         confirmBtnBsStyle="info"
         btnSize=""
       >
-        Your edit has been successfully saved.
+        {s}
       </ReactBSAlert>
     );
     setRenderEdit(true)
@@ -314,8 +314,25 @@ const DataTable = () => {
       },
       
     })
-    setEditData(updatedData);
-    successEdit()
+
+    .then((response) => {
+      if (!response.ok) {
+        return response.json().then(data => {
+          console.log(data.error)
+          
+          errorUpload(data.error);
+        });
+      }
+     
+      else{
+        return response.json().then(data => {
+          setEditData(updatedData);
+          successEdit(data.message);
+        })
+    
+        }
+      })
+    
 
       // Call your Django API to send the updated values here
     };

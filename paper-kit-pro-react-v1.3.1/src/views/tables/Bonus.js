@@ -53,7 +53,7 @@ function UserProfile() {
   const [originalData, setOriginalData] = useState({});
 
   const [alert, setAlert] = useState(null);
-  
+
   const [isActive, setIsActive] = useState("");
   const [activity, setActivity] = useState(false);
   const handleSelectMember = async (member) => {
@@ -97,7 +97,7 @@ function UserProfile() {
     fetch("http://127.0.0.1:8000/api/add_salers/", {
       method: "POST",
       body: JSON.stringify(newSaler),
-      
+
       headers: {
         'Authorization': 'Bearer ' + String(access_token)
       },
@@ -124,7 +124,7 @@ function UserProfile() {
 
 
   async function fetchSalersData() {
-    
+
     const access_token = await localforage.getItem('access_token');
     console.log(access_token)
     fetch('http://127.0.0.1:8000/api/collapsed_salers/', {
@@ -158,7 +158,7 @@ function UserProfile() {
     const { name, value } = event.target;
     console.log(name, value);
     const newValue = parseFloat(value);
-   
+
 
     setFormData((prevFormData) => ({ ...prevFormData, [name]: newValue }));
 
@@ -187,7 +187,7 @@ function UserProfile() {
       fetch('http://127.0.0.1:8000/api/edit_salers/', {
         method: "POST",
         body: JSON.stringify(all_data),
-        
+
         headers: {
           'Authorization': 'Bearer ' + String(access_token)
         },
@@ -248,7 +248,7 @@ function UserProfile() {
         'Authorization': 'Bearer ' + String(access_token)
       },
       body: JSON.stringify(delete_id),
-      
+
 
     })
       .then((response) => {
@@ -499,18 +499,18 @@ function UserProfile() {
                         <label>Activity</label>
                         <br></br>
                         <Input
-  name="activity"
-  type="select"
-  value={salersWholeData["is_active"] ? "Active" : "Inactive"}
-  onChange={(e) => {
-    const value = e.target.value === "Active";
-    setIsActive(value);
-  }}
->
-  
-  <option value="Active">Active</option>
-  <option value="Inactive">Inactive</option>
-</Input>
+                          name="activity"
+                          type="select"
+                          value={salersWholeData["is_active"] ? "Active" : "Inactive"}
+                          onChange={(e) => {
+                            const value = e.target.value === "Active";
+                            setIsActive(value);
+                          }}
+                        >
+
+                          <option value="Active">Active</option>
+                          <option value="Inactive">Inactive</option>
+                        </Input>
 
 
 
@@ -523,7 +523,7 @@ function UserProfile() {
                       <FormGroup>
                         <label>Experience Rating</label>
                         <Input
-                          disabled
+                          
                           defaultValue={salersWholeData["experience_rating"]}
                           onChange={handleInputChange}
                           placeholder="Exp. Rating"
@@ -535,7 +535,7 @@ function UserProfile() {
                       <FormGroup>
                         <label>Monthly Total Sales Rating</label>
                         <Input
-                          disabled
+                          
                           defaultValue={salersWholeData["monthly_total_sales_rating"]}
                           onChange={handleInputChange}
                           placeholder="Mont. Tot. Sales Rating"
@@ -549,7 +549,7 @@ function UserProfile() {
                       <FormGroup>
                         <label>Receipment Rating</label>
                         <Input
-                          disabled
+                          
                           defaultValue={salersWholeData["receipment_rating"]}
                           onChange={handleInputChange}
                           placeholder="Receipment Rating"
