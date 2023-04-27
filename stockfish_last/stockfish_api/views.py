@@ -8,7 +8,7 @@ from django.http import JsonResponse, HttpResponse
 import json
 from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
-from .definitions import jalali_to_greg, greg_to_jalali, calculate_experience_rating, calculate_sale_rating, current_jalali_date, get_exchange_rate, get_model, generate_future_forecast_dates
+from .definitions import jalali_to_greg, greg_to_jalali, calculate_experience_rating, calculate_sale_rating, current_jalali_date, get_exchange_rate, get_model, generate_future_forecast_dates, the_man_from_future
 from datetime import datetime
 import datetime
 import jdatetime
@@ -93,7 +93,7 @@ class AddCustomersView(APIView):
             file = request.FILES['file']
             kind = filetype.guess(file.read())
             if kind is None or kind.mime not in ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']:
-                return JsonResponse({'error': "The uploaded file is not a valid Excel file1"}, status=400)
+                return JsonResponse({'error': "The uploaded file is not a valid Excel file!"}, status=400)
 
             data = pd.read_excel(file)
             if data.empty:
@@ -162,12 +162,15 @@ class EditCustomerView(APIView):
                     customer.customer_code = new_customer_code
 
             # Update other customer fields
-            for field in ['description', 'quantity', 'area_code', 'code', 'city', 'area']:
-                value = data.get(f'new_{field}')
-                if value is not None and value != '':
-                    setattr(customer, field, value)
-                else: 
-                    return JsonResponse({'error': "One or more data field is empty!"}, status=400)
+            try:
+                for field in ['description', 'quantity', 'area_code', 'code', 'city', 'area']:
+                    value = data.get(f'new_{field}')
+                    if value is not None and value != '':
+                        setattr(customer, field, value)
+                    else: 
+                        return JsonResponse({'error': "One or more data field is empty!"}, status=400)
+            except Exception as e:
+                return JsonResponse({'error': str(e)}, status=400)
 
 
             customer.save()
@@ -650,7 +653,12 @@ class AddWarehouseView(APIView):
             count = 0
             for i, row in data.iterrows():
                 try:
-                    product_code = row["Product Code"]
+                    product_code = int(row["Product Code"])
+                    try:
+                        product = Products.objects.get(product_code_ir = product_code)
+                    except Products.DoesNotExist:
+                        return JsonResponse({'error': f"Product Code: '{product_code}' not found in the Products Table. If there is no mistake, please add '{product_code}' to the Products Table first. "}, status=400)
+
                     if Warehouse.objects.filter(product_code=product_code).exists():
                         continue
                     count+=1
@@ -707,6 +715,10 @@ class EditWarehouseView(APIView):
                 if Warehouse.objects.filter(product_code=new_product_code).exists():
                     return JsonResponse({'error': f"The product code '{new_product_code}' already exists in the warehouse."}, status=400)
                 else:
+                    try:
+                        product = Products.objects.get(product_code_ir = new_product_code)
+                    except Products.DoesNotExist:
+                        return JsonResponse({'error': f"Your new Product Code: '{new_product_code}' not found in the Products Table. If there is no mistake, please add '{new_product_code}' to the Products Table first. "}, status=400)
                     warehouse_item.product_code = new_product_code
 
             # Update other warehouse item fields
@@ -803,7 +815,7 @@ class AddProductsView(APIView):
     def post(self, request, *args, **kwargs):
         try:
             if 'file' not in request.FILES:
-                raise ValidationError("No file uploaded")
+                return JsonResponse({'error': "No file uploaded"}, status=400)
             file = request.FILES['file']
             kind = filetype.guess(file.read())
             if kind is None or kind.mime not in ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']:
@@ -1028,6 +1040,7 @@ class AddSalerView(APIView):
         try:
             data = json.loads(request.body)
             jalali_date = data.get("job_start_date").split("-")
+            jalali_current_date = current_jalali_date()
             try:
                 jalali_date = jdatetime.date(int(jalali_date[0]), int(jalali_date[1]), int(jalali_date[2]))
             except ValueError:
@@ -1036,6 +1049,8 @@ class AddSalerView(APIView):
                 return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD'"}, status=400)
             except Exception as e:
                 return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD'"}, status=400)
+            if the_man_from_future(jalali_date):
+                return JsonResponse({'error': "HERE'S THE MAN FROM THE FUTURE TO SAVE US ALL!!!! Job Start Date cannot be future time, please check it :) "}, status=400)
 
             saler = Salers(
                 name = data.get("name"),
@@ -1239,8 +1254,6 @@ def update_sale_summary_with_add_sale(sender, instance, created, **kwargs):
     else:
         # Check which fields have been updated
         dirty_fields = instance.get_dirty_fields()
-        print("dirty fields: ", dirty_fields)
-        print("dirtyyy")
 
         # Update the corresponding attributes of the SaleSummary instance based on the updated fields
         if 'net_sales' in dirty_fields:
@@ -1693,9 +1706,7 @@ class SalerDataView(APIView):
                     yearly_sale / 10
                 ])
 
-        print(combined_data)
         response_data = {"jalali_date": jalali_date_now_str, "sales_data": combined_data}
-        print("RESPONSE DATA: ",response_data)
 
         return JsonResponse(response_data, safe=False)
         
@@ -2177,6 +2188,9 @@ class ROPView(APIView):
         avrg_future_forecast_dates = generate_future_forecast_dates(len(avrg_future_sales))
         exp_future_forecast_dates = generate_future_forecast_dates(len(exp_future_sales))
         holt_future_forecast_dates = generate_future_forecast_dates(len(holt_future_sales))
+        print("avrg_future_forecast_dates: ", avrg_future_forecast_dates)
+        print("holt_future_forecast_dates: ", holt_future_forecast_dates)
+        print("holt_order: ", holt_order)
         item = ROP.objects.get(product_code_ir = product_code)
         rop_list = rop_list = [
                 item.group,
@@ -2263,8 +2277,7 @@ def create_sales_signal(sender, instance, created, **kwargs):
         product_code = instance.product_code
         product_values = ProductPerformance.objects.filter(product_code=product_code)
         product_values = [[1, item.month, item.year, item.product_code, item.sale_amount] for item in product_values]
-        print(product_values)
-        weight = Products.objects.get(product_code_ir = product_code)
+        weight = Products.objects.get(product_code_ir = product_code).weight
         try:
             last_sales = MonthlyProductSales.objects.filter(product_code=product_code).values("date").latest("date")
             last_sale_date = last_sales["date"].strftime('%Y-%m-%d')
@@ -2291,22 +2304,44 @@ def create_sales_signal(sender, instance, created, **kwargs):
 
         is_active = any(order_flags.values())
 
+        try:
+            existing_order_list = OrderList.objects.get(product_code=product_code, is_active=True)
+        except OrderList.DoesNotExist:
+            existing_order_list = None
+
         if is_active:
-            order_list = OrderList(
-                product_code=product_code,
-                order_flag_avrg=order_flags['average'],
-                order_flag_exp=order_flags['exp'],
-                order_flag_holt=order_flags['holt'],
-                order_avrg=orders['average'],
-                order_exp=orders['exp'],
-                order_holt=orders['holt'],
-                current_date=jalali_date,
-                current_stock=stock,
-                weight=weight,
-                average_sale=np.mean(all_sales),
-                is_active=is_active
-            )
-            order_list.save()
+            if existing_order_list:
+                # Update the existing OrderList object
+                existing_order_list.order_flag_avrg = order_flags['average']
+                existing_order_list.order_flag_exp = order_flags['exp']
+                existing_order_list.order_flag_holt = order_flags['holt']
+                existing_order_list.order_avrg = orders['average']
+                existing_order_list.order_exp = orders['exp']
+                existing_order_list.order_holt = orders['holt']
+                existing_order_list.current_date = jalali_date
+                existing_order_list.current_stock = stock
+                existing_order_list.weight = weight
+                existing_order_list.average_sale = np.mean(all_sales)
+                existing_order_list.is_ordered = False
+                existing_order_list.save()
+            else:
+                # Create a new OrderList object
+                order_list = OrderList(
+                    product_code=product_code,
+                    order_flag_avrg=order_flags['average'],
+                    order_flag_exp=order_flags['exp'],
+                    order_flag_holt=order_flags['holt'],
+                    order_avrg=orders['average'],
+                    order_exp=orders['exp'],
+                    order_holt=orders['holt'],
+                    current_date=jalali_date,
+                    current_stock=stock,
+                    weight=weight,
+                    average_sale=np.mean(all_sales),
+                    is_active=is_active,
+                    is_ordered=False
+                )
+                order_list.save()
 
 class OrderListView(APIView):
     permission_classes = (IsAuthenticated,)

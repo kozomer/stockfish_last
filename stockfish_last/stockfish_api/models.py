@@ -3,9 +3,9 @@ from django_jalali.db import models as jmodels
 from dirtyfields import DirtyFieldsMixin
 
 class Customers(models.Model):
-    customer_code = models.CharField(max_length=100, unique=True)
+    customer_code = models.IntegerField(unique= True)
     description = models.CharField(max_length=200)
-    quantity = models.IntegerField()
+    quantity = models.IntegerField(null= True)
     area_code = models.CharField(max_length=100)
     code = models.CharField(max_length=100)
     city = models.CharField(max_length=100)
@@ -191,7 +191,7 @@ class MonthlyProductSales(models.Model):
 
 class CustomerPerformance(models.Model):
     objects = jmodels.jManager()
-    customer_code = models.IntegerField(null=True)
+    customer_code = models.IntegerField()
     customer_name = models.CharField(max_length=100)
     customer_area = models.CharField(max_length=100)
     year = models.IntegerField(null=True)
