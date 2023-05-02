@@ -253,6 +253,15 @@ class Trucks(models.Model):
     is_ordered = models.BooleanField(default=False)
     is_waiting = models.BooleanField()
 
+class NotificationsOrderList(models.Model):
+    objects = jmodels.jManager()
+    current_date = jmodels.jDateField(null=True)
+    product_code = models.IntegerField(null=True)
+    is_active = models.BooleanField()
+    order_avrg = models.FloatField(default=0, null=True)
+    order_exp = models.FloatField(default=0, null=True)
+    order_holt = models.FloatField(default=0, null=True)
+
 
 
 

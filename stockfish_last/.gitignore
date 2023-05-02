@@ -27,3 +27,6 @@ build/
 # Ignore virtual environment directories
 venv/
 myenv/
+
+# Ignore excel files
+.*.xlsx
