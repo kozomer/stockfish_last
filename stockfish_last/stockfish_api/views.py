@@ -1,7 +1,7 @@
 from django.shortcuts import render
 import pandas as pd
 from .models import (Customers, Products, Sales, Warehouse, ROP, Salers, SalerPerformance, SaleSummary, SalerMonthlySaleRating, 
-                    MonthlyProductSales,CustomerPerformance, ProductPerformance, OrderList, GoodsOnRoad, Trucks)
+                    MonthlyProductSales,CustomerPerformance, ProductPerformance, OrderList, GoodsOnRoad, Trucks, NotificationsOrderList)
 from django.views import View
 from rest_framework.views import APIView
 from django.http import JsonResponse, HttpResponse
@@ -1275,16 +1275,35 @@ def update_saler_performance_with_add_sale(sender, instance, created, **kwargs):
         day=instance.date.day
     )
 
-    # Update the sale value for the SalerPerformance object
     if created:
+        # Update the sale value for the SalerPerformance object
         saler_performance.sale += float(instance.net_sales)
     else:
         # Check which fields have been updated
         dirty_fields = instance.get_dirty_fields()
 
+        # If any of the saler, year, month, or day fields are updated, find the previous SalerPerformance instance, subtract the old values, and update the new SalerPerformance instance
+        if any(field in dirty_fields for field in ['saler', 'date']):
+            old_saler = dirty_fields.get('saler', instance.saler)
+            old_date = dirty_fields.get('date', instance.date)
+            old_saler_performance = SalerPerformance.objects.get(
+                name=old_saler,
+                year=old_date.year,
+                month=old_date.month,
+                day=old_date.day
+            )
+
+            # Subtract old values from the old SalerPerformance instance
+            old_saler_performance.sale -= dirty_fields.get('net_sales', instance.net_sales)
+            old_saler_performance.save()
+
+            # Update the new SalerPerformance instance
+            saler_performance.sale += instance.net_sales
+
         # Update the corresponding attributes of the SalerPerformance instance based on the updated fields
-        if 'net_sales' in dirty_fields:
-            saler_performance.sale += float(instance.net_sales) - dirty_fields['net_sales']
+        else:
+            if 'net_sales' in dirty_fields:
+                saler_performance.sale += float(instance.net_sales) - dirty_fields['net_sales']
 
     saler_performance.save()
 
@@ -1357,15 +1376,38 @@ def update_sale_summary_with_add_sale(sender, instance, created, **kwargs):
         # Check which fields have been updated
         dirty_fields = instance.get_dirty_fields()
 
+        # If the date field is updated, find the previous SaleSummary instance, subtract the old values, and update the new SaleSummary instance
+        if 'date' in dirty_fields:
+            old_date = dirty_fields['date']
+            old_sale_summary = SaleSummary.objects.get(
+                year=old_date.year,
+                month=old_date.month,
+                day=old_date.day
+            )
+
+            # Subtract old values from the old SaleSummary instance
+            old_sale_summary.sale -= dirty_fields.get('net_sales', instance.net_sales)
+            old_sale_summary.dollar_sepidar_sale -= dirty_fields.get('dollar_sepidar', instance.dollar_sepidar)
+            old_sale_summary.dollar_sale -= dirty_fields.get('dollar', instance.dollar)
+            old_sale_summary.kg_sale -= dirty_fields.get('kg', instance.kg)
+            old_sale_summary.save()
+
+            # Update the new SaleSummary instance
+            sale_summary.sale += instance.net_sales
+            sale_summary.dollar_sepidar_sale += instance.dollar_sepidar
+            sale_summary.dollar_sale += instance.dollar
+            sale_summary.kg_sale += instance.kg
+
         # Update the corresponding attributes of the SaleSummary instance based on the updated fields
-        if 'net_sales' in dirty_fields:
-            sale_summary.sale += float(instance.net_sales) - dirty_fields['net_sales']
-        if 'dollar_sepidar' in dirty_fields:
-            sale_summary.dollar_sepidar_sale += float(instance.dollar_sepidar) - dirty_fields['dollar_sepidar']
-        if 'dollar' in dirty_fields:
-            sale_summary.dollar_sale += float(instance.dollar) - dirty_fields['dollar']
-        if 'kg' in dirty_fields:
-            sale_summary.kg_sale += float(instance.kg) - dirty_fields['kg']
+        else:
+            if 'net_sales' in dirty_fields:
+                sale_summary.sale += float(instance.net_sales) - dirty_fields['net_sales']
+            if 'dollar_sepidar' in dirty_fields:
+                sale_summary.dollar_sepidar_sale += float(instance.dollar_sepidar) - dirty_fields['dollar_sepidar']
+            if 'dollar' in dirty_fields:
+                sale_summary.dollar_sale += float(instance.dollar) - dirty_fields['dollar']
+            if 'kg' in dirty_fields:
+                sale_summary.kg_sale += float(instance.kg) - dirty_fields['kg']
 
         sale_summary.save()
 
@@ -1472,13 +1514,34 @@ def update_monthly_product_sales_with_add_sale(sender, instance, created, **kwar
         # Check which fields have been updated
         dirty_fields = instance.get_dirty_fields()
 
+        # If any of the product_code, year, or month fields are updated, find the previous MonthlyProductSales instance, subtract the old values, and update the new MonthlyProductSales instance
+        if any(field in dirty_fields for field in ['product_code', 'date']):
+            old_product_code = dirty_fields.get('product_code', instance.product_code)
+            old_date = dirty_fields.get('date', instance.date)
+            old_monthly_sale = MonthlyProductSales.objects.get(
+                product_code=old_product_code,
+                year=old_date.year,
+                month=old_date.month
+            )
+
+            # Subtract old values from the old MonthlyProductSales instance
+            old_monthly_sale.piece -= dirty_fields.get('original_output_value', instance.original_output_value)
+            old_monthly_sale.sale -= dirty_fields.get('net_sales', instance.net_sales)
+            old_monthly_sale.save()
+
+            # Update the new MonthlyProductSales instance
+            monthly_sale.piece += instance.original_output_value
+            monthly_sale.sale += instance.net_sales
+
         # Update the corresponding attributes of the MonthlyProductSales instance based on the updated fields
-        if 'original_output_value' in dirty_fields:
-            monthly_sale.piece += float(instance.original_output_value) - dirty_fields['original_output_value']
-        if 'net_sales' in dirty_fields:
-            monthly_sale.sale += float(instance.net_sales) - dirty_fields['net_sales']
+        else:
+            if 'original_output_value' in dirty_fields:
+                monthly_sale.piece += float(instance.original_output_value) - dirty_fields['original_output_value']
+            if 'net_sales' in dirty_fields:
+                monthly_sale.sale += float(instance.net_sales) - dirty_fields['net_sales']
 
     monthly_sale.save()
+
 
 
 @receiver(post_delete, sender=Sales)
@@ -1525,17 +1588,40 @@ def update_customer_performance_with_add_sale(sender, instance, created, **kwarg
         # Check which fields have been updated
         dirty_fields = instance.get_dirty_fields()
 
+        # If any of the year, month, or customer_code fields are updated, find the previous CustomerPerformance instance, subtract the old values, and update the new CustomerPerformance instance
+        if any(field in dirty_fields for field in ['date', 'customer_code']):
+            old_date = dirty_fields.get('date', instance.date)
+            old_customer_code = dirty_fields.get('customer_code', instance.customer_code)
+            old_customer_performance = CustomerPerformance.objects.get(
+                year=old_date.year, month=old_date.month, customer_code=old_customer_code
+            )
+
+            # Subtract old values from the old CustomerPerformance instance
+            old_customer_performance.sale -= dirty_fields.get('net_sales', instance.net_sales)
+            old_customer_performance.sale_amount -= dirty_fields.get('original_output_value', instance.original_output_value)
+            old_customer_performance.dollar -= dirty_fields.get('dollar', instance.dollar)
+            old_customer_performance.dollar_sepidar -= dirty_fields.get('dollar_sepidar', instance.dollar_sepidar)
+            old_customer_performance.save()
+
+            # Update the new CustomerPerformance instance
+            customer_performance.sale += instance.net_sales
+            customer_performance.sale_amount += instance.original_output_value
+            customer_performance.dollar += instance.dollar
+            customer_performance.dollar_sepidar += instance.dollar_sepidar
+
         # Update the corresponding attributes of the CustomerPerformance instance based on the updated fields
-        if 'net_sales' in dirty_fields:
-            customer_performance.sale += float(instance.net_sales) - dirty_fields['net_sales']
-        if 'original_output_value' in dirty_fields:
-            customer_performance.sale_amount += float(instance.original_output_value) - dirty_fields['original_output_value']
-        if 'dollar' in dirty_fields:
-            customer_performance.dollar += float(instance.dollar) - dirty_fields['dollar']
-        if 'dollar_sepidar' in dirty_fields:
-            customer_performance.dollar_sepidar += float(instance.dollar_sepidar) - dirty_fields['dollar_sepidar']
+        else:
+            if 'net_sales' in dirty_fields:
+                customer_performance.sale += float(instance.net_sales) - dirty_fields['net_sales']
+            if 'original_output_value' in dirty_fields:
+                customer_performance.sale_amount += float(instance.original_output_value) - dirty_fields['original_output_value']
+            if 'dollar' in dirty_fields:
+                customer_performance.dollar += float(instance.dollar) - dirty_fields['dollar']
+            if 'dollar_sepidar' in dirty_fields:
+                customer_performance.dollar_sepidar += float(instance.dollar_sepidar) - dirty_fields['dollar_sepidar']
 
     customer_performance.save()
+
 
 
 @receiver(post_delete, sender=Sales)
@@ -1641,13 +1727,32 @@ def update_product_performance_with_add_sale(sender, instance, created, **kwargs
         # Check which fields have been updated
         dirty_fields = instance.get_dirty_fields()
 
+        # If any of the year, month, or product_code fields are updated, find the previous ProductPerformance instance, subtract the old values, and update the new ProductPerformance instance
+        if any(field in dirty_fields for field in ['date', 'product_code']):
+            old_date = dirty_fields.get('date', instance.date)
+            old_product_code = dirty_fields.get('product_code', instance.product_code)
+            old_product_performance = ProductPerformance.objects.get(
+                year=old_date.year, month=old_date.month, product_code=old_product_code
+            )
+
+            # Subtract old values from the old ProductPerformance instance
+            old_product_performance.sale_amount -= dirty_fields.get('original_output_value', instance.original_output_value)
+            old_product_performance.sale -= dirty_fields.get('net_sales', instance.net_sales)
+            old_product_performance.save()
+
+            # Update the new ProductPerformance instance
+            product_performance.sale_amount += instance.original_output_value
+            product_performance.sale += instance.net_sales
+
         # Update the corresponding attributes of the ProductPerformance instance based on the updated fields
-        if 'original_output_value' in dirty_fields:
-            product_performance.sale_amount += float(instance.original_output_value) - dirty_fields['original_output_value']
-        if 'net_sales' in dirty_fields:
-            product_performance.sale += float(instance.net_sales) - dirty_fields['net_sales']
+        else:
+            if 'original_output_value' in dirty_fields:
+                product_performance.sale_amount += float(instance.original_output_value) - dirty_fields['original_output_value']
+            if 'net_sales' in dirty_fields:
+                product_performance.sale += float(instance.net_sales) - dirty_fields['net_sales']
 
     product_performance.save()
+
 
 
 @receiver(post_delete, sender=Sales)
@@ -2448,6 +2553,9 @@ def create_sales_signal(sender, instance, created, **kwargs):
                 )
                 order_list.save()
 
+
+
+
 class OrderListView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
@@ -2742,6 +2850,55 @@ class ApproveArrivedTruckView(APIView):
 
 # endregion
 
+
+# region Notifications
+
+@receiver(post_save, sender=OrderList)
+def create_notification_order_list(sender, instance, created, **kwargs):
+    notification_order_list = NotificationsOrderList(
+        current_date=instance.current_date,
+        product_code=instance.product_code,
+        is_active=instance.is_active,
+        order_avrg=instance.order_avrg,
+        order_exp=instance.order_exp,
+        order_holt=instance.order_holt,
+    )
+    notification_order_list.save()
+
+class NotificationsView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def get(self, request, *args, **kwargs):
+        notifications = NotificationsOrderList.objects.filter(is_active=True).values()
+        notification_data = [
+            [n['id'], n['current_date'].strftime('%Y-%m-%d'), n['product_code'], n['order_avrg'], n['order_exp'], n['order_holt']]
+            for n in notifications
+        ]
+        return JsonResponse(notification_data, safe=False)
+
+class DeleteNotificationView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        notification_id = request.data.get('id')
+        if not notification_id:
+            return JsonResponse({"error": "Missing 'id' parameter"}, status=400)
+
+        try:
+            notification = NotificationsOrderList.objects.get(id=notification_id)
+        except NotificationsOrderList.DoesNotExist:
+            return JsonResponse({"error": f"No notification found with id: {notification_id}"}, status=404)
+
+        notification.is_active = False
+        notification.save()
+
+        return JsonResponse({"success": f"Notification with id {notification_id} has been deactivated"})
+
+
+
+# endregion
 
 
 

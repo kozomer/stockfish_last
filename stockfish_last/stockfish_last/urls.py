@@ -24,7 +24,7 @@ from stockfish_api.views import ( AddCustomersView, AddSalesView, AddProductsVie
                                  ExchangeRateAPIView, SalerDataView, TotalDataView, TotalDataByMonthlyView, CustomerAreaPieChartView, 
                                  ExportCustomersView, ExportSalesView, ExportWarehouseView, ExportProductsView,
                                  GoodsOnRoadView, AddTruckView, WaitingTrucksView, TrucksOnRoadView, ApproveWaitingTruckView,
-                                 ApproveProductsToOrderView, ApproveArrivedTruckView
+                                 ApproveProductsToOrderView, ApproveArrivedTruckView, NotificationsView, DeleteNotificationView
                                  )
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -66,6 +66,7 @@ urlpatterns = [
     path('api/trucks_on_road/',TrucksOnRoadView.as_view(), name='trucks_on_road'),
     path('api/approve_products/',ApproveProductsToOrderView.as_view(), name='approve_products'),
     path('api/approve_arrived_truck/',ApproveArrivedTruckView.as_view(), name='approve_arrived_truck'),
+    path('api/notifications/', NotificationsView.as_view(), name='notifications'),
 
 
     path('api/delete_sales/',  DeleteSaleView.as_view(), name='delete_sales'),
@@ -73,6 +74,7 @@ urlpatterns = [
     path('api/delete_products/', DeleteProductView.as_view(), name='delete_goods'),
     path('api/delete_saler/', DeleteSalerView.as_view(), name='delete_saler'),
     path('api/delete_warehouse/', DeleteWarehouseView.as_view(), name='delete_warehouse'),
+    path('api/delete_notification/', DeleteNotificationView.as_view(), name='delete_notification'),
     
     path('api/item_list/',  ItemListView.as_view(), name='item_list'),
     path('api/item_list_filter/', ItemListView.as_view(), name='item_list_filter'),
