@@ -52,12 +52,15 @@ function AdminNavbar(props) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
    
-  const unreadCount=notifications.filter(notification => !notification.read).length;
+  const [unreadCount, setUnreadCount] = useState(0);
+  
+
+
   const [sidebarBgColor, setSidebarBgColor] = useState("black");
-const [sidebarActiveColor, setSidebarActiveColor] = useState("primary");
-const [sidebarMini, setSidebarMini] = useState(false);
-const [showFixedPlugin, setShowFixedPlugin] = useState(false);
-const handleBgClick = (color) => {
+  const [sidebarActiveColor, setSidebarActiveColor] = useState("primary");
+  const [sidebarMini, setSidebarMini] = useState(false);
+  const [showFixedPlugin, setShowFixedPlugin] = useState(false);
+  const handleBgClick = (color) => {
   setSidebarBgColor(color);
   };
   
@@ -72,9 +75,17 @@ const handleBgClick = (color) => {
   const toggleFixedPlugin = () => {
     setShowFixedPlugin(!showFixedPlugin);
   };
+  
+
   useEffect(() => {
     
-  }, [unreadCount]);
+      console.log(notifications)
+      console.log(notifications.length)
+      setUnreadCount(notifications.length);
+ 
+
+   
+  }, [notifications]);
   
  /* useEffect(() => {
     // Retrieve the notifications from localforage

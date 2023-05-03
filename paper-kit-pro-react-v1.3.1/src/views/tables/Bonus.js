@@ -57,6 +57,7 @@ function UserProfile() {
 
   const [isActive, setIsActive] = useState("");
   const [activity, setActivity] = useState(false);
+  const [isSelected, setIsSelected] = useState(false);
   const [newSalerType, setNewSalerType] = useState("active");
   const [salerTableData, setSalerTableData] = useState([]);
 
@@ -84,11 +85,19 @@ function UserProfile() {
         console.log(data);
 
         setSalersWholeData(data)
-        console.log(salersWholeData["is_active"])
+        console.log(salersWholeData)
+        setIsSelected(true)
       })
 
 
   };
+
+  useEffect(() => {
+    if (salersWholeData) {
+      // Execute the code you want to run when salersWholeData is changed.
+      console.log('salersWholeData has changed:', salersWholeData);
+    }
+  }, [salersWholeData]);
 
   const handleAddSaler = async () => {
     const access_token = await localforage.getItem('access_token');
@@ -194,31 +203,52 @@ function UserProfile() {
   
     if (floatFields.includes(name)) {
       const newValue = parseFloat(value);
+  
+      // Update the formData state
       setFormData((prevFormData) => ({ ...prevFormData, [name]: newValue }));
+  
+      // Update the salersWholeData state
+      setSalersWholeData((prevSalersWholeData) => ({
+        ...prevSalersWholeData,
+        [name]: newValue,
+      }));
     } else {
+      // Update the formData state
       setFormData((prevFormData) => ({ ...prevFormData, [name]: value }));
+  
+      // Update the salersWholeData state
+      setSalersWholeData((prevSalersWholeData) => ({
+        ...prevSalersWholeData,
+        [name]: value,
+      }));
     }
+    console.log('Updated formData:', formData);
   };
   
+  
 
-
-  const handleSave = () => {
+  const handleSave = (staffId) => {
     // Create an object with the new data
     console.log(isActive)
     if (isActive === "") {
-      console.log("asdadasdas");
-      setIsActive(salersWholeData["is_active"]);
-      console.log(salersWholeData["is_active"]);
+      setIsActive((prevIsActive) => {
+        // If the previous value is empty, set it to salersWholeData["is_active"]
+        return prevIsActive !== "" ? prevIsActive : salersWholeData["is_active"];
+      });
     }
   
+    // Use the current value of isActive state
+    const currentIsActive = isActive !== "" ? isActive : salersWholeData["is_active"];
     // Update the formData with the latest values
     const newData = {
       ...salersWholeData,
       ...formData,
-      is_active: isActive,
+      is_active: currentIsActive,
     };
 
+    
 
+    
     editSalers()
     async function editSalers() {
 
@@ -235,14 +265,29 @@ function UserProfile() {
           'Authorization': 'Bearer ' + String(access_token)
         },
       })
-        .then((response) => {
-          if (response.ok) {
-            setSalersWholeData(newData);
-          }
-        })
+      
+      .then((response) => {
+        if (!response.ok) {
+          return response.json().then(data => {
+            
+            errorUpload(data.error);
 
-        .catch(error => console.log(error));
+          });
+        } else {
+          return response.json().then(data => {
+           
+            
+            setSalersWholeData(newData);
+          
+            successAdd();
+          });
+        }
+      })
+      
+      
     }
+
+    
     console.log('New data:', newData);
     console.log('Old data:', salersWholeData);
 
@@ -407,7 +452,7 @@ function UserProfile() {
                               <Col md="1" xs="1" className="d-flex justify-content-center">
                                 <div
                                   style={{
-                                    backgroundColor: saler[2] ? "light-green" : "red",
+                                    backgroundColor: saler[2] ? "green" : "red",
                                     width: "10px",
                                     height: "10px",
                                     borderRadius: "50%",
@@ -472,7 +517,7 @@ function UserProfile() {
                               <Col md="1" xs="1" className="d-flex justify-content-center">
                                 <div
                                   style={{
-                                    backgroundColor: saler[2] ? "light-green" : "red",
+                                    backgroundColor: saler[2] ? "green" : "red",
                                     width: "10px",
                                     height: "10px",
                                     borderRadius: "50%",
@@ -656,7 +701,7 @@ function UserProfile() {
                       <FormGroup>
                         <label>Experience Rating</label>
                         <Input
-
+                          name="experience_rating"
                           defaultValue={salersWholeData["experience_rating"]}
                           onChange={handleInputChange}
                           placeholder="Exp. Rating"
@@ -668,7 +713,7 @@ function UserProfile() {
                       <FormGroup>
                         <label>Monthly Total Sales Rating</label>
                         <Input
-
+                          name="monthly_total_sales_rating"
                           defaultValue={salersWholeData["monthly_total_sales_rating"]}
                           onChange={handleInputChange}
                           placeholder="Mont. Tot. Sales Rating"
@@ -682,7 +727,7 @@ function UserProfile() {
                       <FormGroup>
                         <label>Receipment Rating</label>
                         <Input
-
+                          name="receipment_rating"
                           defaultValue={salersWholeData["receipment_rating"]}
                           onChange={handleInputChange}
                           placeholder="Receipment Rating"
@@ -710,7 +755,7 @@ function UserProfile() {
                 </Form>
               </CardBody>
               <CardFooter>
-                <Button className="btn-round" color="success" type="submit" onClick={handleSave}>Save</Button>
+                <Button className="btn-round" color="success" type="submit"  disabled={!isSelected} onClick={() => handleSave(salersWholeData.id)}>Save</Button>
               </CardFooter>
             </Card>
           
