@@ -1265,64 +1265,7 @@ class DeleteSalerView(APIView):
         return JsonResponse({'message': "Saler object has been successfully deleted"}, status=200)
 
 
-@receiver(post_save, sender=Sales)
-def update_saler_performance_with_add_sale(sender, instance, created, **kwargs):
-    # Get or create the SalerPerformance object
-    saler_performance, _ = SalerPerformance.objects.get_or_create(
-        name=instance.saler,
-        year=instance.date.year,
-        month=instance.date.month,
-        day=instance.date.day
-    )
 
-    if created:
-        # Update the sale value for the SalerPerformance object
-        saler_performance.sale += float(instance.net_sales)
-    else:
-        # Check which fields have been updated
-        dirty_fields = instance.get_dirty_fields()
-
-        # If any of the saler, year, month, or day fields are updated, find the previous SalerPerformance instance, subtract the old values, and update the new SalerPerformance instance
-        if any(field in dirty_fields for field in ['saler', 'date']):
-            old_saler = dirty_fields.get('saler', instance.saler)
-            old_date = dirty_fields.get('date', instance.date)
-            old_saler_performance = SalerPerformance.objects.get(
-                name=old_saler,
-                year=old_date.year,
-                month=old_date.month,
-                day=old_date.day
-            )
-
-            # Subtract old values from the old SalerPerformance instance
-            old_saler_performance.sale -= dirty_fields.get('net_sales', instance.net_sales)
-            old_saler_performance.save()
-
-            # Update the new SalerPerformance instance
-            saler_performance.sale += instance.net_sales
-
-        # Update the corresponding attributes of the SalerPerformance instance based on the updated fields
-        else:
-            if 'net_sales' in dirty_fields:
-                saler_performance.sale += float(instance.net_sales) - dirty_fields['net_sales']
-
-    saler_performance.save()
-
-
-@receiver(post_delete, sender=Sales)
-def update_saler_performance_with_delete_sale(sender, instance, **kwargs):
-    # Get the corresponding SalerPerformance object for the sale
-    find_month=instance.date.month
-    find_year = instance.date.year
-    performance, created = SalerPerformance.objects.get_or_create(
-        name=instance.saler, 
-        year=instance.date.year,
-        month=instance.date.month,
-        day=instance.date.day
-        )
-
-    # Subtract the net sale amount from the sale field
-    performance.sale -= instance.net_sales
-    performance.save()
 
 
 @receiver(pre_save, sender=SalerPerformance)
@@ -1346,6 +1289,87 @@ def update_month_sale_rating(sender, instance, **kwargs):
     saler.monthly_total_sales_rating = monthly_sale_rating
 
 
+
+
+
+# endregion
+
+# region SalerPerformance
+
+@receiver(post_save, sender=Sales)
+def update_saler_performance_with_add_sale(sender, instance, created, **kwargs):
+    # Get or create the SalerPerformance object
+    saler_performance, _ = SalerPerformance.objects.get_or_create(
+        name=instance.saler,
+        year=instance.date.year,
+        month=instance.date.month,
+        day=instance.date.day
+    )
+
+    if created:
+        # Update the sale value for the SalerPerformance object
+        saler_performance.sale += float(instance.net_sales)
+        saler_performance.bonus += float(instance.bonus)
+    else:
+        # Check which fields have been updated
+        dirty_fields = instance.get_dirty_fields()
+
+        # If any of the saler, year, month, or day fields are updated, find the previous SalerPerformance instance, subtract the old values, and update the new SalerPerformance instance
+        if any(field in dirty_fields for field in ['saler', 'date']):
+            old_saler = dirty_fields.get('saler', instance.saler)
+            old_date = dirty_fields.get('date', instance.date)
+            old_saler_performance = SalerPerformance.objects.get(
+                name=old_saler,
+                year=old_date.year,
+                month=old_date.month,
+                day=old_date.day
+            )
+
+            # Subtract old values from the old SalerPerformance instance
+            old_saler_performance.sale -= dirty_fields.get('net_sales', instance.net_sales)
+            old_saler_performance.bonus -= dirty_fields.get('bonus', instance.bonus)
+            old_saler_performance.save()
+
+            # Update the new SalerPerformance instance
+            saler_performance.sale += instance.net_sales
+            saler_performance.bonus += instance.bonus
+
+        # Update the corresponding attributes of the SalerPerformance instance based on the updated fields
+        else:
+            if 'net_sales' in dirty_fields:
+                saler_performance.sale += float(instance.net_sales) - dirty_fields['net_sales']
+            if 'bonus' in dirty_fields:
+                saler_performance.bonus += float(instance.bonus) - dirty_fields['bonus']
+
+    saler_performance.save()
+
+
+@receiver(post_delete, sender=Sales)
+def update_saler_performance_with_delete_sale(sender, instance, **kwargs):
+    # Get the corresponding SalerPerformance object for the sale
+    performance, created = SalerPerformance.objects.get_or_create(
+        name=instance.saler, 
+        year=instance.date.year,
+        month=instance.date.month,
+        day=instance.date.day
+        )
+
+    # Subtract the net sale amount from the sale field
+    performance.sale -= instance.net_sales
+    performance.bonus -= instance.bonus
+    performance.save()
+
+
+class SalerPerformanceView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def get(self, request, *args, **kwargs):
+        saler_performances = SalerPerformance.objects.values().all()
+        saler_performance_list = [[performance['name'], performance['year'], performance['month'],
+                                   performance['day'], performance['sale'], performance['bonus']]
+                                  for performance in saler_performances]
+        return JsonResponse(saler_performance_list, safe=False)
 
 
 
