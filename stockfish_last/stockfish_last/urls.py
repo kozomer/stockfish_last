@@ -15,7 +15,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from stockfish_api.views import ( AddCustomersView, AddSalesView, AddProductsView, AddWarehouseView, AddSalerView,
+from stockfish_api.views import ( AddCustomersView, AddSalesView, AddProductsView, AddWarehouseView, AddSalerView, SalerPerformanceView,
                                  ViewSalesView,  ViewWarehouseView, ViewProductsView, ChartView, ItemListView, ViewCustomersView, CollapsedSalerView, SalerCardView, SalerTableView, SalesReportView, ROPView, OrderListView,
                                  DeleteSaleView, DeleteCustomerView, DeleteProductView, DeleteSalerView, DeleteWarehouseView,
                                  EditProductView, EditCustomerView, EditSaleView, EditWarehouseView,  EditSalerView, EditOrderListView,  EditGoodsOnRoadView,
@@ -67,6 +67,7 @@ urlpatterns = [
     path('api/approve_products/',ApproveProductsToOrderView.as_view(), name='approve_products'),
     path('api/approve_arrived_truck/',ApproveArrivedTruckView.as_view(), name='approve_arrived_truck'),
     path('api/notifications/', NotificationsView.as_view(), name='notifications'),
+    path('api/saler_performance/', SalerPerformanceView.as_view(), name='saler_performance'),
 
 
     path('api/delete_sales/',  DeleteSaleView.as_view(), name='delete_sales'),

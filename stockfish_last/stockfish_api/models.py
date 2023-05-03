@@ -157,6 +157,7 @@ class SalerPerformance(models.Model):
     month = models.IntegerField(null=True)
     day = models.IntegerField(null=True)
     sale = models.FloatField(default=0, null=True)
+    bonus = models.FloatField(default=0, null=True)
     
 
 class SaleSummary(models.Model):
