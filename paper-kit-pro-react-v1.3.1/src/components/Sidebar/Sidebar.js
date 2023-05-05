@@ -218,8 +218,8 @@ function Sidebar(props) {
       data-color={props.bgColor}
       data-active-color={props.activeColor}
     >
-      <div className="logo" style={{ textAlign: "center", fontSize: "1.5rem", color: "white" }}>
-        MOONSOFT
+      <div className="logo" style={{ textAlign: "center", fontSize: "1.5rem", color: "white",  fontWeight: 'bold', }}>
+        VIVID
       </div>
   
       <div className="sidebar-wrapper" ref={sidebar}>

@@ -179,10 +179,17 @@ function AdminNavbar(props) {
               </button>
             </div>
             <NavbarBrand href="#pablo" onClick={(e) => e.preventDefault()}>
-              <span className="d-none d-md-block">
+              <span className="d-none d-md-block"
+               style={{ color: 'black',
+               fontWeight: 'bold',
+               fontSize: '1.5rem', // Adjust the size as desired
+               
+               paddingBottom: '5px'  }}>
                 STOCKFISH
               </span>
-              <span className="d-block d-md-none">STFISH</span>
+              <span className="d-block d-md-none"
+                style={{ color: 'black',
+                fontWeight: 'bold',}}>STFISH</span>
             </NavbarBrand>
           </div>
           <button

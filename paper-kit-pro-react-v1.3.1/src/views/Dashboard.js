@@ -147,6 +147,7 @@ function Dashboard() {
       }); // Replace with the correct API endpoint
       const data = await response.json();
       setNotificationData(data);
+      setNotificationsAdded(true);
     } catch (error) {
       console.error('Error fetching notification data:', error);
     }
