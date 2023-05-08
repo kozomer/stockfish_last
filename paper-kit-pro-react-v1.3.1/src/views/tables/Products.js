@@ -47,7 +47,7 @@ const DataTable = () => {
     async function fetchData() {
       const access_token = await localforage.getItem('access_token');
       
-      const response = await fetch('http://127.0.0.1:8000/api/products/',{
+      const response = await fetch('https://vividstockfish.com/api/products/',{
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer '+ String(access_token)
@@ -81,7 +81,7 @@ const DataTable = () => {
     const formData = new FormData();
     formData.append('file', file);
     const access_token = await localforage.getItem('access_token');
-    fetch('http://127.0.0.1:8000/api/add_products/', {
+    fetch('https://vividstockfish.com/api/add_products/', {
       method: 'POST',
       body: formData,
       
@@ -104,7 +104,7 @@ const DataTable = () => {
       setIsLoading(false);
       successUpload(data.message);
       
-      fetch('http://127.0.0.1:8000/api/products/',{
+      fetch('https://vividstockfish.com/api/products/',{
         headers: {
           'Authorization': 'Bearer '+ String(access_token)
         }
@@ -248,7 +248,7 @@ const DataTable = () => {
       if (deleteConfirm) {
        
         const access_token =  await localforage.getItem('access_token'); 
-        fetch(`http://127.0.0.1:8000/api/delete_products/`, {
+        fetch(`https://vividstockfish.com/api/delete_products/`, {
           method: "POST",
           body: new URLSearchParams(deleteData),
           headers: {
@@ -318,7 +318,7 @@ const DataTable = () => {
         old_price:oldData[11],
       };
       console.log(updatedData)
-      fetch('http://127.0.0.1:8000/api/edit_products/', {
+      fetch('https://vividstockfish.com/api/edit_products/', {
       method: 'POST',
       body: JSON.stringify(updatedData),
       headers: {
@@ -378,7 +378,7 @@ const DataTable = () => {
       const access_token = await localforage.getItem('access_token');
     
       // Make an AJAX request to the backend to download the CSV file
-      const response = await fetch('http://127.0.0.1:8000/api/export_products/', {
+      const response = await fetch('https://vividstockfish.com/api/export_products/', {
         headers: {
           'Authorization': 'Bearer '+ String(access_token)
         },
@@ -662,7 +662,7 @@ const DataTable = () => {
                                 };
                                 setDeleteData(data);
                                 //console.log(data);
-                                fetch(`http://127.0.0.1:8000/api/delete_sales/`, {
+                                fetch(`https://vividstockfish.com/api/delete_sales/`, {
                                   method: "POST",
                                   body: new URLSearchParams(data),
                                 }).then(() => {

@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 from pathlib import Path
 from  datetime import timedelta
 import os
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,21 +23,26 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-0n#6q-+h&+8o3lb&%&5afiger05--w5d$9j9bmq%f!1j184orx'
+SECRET_KEY = SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 #! True for developement environment
 #! False for production environment
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ["192.168.1.192","127.0.0.1","localhost","179.61.219.154", "vividstockfish.com", "www.vividstockfish.com"]
+ALLOWED_HOSTS = [#"192.168.1.192",
+                 #"127.0.0.1",
+                 #"localhost",
+                 #"179.61.219.154",
+                 "vividstockfish.com",
+                 "www.vividstockfish.com"]
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "https://www.vividstockfish.com",
     "https://vividstockfish.com",
-    "http://localhost:3000",
-    "http://127.0.0.1:8000",
+    #"http://localhost:3000",
+    #"http://127.0.0.1:8000",
 ]
 
 # Application definition
@@ -57,7 +63,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'rest_framework_jwt',
 ]
-CSRF_TRUSTED_ORIGINS = ['http://localhost:3000',  
+CSRF_TRUSTED_ORIGINS = [#'http://localhost:3000',  
                         "https://www.vividstockfish.com",
                         "https://vividstockfish.com"]
 
@@ -139,14 +145,31 @@ WSGI_APPLICATION = 'stockfish_last.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
+ENVIRONMENT = config('ENVIRONMENT')
+
 #! Add two seperate database for production and developement !!
 #! Also add database to .gitignore file.  
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
+if ENVIRONMENT == 'production':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'production.db.sqlite3',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'development.db.sqlite3',
+        }
+    }
 
 
 # Password validation
