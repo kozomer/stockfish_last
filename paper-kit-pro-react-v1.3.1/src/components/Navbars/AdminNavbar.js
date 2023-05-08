@@ -52,12 +52,15 @@ function AdminNavbar(props) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
    
-  const unreadCount=notifications.filter(notification => !notification.read).length;
+  const [unreadCount, setUnreadCount] = useState(0);
+  
+
+
   const [sidebarBgColor, setSidebarBgColor] = useState("black");
-const [sidebarActiveColor, setSidebarActiveColor] = useState("primary");
-const [sidebarMini, setSidebarMini] = useState(false);
-const [showFixedPlugin, setShowFixedPlugin] = useState(false);
-const handleBgClick = (color) => {
+  const [sidebarActiveColor, setSidebarActiveColor] = useState("primary");
+  const [sidebarMini, setSidebarMini] = useState(false);
+  const [showFixedPlugin, setShowFixedPlugin] = useState(false);
+  const handleBgClick = (color) => {
   setSidebarBgColor(color);
   };
   
@@ -72,9 +75,17 @@ const handleBgClick = (color) => {
   const toggleFixedPlugin = () => {
     setShowFixedPlugin(!showFixedPlugin);
   };
+  
+
   useEffect(() => {
     
-  }, [unreadCount]);
+      console.log(notifications)
+      console.log(notifications.length)
+      setUnreadCount(notifications.length);
+ 
+
+   
+  }, [notifications]);
   
  /* useEffect(() => {
     // Retrieve the notifications from localforage
@@ -168,10 +179,17 @@ const handleBgClick = (color) => {
               </button>
             </div>
             <NavbarBrand href="#pablo" onClick={(e) => e.preventDefault()}>
-              <span className="d-none d-md-block">
+              <span className="d-none d-md-block"
+               style={{ color: 'black',
+               fontWeight: 'bold',
+               fontSize: '1.5rem', // Adjust the size as desired
+               
+               paddingBottom: '5px'  }}>
                 STOCKFISH
               </span>
-              <span className="d-block d-md-none">STFISH</span>
+              <span className="d-block d-md-none"
+                style={{ color: 'black',
+                fontWeight: 'bold',}}>STFISH</span>
             </NavbarBrand>
           </div>
           <button

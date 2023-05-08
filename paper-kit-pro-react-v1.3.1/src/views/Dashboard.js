@@ -14,7 +14,7 @@
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 */
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 // react plugin used to create charts
 import { Line, Bar, Doughnut } from "react-chartjs-2";
 // react plugin for creating vector maps
@@ -87,8 +87,11 @@ function Dashboard() {
   
   const [salesTotalData, setSalesTotalData] = useState([]);
   const [salesMonthlyData, setSalesMonthlyData] = useState([]);
+  const [notificationData, setNotificationData] = useState([]);
+  const [notificationsAdded, setNotificationsAdded] = useState(false);
+
   //Notification
-  const notify = (place, productCode) => {
+  const notify = useCallback((place, productCode) => {
     var color = Math.floor(Math.random() * 5 + 1);
     var type;
     switch (color) {
@@ -117,7 +120,7 @@ function Dashboard() {
         <div>
           <div>
             Welcome to <b>Now UI Dashboard React</b> - a beautiful premium admin
-            for every web developer. Click <a href={`/admin/rop?productCode=${1}`}>here</a> to reorder points for product {1}.
+            for every web developer. Click <a href={`/admin/rop?productCode=${productCode}`}>here</a> to reorder points for product {productCode}.
           </div>
         </div>
       ),
@@ -128,13 +131,43 @@ function Dashboard() {
     };
     notifications.push(options);
     localforage.setItem('notifications', JSON.stringify([...notifications]));
-    notificationAlert.current.notificationAlert(options);
+   // notificationAlert.current.notificationAlert(options);
     console.log(notifications)
+  }, []);
+  
+  const fetchNotificationData = async () => {
+    const access_token = await localforage.getItem('access_token');
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/notifications/', {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': 'Bearer ' + String(access_token)
+        },
+      }); // Replace with the correct API endpoint
+      const data = await response.json();
+      setNotificationData(data);
+      setNotificationsAdded(true);
+    } catch (error) {
+      console.error('Error fetching notification data:', error);
+    }
   };
-  
-  
 
-
+  useEffect(() => {
+    fetchNotificationData();
+  }, []);
+  
+  useEffect(() => {
+    if (!notificationsAdded && notificationData.length > 0) {
+      notificationData.forEach((notification) => {
+        const [id, date, productCode, orderAvrg, orderExp, orderHolt] = notification;
+        console.log(notificationData);
+        notify("tr", productCode);
+      });
+      setNotificationsAdded(true);
+    }
+  }, [notificationData, notificationsAdded]);
+  
   useEffect(() => {
     const fetchData = async () => {
       const access_token = await localforage.getItem('access_token');
@@ -794,7 +827,7 @@ function Dashboard() {
                       <thead>
                         <tr>
                           <th>#</th>
-                          <th>Product Name</th>
+                          <th>Area Name</th>
                           <th className="text-right">Total Sales</th>
 
                         </tr>
@@ -832,7 +865,7 @@ function Dashboard() {
                             title: {
                               display: true,
                               position: "top",
-                              text: "Top Products",
+                              text: "Top Areas",
                               color: "#66615c",
                               font: {
                                 weight: 400,

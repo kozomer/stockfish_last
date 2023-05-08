@@ -38,6 +38,7 @@ import SalesReport from "views/tables/SalesReport";
 import ReorderPoints from "views/tables/ReorderPoints.js";
 import Orderlist from "views/tables/OrderList";
 import GoodsOnRoad from "views/tables/GoodsOnRoad";
+import StaffPerformance from "views/tables/StaffPerfomance";
 
 import Register from "views/pages/Register.js";
 import RegularForms from "views/forms/RegularForms.js";
@@ -91,6 +92,14 @@ const routes = [
     name: "Staff",
     icon:"nc-icon nc-badge",
     component:Bonus,
+    layout: "/admin"
+  },
+  
+  {
+    path: "/saler-performance",
+    name: "Staff Performance",
+    icon:"nc-icon nc-user-run",
+    component: StaffPerformance,
     layout: "/admin"
   },
   {
