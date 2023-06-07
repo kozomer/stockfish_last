@@ -1,7 +1,7 @@
 from django.shortcuts import render
 import pandas as pd
 from .models import (Customers, Products, Sales, Warehouse, ROP, Salers, SalerPerformance, SaleSummary, SalerMonthlySaleRating, 
-                    MonthlyProductSales,CustomerPerformance, ProductPerformance, OrderList, GoodsOnRoad, Trucks, NotificationsOrderList)
+                    MonthlyProductSales,CustomerPerformance, ProductPerformance, OrderList, GoodsOnRoad, Trucks, NotificationsOrderList, SalerReceipeRating)
 from django.views import View
 from rest_framework.views import APIView
 from django.http import JsonResponse, HttpResponse
@@ -284,7 +284,7 @@ class AddSalesView(APIView):
                 count += 1
 
                 # Check required fields
-                for field in ['Good Code', 'Customer Code', 'Original Output Value', 'Net Sales', 'Saler', 'PSR']:
+                for field in ['Good Code', 'Customer Code', 'The Original Value', 'Net Sales', 'Saler',]:
                     if not row[field]:
                         return JsonResponse({'error': f"{field} cannot be empty"}, status=400)
 
@@ -299,7 +299,8 @@ class AddSalesView(APIView):
 
                 # Check valid date format
                 try:
-                    date = jdatetime.date(int(row["Year"]), int(row["Month"]), int(row["Day"]))
+                    date_raw = row["Date"].split("/")
+                    date = jdatetime.date(int(date_raw[0]), int(date_raw[1]), int(date_raw[2]))
                 except ValueError:
                     return JsonResponse({'error': "Date should be in the format of YYYY-MM-DD"}, status=400)
                 except IndexError as e:
@@ -338,54 +339,92 @@ class AddSalesView(APIView):
                     
                     return JsonResponse({'error': "No saler found"}, status=400)
                 
+                # Calculation of "KG"
+                if row["Unit"].lower() == "kg":
+                    kg = row["The Original Value"]
+                else:
+                    kg = row["The Original Value"] * product.unit_secondary
+                
+                # Calculation of Balance
+                net_sales = float(row['Net Sales'])
+                payment_cash = 0
+                payment_check = 0
+                balance = net_sales-(payment_cash+payment_check)
+
+                #Calculation of Dollar Sepidar
+                currency_sepidar=float(row["Currency-Sepidar"])
+                currency=float(row["Currency"])
+                dollar_sepidar = net_sales/currency_sepidar
+                dollar = net_sales/currency
+
+                #Calculation of monthly sale rating
+                monthly_sale_rating_object = SalerMonthlySaleRating.objects.get(name = saler.name, year = date.year, month = date.month)
+                monthly_sale_rating = monthly_sale_rating_object.sale_rating
+                #Calculation of Manager Rating
+                if current_jalali_date().month == date.month and current_jalali_date().year == date.year:
+                    manager_rating =saler.manager_performance_rating
+                else:
+                    manager_rating = 1
+                
+                receipe_rating_object = SalerReceipeRating.objects.get(name = saler.name, year = date.year, month = date.month)
+                receipe_rating = receipe_rating_object.sale_rating
+                # Saler Factor
+                saler_factor = monthly_sale_rating * manager_rating * receipe_rating * saler.experience_rating * (row["Payment Type"] if row["Payment Type"] else 1)* (row["CT"] if row["CT"] else 1)
+                prim_percantage = row["Prim Percantage"]
+                bonus_factor = saler_factor * prim_percantage
+                bonus = bonus_factor * net_sales
+
+                
                 # Save the Sale object
                 sale = Sales(
                     no=no,
                     bill_number=row["Bill Number"],
                     date=date,
-                    psr=row["PSR"],
+                    psr= None, #row["PSR"],
                     customer_code=row["Customer Code"],
                     name= customer.description,
                     city= customer.city,
                     area= customer.area,
-                    color_making_saler=row["Color Making Saler"],
-                    group= product.group,
+                    color_making_saler= None, #row["Color Making Saler"],
+                    #group= product.group,
                     product_code=row["Good Code"],
                     product_name=product.description_ir,
                     unit=product.unit,
                     unit2=product.unit_secondary,
                     original_value=row["The Original Value"],
-                    kg = row['KG'],
-                    original_output_value=row["Original Output Value"],
+                    kg = kg,
+                    #original_output_value=row["Original Output Value"],
                     secondary_output_value=row["Secondary Output Value"],
-                    price=row["Price"],
-                    original_price=row["Original Price"],
+                    price_dollar = row["Price/Dollar"],
+                    #price=row["Price"],
+                    original_price_dollar=row["Original Price"], #!!!!!!!!!!!
+                    #original_price=row["Original Price"], #!!!!!!!!!!!
                     discount_percentage=row["Discount Percantage (%)"],
                     amount_sale=row["Amount Sale"],
                     discount=row["Discount"],
                     additional_sales=row["Additional Sales"],
                     net_sales=row["Net Sales"],
-                    discount_percentage_2=row["Discount Percantage 2(%)"],
-                    real_discount_percentage=row["Real Discount Percantage (%)"],
-                    payment_cash=row["Payment Cash"],
-                    payment_check=row["Payment Check"],
-                    balance=row["Balance"],
-                    saler=row["Saler"],
-                    currency_sepidar=row["Currency-Sepidar"],
-                    dollar_sepidar=row["Dollar-Sepidar"],
-                    currency=row["Currency"],
-                    dollar=row["Dollar"],
-                    manager_rating=row["Manager Rating"],
-                    senior_saler=row["Senior Saler"],
-                    tot_monthly_sales=row["Tot Monthly Sales"],
-                    receipment=row["Receipment"],
-                    ct=row["CT"],
-                    payment_type=row["Payment Type"],
-                    customer_size=row["Customer Size"],
-                    saler_factor=row["Saler Factor"],
-                    prim_percentage=row["Prim Percantage"],
-                    bonus_factor=row["Bonus Factor"],
-                    bonus=row["Bonus"]
+                    #discount_percentage_2=row["Discount Percantage 2(%)"],
+                    #real_discount_percentage=row["Real Discount Percantage (%)"],
+                    payment_cash= payment_cash, #row["Payment Cash"],
+                    payment_check= payment_check, #row["Payment Check"],
+                    balance = balance,
+                    saler= saler.name,
+                    currency_sepidar= currency_sepidar, #! Sepidar dosyası içinde bu veri de verimeli
+                    dollar_sepidar= dollar_sepidar,
+                    currency= currency, #! Sepidar dosyası içinde bu veri de verimeli
+                    dollar= dollar,
+                    manager_rating= manager_rating,
+                    senior_saler= saler.experience_rating,
+                    tot_monthly_sales= monthly_sale_rating,
+                    receipment= receipe_rating,
+                    ct= 1, #row["CT"],#! Sepidar dosyası içinde bu veri de verimeli
+                    payment_type=None, #row["Payment Type"], #! Sepidar dosyası içinde bu veri de verimeli
+                    customer_size=1, #row["Customer Size"], #! Sepidar dosyası içinde bu veri de verimeli
+                    saler_factor = saler_factor,
+                    prim_percentage=row["Prim Percantage"], #! sepidardan alınmalı
+                    bonus_factor=bonus_factor,
+                    bonus=bonus
                 )
                 sale.save()
 
@@ -410,20 +449,22 @@ class AddSalesView(APIView):
 class ViewSalesView(APIView):
     permission_classes = [IsAuthenticated,]
     authentication_classes = [JWTAuthentication,]
+    
     def get(self, request, *args, **kwargs):
         sales = Sales.objects.values().all()
         sale_list = [[sale['no'], sale['bill_number'], sale['date'].strftime('%Y-%m-%d'), sale['psr'], sale['customer_code'],
-                        sale['name'], sale['city'], sale['area'], sale['color_making_saler'], sale['group'], sale['product_code'], 
-                        sale['product_name'], sale['unit'], sale['unit2'], sale['kg'], sale['original_value'], sale['original_output_value'], 
-                        sale['secondary_output_value'], sale['price'], sale['original_price'], sale['discount_percentage'], sale['amount_sale'],
-                        sale['discount'], sale['additional_sales'], sale['net_sales'], sale['discount_percentage_2'], sale['real_discount_percentage'],
-                        sale['payment_cash'], sale['payment_check'], sale['balance'], sale['saler'], sale['currency_sepidar'], sale['dollar_sepidar'], 
-                        sale['currency'], sale['dollar'], sale['manager_rating'], sale['senior_saler'], sale['tot_monthly_sales'], sale['receipment'], 
-                        sale['ct'], sale['payment_type'], sale['customer_size'], sale['saler_factor'], sale['prim_percentage'], sale['bonus_factor'], 
-                        sale['bonus']]
+                        sale['name'], sale['city'], sale['area'], sale['color_making_saler'], sale['product_code'], 
+                        sale['product_name'], sale['unit'], sale['unit2'], sale['kg'], sale['original_value'], 
+                        sale['secondary_output_value'], sale['price_dollar'], sale['original_price_dollar'], sale['discount_percentage'], 
+                        sale['amount_sale'], sale['discount'], sale['additional_sales'], sale['net_sales'], sale['payment_cash'], 
+                        sale['payment_check'], sale['balance'], sale['saler'], sale['currency_sepidar'], sale['dollar_sepidar'], 
+                        sale['currency'], sale['dollar'], sale['manager_rating'], sale['senior_saler'], sale['tot_monthly_sales'], 
+                        sale['receipment'], sale['ct'], sale['payment_type'], sale['customer_size'], sale['saler_factor'], sale['prim_percentage'], 
+                        sale['bonus_factor'], sale['bonus']]
                      for sale in sales]
         return JsonResponse(sale_list, safe=False)
 
+#! Düzenleme burada kaldı.
 class DeleteSaleView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
