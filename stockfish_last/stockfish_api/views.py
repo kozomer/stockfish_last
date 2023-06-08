@@ -374,13 +374,16 @@ class AddSalesView(APIView):
                 bonus_factor = saler_factor * prim_percantage
                 bonus = bonus_factor * net_sales
 
+                discount_percentage = ((float(row["Net Sales"])/float(row["Amount Sale"]))-1)*100
+
+
                 
                 # Save the Sale object
                 sale = Sales(
                     no=no,
                     bill_number=row["Bill Number"],
                     date=date,
-                    psr= None, #row["PSR"],
+                    psr= row["PSR"],
                     customer_code=row["Customer Code"],
                     name= customer.description,
                     city= customer.city,
@@ -397,9 +400,9 @@ class AddSalesView(APIView):
                     secondary_output_value=row["Secondary Output Value"],
                     price_dollar = row["Price/Dollar"],
                     #price=row["Price"],
-                    original_price_dollar=row["Original Price"], #!!!!!!!!!!!
+                    original_price_dollar=row["Original Price"], 
                     #original_price=row["Original Price"], #!!!!!!!!!!!
-                    discount_percentage=row["Discount Percantage (%)"],
+                    discount_percentage=discount_percentage,
                     amount_sale=row["Amount Sale"],
                     discount=row["Discount"],
                     additional_sales=row["Additional Sales"],
@@ -410,17 +413,17 @@ class AddSalesView(APIView):
                     payment_check= payment_check, #row["Payment Check"],
                     balance = balance,
                     saler= saler.name,
-                    currency_sepidar= currency_sepidar, #! Sepidar dosyası içinde bu veri de verimeli
+                    currency_sepidar= currency_sepidar, 
                     dollar_sepidar= dollar_sepidar,
-                    currency= currency, #! Sepidar dosyası içinde bu veri de verimeli
+                    currency= currency, 
                     dollar= dollar,
                     manager_rating= manager_rating,
                     senior_saler= saler.experience_rating,
                     tot_monthly_sales= monthly_sale_rating,
                     receipment= receipe_rating,
-                    ct= 1, #row["CT"],#! Sepidar dosyası içinde bu veri de verimeli
-                    payment_type=None, #row["Payment Type"], #! Sepidar dosyası içinde bu veri de verimeli
-                    customer_size=1, #row["Customer Size"], #! Sepidar dosyası içinde bu veri de verimeli
+                    ct= row["CT"],
+                    payment_type= row["Payment Type"], 
+                    customer_size= row["Customer Size"], 
                     saler_factor = saler_factor,
                     prim_percentage=row["Prim Percantage"], #! sepidardan alınmalı
                     bonus_factor=bonus_factor,
@@ -431,7 +434,7 @@ class AddSalesView(APIView):
                 # Update stock in warehouse
                 try:
                     warehouse_item = Warehouse.objects.get(product_code=sale.product_code)
-                    warehouse_item.stock -= sale.original_output_value
+                    warehouse_item.stock -= sale.original_value
                     warehouse_item.save()
                 except Warehouse.DoesNotExist:
                     return JsonResponse({'error': f"No product found with code '{row['Good Code']}' in warehouse"}, status=400)
@@ -472,11 +475,11 @@ class DeleteSaleView(APIView):
         try:
             no = request.POST.get('no', None)
             product_code = request.POST.get('product_code', None)
-            original_output_value = request.POST.get('original_output_value', None)
+            original_value = request.POST.get('original_value', None)
             Sales.objects.filter(no=no).delete()
             try:
                 warehouse_item = Warehouse.objects.get(product_code=product_code)
-                warehouse_item.stock += float(original_output_value)
+                warehouse_item.stock += float(original_value)
                 warehouse_item.save()
             except Warehouse.DoesNotExist:
                 return JsonResponse({'error': f"No product found with code '{product_code}' in warehouse"}, status=400)
@@ -493,7 +496,7 @@ class EditSaleView(APIView):
             data = json.loads(request.body)
 
             # Check for required fields
-            for field in ['new_product_code', 'new_customer_code', 'new_original_output_value', 'new_net_sales', 'new_saler', 'new_psr', 'new_date']:
+            for field in ['new_product_code', 'new_customer_code', 'new_original_value', 'new_net_sales', 'new_saler', 'new_psr', 'new_date']:
                 if not data.get(field):
                     return JsonResponse({'error': f"{field} cannot be empty"}, status=400)
 
@@ -515,6 +518,7 @@ class EditSaleView(APIView):
                 return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD'"}, status=400)
             except Exception as e:
                 return JsonResponse({'error': str(e)}, status=400)
+            
             # Check for valid psr value
             if data.get('new_psr') not in ['P', 'S', 'R']:
                 return JsonResponse({'error': "Invalid P-S-R value. Allowed values are 'P', 'S', and 'R'."}, status=400)
@@ -524,6 +528,7 @@ class EditSaleView(APIView):
                 return JsonResponse({'error': f"No product found with code '{data.get('new_product_code')}' in Warehouse. Please check product code. If there is a new product please add firstly to Warehouse."}, status=400)
             if not Products.objects.filter(product_code_ir=data.get('new_product_code')).exists():
                 return JsonResponse({'error': f"No product found with code '{data.get('new_product_code')}'. Please check product code. If there is a new product please add firstly to Products."}, status=400)
+            
             # Check for existing customer
             if not Customers.objects.filter(customer_code=data.get('new_customer_code')).exists():
                 return JsonResponse({'error': f"No customer found with code '{data.get('new_customer_code')}'. Please check customer code. If there is a new customer please add firstly to Customers."}, status=400)
@@ -545,27 +550,23 @@ class EditSaleView(APIView):
             sale.psr = data.get('new_psr')
             sale.customer_code = data.get('new_customer_code')
             sale.name = data.get('new_name')
-            sale.area = data.get('new_area')
             sale.city = data.get('new_city')
+            sale.area = data.get('new_area')
             sale.color_making_saler = data.get('new_color_making_saler')
-            sale.group = data.get('new_group')
             sale.product_code = data.get('new_product_code')
             sale.product_name = data.get('new_product_name')
             sale.unit = data.get('new_unit')
             sale.unit2 = data.get('new_unit2')
             sale.kg = data.get('new_kg')
             sale.original_value = data.get('new_original_value')
-            sale.original_output_value = data.get('new_original_output_value')
             sale.secondary_output_value = data.get('new_secondary_output_value')
-            sale.price = data.get('new_price')
-            sale.original_price = data.get('new_original_price')
+            sale.price_dollar = data.get('new_price_dollar')
+            sale.original_price_dollar = data.get('new_original_price_dollar')
             sale.discount_percentage = data.get('new_discount_percentage')
             sale.amount_sale = data.get('new_amount_sale')
             sale.discount = data.get('new_discount')
             sale.additional_sales = data.get('new_additional_sales')
             sale.net_sales = data.get('new_net_sales')
-            sale.discount_percentage_2 = data.get('new_discount_percentage_2')
-            sale.real_discount_percentage = data.get('new_real_discount_percentage')
             sale.payment_cash = data.get('new_payment_cash')
             sale.payment_check = data.get('new_payment_check')
             sale.balance = data.get('new_balance')
@@ -600,6 +601,7 @@ class EditSaleView(APIView):
             traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
 
+
 class ExportSalesView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
@@ -611,18 +613,15 @@ class ExportSalesView(APIView):
                 worksheet.column_dimensions[column_cells[0].column_letter].width = length + 2
 
         sales = Sales.objects.all().values()
-        # Create a new workbook and add a worksheet
         jalali_date= current_jalali_date().strftime('%Y-%m-%d')
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = f"Sales {jalali_date}"
-        # Write the header row
-        header = ['No', 'Bill Number', 'Date', 'PSR', 'Customer Code', 'Name', 'City', 'Area', 'Color Making Saler', 'Group',
-                  'Product Code', 'Product Name', 'Unit', 'Unit2', 'Kg', 'Original Value', 'Original Output Value', 'Secondary Output Value',
-                  'Price', 'Original Price', 'Discount Percentage', 'Amount Sale', 'Discount', 'Additional Sales', 'Net Sales',
-                  'Discount Percentage 2', 'Real Discount Percentage', 'Payment Cash', 'Payment Check', 'Balance', 'Saler', 'Currency Sepidar',
-                  'Dollar Sepidar', 'Currency', 'Dollar', 'Manager Rating', 'Senior Saler', 'Total Monthly Sales', 'Receipment', 'CT',
-                  'Payment Type', 'Customer Size', 'Saler Factor', 'Prim Percentage', 'Bonus Factor', 'Bonus']
+        header = ['No', 'Bill Number', 'Date', 'PSR', 'Customer Code', 'Name', 'City', 'Area', 'Color Making Saler', 'Product Code',
+                  'Product Name', 'Unit', 'Unit2', 'Kg', 'Original Value', 'Secondary Output Value', 'Price Dollar', 'Original Price Dollar',
+                  'Discount Percentage', 'Amount Sale', 'Discount', 'Additional Sales', 'Net Sales', 'Payment Cash', 'Payment Check',
+                  'Balance', 'Saler', 'Currency Sepidar', 'Dollar Sepidar', 'Currency', 'Dollar', 'Manager Rating', 'Senior Saler',
+                  'Total Monthly Sales', 'Receipment', 'CT', 'Payment Type', 'Customer Size', 'Saler Factor', 'Prim Percentage', 'Bonus Factor', 'Bonus']
         for col_num, column_title in enumerate(header, 1):
             cell = ws.cell(row=1, column=col_num)
             cell.value = column_title
@@ -632,21 +631,18 @@ class ExportSalesView(APIView):
                                                  bottom=openpyxl.styles.Side(style='medium'),
                                                  left=openpyxl.styles.Side(style='medium'),
                                                  right=openpyxl.styles.Side(style='medium'))
-        ## Write the data rows
         for row_num, sale in enumerate(sales, 2):
             row = [sale['no'], sale['bill_number'], sale['date'].strftime('%Y-%m-%d'), sale['psr'], sale['customer_code'],
-                   sale['name'], sale['city'], sale['area'], sale['color_making_saler'], sale['group'], sale['product_code'], 
-                   sale['product_name'], sale['unit'], sale['unit2'], sale['kg'], sale['original_value'], sale['original_output_value'], 
-                   sale['secondary_output_value'], sale['price'], sale['original_price'], sale['discount_percentage'], sale['amount_sale'],
-                   sale['discount'], sale['additional_sales'], sale['net_sales'], sale['discount_percentage_2'], sale['real_discount_percentage'],
-                   sale['payment_cash'], sale['payment_check'], sale['balance'], sale['saler'], sale['currency_sepidar'], sale['dollar_sepidar'], 
-                   sale['currency'], sale['dollar'], sale['manager_rating'], sale['senior_saler'], sale['tot_monthly_sales'], sale['receipment'], 
-                   sale['ct'], sale['payment_type'], sale['customer_size'], sale['saler_factor'], sale['prim_percentage'], sale['bonus_factor'], 
-                   sale['bonus']]
+                   sale['name'], sale['city'], sale['area'], sale['color_making_saler'], sale['product_code'], sale['product_name'],
+                   sale['unit'], sale['unit2'], sale['kg'], sale['original_value'], sale['secondary_output_value'],
+                   sale['price_dollar'], sale['original_price_dollar'], sale['discount_percentage'], sale['amount_sale'],
+                   sale['discount'], sale['additional_sales'], sale['net_sales'], sale['payment_cash'], sale['payment_check'],
+                   sale['balance'], sale['saler'], sale['currency_sepidar'], sale['dollar_sepidar'], sale['currency'],
+                   sale['dollar'], sale['manager_rating'], sale['senior_saler'], sale['tot_monthly_sales'], sale['receipment'],
+                   sale['ct'], sale['payment_type'], sale['customer_size'], sale['saler_factor'], sale['prim_percentage'], sale['bonus_factor'], sale['bonus']]
             for col_num, cell_value in enumerate(row, 1):
                 cell = ws.cell(row=row_num, column=col_num)
                 cell.value = cell_value
-        # Apply some styling to the Excel file
         for row in ws.iter_rows(min_row=1, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
             for cell in row:
                 cell.border = openpyxl.styles.Border(top=openpyxl.styles.Side(style='thin'),
@@ -654,25 +650,18 @@ class ExportSalesView(APIView):
                                                      left=openpyxl.styles.Side(style='thin'),
                                                      right=openpyxl.styles.Side(style='thin'))
                 cell.alignment = openpyxl.styles.Alignment(horizontal='center')
-        # Set the column widths
         set_column_widths(ws)
-
-        # Apply auto filter
         ws.auto_filter.ref = f"A1:AT{ws.max_row}"
 
-
-        # Set the response headers for an Excel file
         buffer = BytesIO()
         wb.save(buffer)
         buffer.seek(0)
         content = buffer.read()
 
-        # Encode the content in base64
         base64_content = base64.b64encode(content).decode()
 
-
-        # Send the content and filename in the JSON response
         return JsonResponse({'filename': f'sales({jalali_date}).xlsx', 'content': base64_content})
+
 
 
 
@@ -1047,9 +1036,9 @@ class ChartView(APIView):
         #product_code = request.POST.get('product_code')
         #start_date = date(1400,4,1)
         #end_date = date(1400,4,30)
-        data = Sales.objects.filter(group = "Boya").values('date', 'original_output_value')
+        data = Sales.objects.filter(group = "Boya").values('date', 'original_value')
         date_list = [obj['date'] for obj in data]
-        output_value_list = [obj['original_output_value'] for obj in data]
+        output_value_list = [obj['original_value'] for obj in data]
         response_data = {'date_list': date_list, 'output_value_list': output_value_list}
 
         return JsonResponse(response_data, safe=False)
@@ -1068,11 +1057,11 @@ class ItemListView(APIView):
         product_code = data.get('product_code')
 
         # Filter Sales by the product_title
-        data = Sales.objects.filter(product_code=product_code).values('date', 'original_output_value')
+        data = Sales.objects.filter(product_code=product_code).values('date', 'original_value')
         product_name = Products.objects.filter(product_code_ir=product_code).values('description_ir')
-        # Get the original_output_value of each sale
+        # Get the original_value of each sale
         date_list = [obj['date'] for obj in data]
-        output_value_list = [obj['original_output_value'] for obj in data]
+        output_value_list = [obj['original_value'] for obj in data]
         product_name = [obj["product_title"] for obj in product_name]
 
         response_data = {'product_name':product_name ,'date_list': date_list, 'output_value_list': output_value_list}
@@ -1573,7 +1562,7 @@ def update_monthly_product_sales_with_add_sale(sender, instance, created, **kwar
 
     if created:
         # Update the MonthlyProductSales instance with the new sales information
-        monthly_sale.piece += instance.original_output_value
+        monthly_sale.piece += instance.original_value
         monthly_sale.sale += instance.net_sales
     else:
         # Check which fields have been updated
@@ -1590,18 +1579,18 @@ def update_monthly_product_sales_with_add_sale(sender, instance, created, **kwar
             )
 
             # Subtract old values from the old MonthlyProductSales instance
-            old_monthly_sale.piece -= dirty_fields.get('original_output_value', instance.original_output_value)
+            old_monthly_sale.piece -= dirty_fields.get('original_value', instance.original_value)
             old_monthly_sale.sale -= dirty_fields.get('net_sales', instance.net_sales)
             old_monthly_sale.save()
 
             # Update the new MonthlyProductSales instance
-            monthly_sale.piece += instance.original_output_value
+            monthly_sale.piece += instance.original_value
             monthly_sale.sale += instance.net_sales
 
         # Update the corresponding attributes of the MonthlyProductSales instance based on the updated fields
         else:
-            if 'original_output_value' in dirty_fields:
-                monthly_sale.piece += float(instance.original_output_value) - dirty_fields['original_output_value']
+            if 'original_value' in dirty_fields:
+                monthly_sale.piece += float(instance.original_value) - dirty_fields['original_value']
             if 'net_sales' in dirty_fields:
                 monthly_sale.sale += float(instance.net_sales) - dirty_fields['net_sales']
 
@@ -1619,7 +1608,7 @@ def update_monthly_product_sales_with_delete_sale(sender, instance, **kwargs):
         )
 
     monthly_sale.product_name = instance.product_name,
-    monthly_sale.piece -= instance.original_output_value
+    monthly_sale.piece -= instance.original_value
     monthly_sale.sale -= instance.net_sales
     monthly_sale.save()
 
@@ -1646,7 +1635,7 @@ def update_customer_performance_with_add_sale(sender, instance, created, **kwarg
     if created:
         # Update the sale value for the CustomerPerformance object
         customer_performance.sale += instance.net_sales
-        customer_performance.sale_amount += instance.original_output_value
+        customer_performance.sale_amount += instance.original_value
         customer_performance.dollar += instance.dollar
         customer_performance.dollar_sepidar += instance.dollar_sepidar
     else:
@@ -1663,14 +1652,14 @@ def update_customer_performance_with_add_sale(sender, instance, created, **kwarg
 
             # Subtract old values from the old CustomerPerformance instance
             old_customer_performance.sale -= dirty_fields.get('net_sales', instance.net_sales)
-            old_customer_performance.sale_amount -= dirty_fields.get('original_output_value', instance.original_output_value)
+            old_customer_performance.sale_amount -= dirty_fields.get('original_value', instance.original_value)
             old_customer_performance.dollar -= dirty_fields.get('dollar', instance.dollar)
             old_customer_performance.dollar_sepidar -= dirty_fields.get('dollar_sepidar', instance.dollar_sepidar)
             old_customer_performance.save()
 
             # Update the new CustomerPerformance instance
             customer_performance.sale += instance.net_sales
-            customer_performance.sale_amount += instance.original_output_value
+            customer_performance.sale_amount += instance.original_value
             customer_performance.dollar += instance.dollar
             customer_performance.dollar_sepidar += instance.dollar_sepidar
 
@@ -1678,8 +1667,8 @@ def update_customer_performance_with_add_sale(sender, instance, created, **kwarg
         else:
             if 'net_sales' in dirty_fields:
                 customer_performance.sale += float(instance.net_sales) - dirty_fields['net_sales']
-            if 'original_output_value' in dirty_fields:
-                customer_performance.sale_amount += float(instance.original_output_value) - dirty_fields['original_output_value']
+            if 'original_value' in dirty_fields:
+                customer_performance.sale_amount += float(instance.original_value) - dirty_fields['original_value']
             if 'dollar' in dirty_fields:
                 customer_performance.dollar += float(instance.dollar) - dirty_fields['dollar']
             if 'dollar_sepidar' in dirty_fields:
@@ -1702,7 +1691,7 @@ def update_customer_performance_with_delete_sale(sender, instance, **kwargs):
     customer_performance.customer_name = instance.name
     customer_performance.customer_area = instance.area
     customer_performance.sale -= instance.net_sales
-    customer_performance.sale_amount -= instance.original_output_value
+    customer_performance.sale_amount -= instance.original_value
     customer_performance.dollar -= instance.dollar
     customer_performance.dollar_sepidar -= instance.dollar_sepidar
     customer_performance.save()
@@ -1786,7 +1775,7 @@ def update_product_performance_with_add_sale(sender, instance, created, **kwargs
 
     if created:
         # Update the sale value for the ProductPerformance object
-        product_performance.sale_amount += instance.original_output_value
+        product_performance.sale_amount += instance.original_value
         product_performance.sale += instance.net_sales
     else:
         # Check which fields have been updated
@@ -1801,18 +1790,18 @@ def update_product_performance_with_add_sale(sender, instance, created, **kwargs
             )
 
             # Subtract old values from the old ProductPerformance instance
-            old_product_performance.sale_amount -= dirty_fields.get('original_output_value', instance.original_output_value)
+            old_product_performance.sale_amount -= dirty_fields.get('original_value', instance.original_value)
             old_product_performance.sale -= dirty_fields.get('net_sales', instance.net_sales)
             old_product_performance.save()
 
             # Update the new ProductPerformance instance
-            product_performance.sale_amount += instance.original_output_value
+            product_performance.sale_amount += instance.original_value
             product_performance.sale += instance.net_sales
 
         # Update the corresponding attributes of the ProductPerformance instance based on the updated fields
         else:
-            if 'original_output_value' in dirty_fields:
-                product_performance.sale_amount += float(instance.original_output_value) - dirty_fields['original_output_value']
+            if 'original_value' in dirty_fields:
+                product_performance.sale_amount += float(instance.original_value) - dirty_fields['original_value']
             if 'net_sales' in dirty_fields:
                 product_performance.sale += float(instance.net_sales) - dirty_fields['net_sales']
 
@@ -1831,7 +1820,7 @@ def update_product_performance_with_delete_sale(sender, instance, **kwargs):
 
     # Update the sale value for the ProductPerformance object
     product_performance.product_name = instance.product_name
-    product_performance.sale_amount -= instance.original_output_value
+    product_performance.sale_amount -= instance.original_value
     product_performance.sale -= instance.net_sales
     product_performance.save()
 
