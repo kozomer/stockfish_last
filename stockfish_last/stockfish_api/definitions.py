@@ -68,7 +68,7 @@ def the_man_from_future(job_start_date):
         return False
 
 def calculate_sale_rating(sale_amount):
-    print("sale_amount: ",sale_amount)
+
     if 1000 <= sale_amount:
         return 1.30
     elif 750 <= sale_amount < 1000:
@@ -77,6 +77,19 @@ def calculate_sale_rating(sale_amount):
         return 1.10
     else:
         return 1.00
+    
+def calculate_receipe_rating(receipe_ratio):
+
+    if 0.9 <= receipe_ratio:
+        return 1.1
+    elif 0.75 <= receipe_ratio < 0.9:
+        return 1
+    elif 0.5 <= receipe_ratio < 0.75:
+        return 0.75
+    elif 0.4 <= receipe_ratio < 0.5:
+        return 0.50
+    else:
+        return 0.35
 
 
 

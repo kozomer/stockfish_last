@@ -8,7 +8,8 @@ from django.http import JsonResponse, HttpResponse
 import json
 from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
-from .definitions import jalali_to_greg, greg_to_jalali, calculate_experience_rating, calculate_sale_rating, calculate_passive_saler_experience_rating, current_jalali_date, get_exchange_rate, get_model, generate_future_forecast_dates, the_man_from_future
+from .definitions import (jalali_to_greg, greg_to_jalali, calculate_experience_rating, calculate_sale_rating, calculate_passive_saler_experience_rating,
+                            current_jalali_date, get_exchange_rate, get_model, generate_future_forecast_dates, the_man_from_future,calculate_receipe_rating)
 from datetime import datetime
 import datetime
 import jdatetime
@@ -698,7 +699,7 @@ class AddWarehouseView(APIView):
                     if Warehouse.objects.filter(product_code=product_code).exists():
                         continue
                     count+=1
-                    warehouse_item = Warehouse(product_code=product_code, title=row["Product Title"], unit=row["Unit"], stock=row["Stock"])
+                    warehouse_item = Warehouse(product_code=product_code, product_code_tr = product.product_code_tr, title=row["Product Title"], unit=row["Unit"], stock=row["Stock"], kg= row["KG"])
                     warehouse_item.save()
                 except KeyError as e:
                     return JsonResponse({'error': f"Column '{e}' not found in the uploaded file"}, status=400)
@@ -715,7 +716,7 @@ class ViewWarehouseView(APIView):
         # if not request.user.is_authenticated:
         #     return HttpResponse(status=401)
         warehouse_items = Warehouse.objects.values().all()
-        warehouse_list = [[item['product_code'], item['title'], item['unit'], item['stock']] for item in warehouse_items]
+        warehouse_list = [[item['product_code'], item['product_code_tr'], item['title'], item['unit'], item['stock'], item['kg']] for item in warehouse_items]
         return JsonResponse(warehouse_list, safe=False)
 
 class DeleteWarehouseView(APIView):
@@ -761,7 +762,7 @@ class EditWarehouseView(APIView):
                     warehouse_item.product_code = new_product_code
 
             # Update other warehouse item fields
-            for field in ['new_title', 'new_unit', 'new_stock']:
+            for field in ['new_title', 'new_unit', 'new_stock', 'new_product_code_tr', 'new_kg']:
                 value = data.get(field)
                 if value is not None and value != '':
                     updated_field = field[4:]  # Remove the "new_" prefix
@@ -799,7 +800,7 @@ class ExportWarehouseView(APIView):
         ws = wb.active
         ws.title = f"Warehouse {jalali_date}"
         # Write the header row
-        header = ['Product Code', 'Title', 'Unit', 'Stock']
+        header = ['Product Code', 'Product Code TR', 'Title', 'Unit', 'Stock', 'KG']
         for col_num, column_title in enumerate(header, 1):
             cell = ws.cell(row=1, column=col_num)
             cell.value = column_title
@@ -811,7 +812,7 @@ class ExportWarehouseView(APIView):
                                                  right=openpyxl.styles.Side(style='medium'))
         # Write the data rows
         for row_num, item in enumerate(warehouse_items, 2):
-            row = [item['product_code'], item['title'], item['unit'], item['stock']]
+            row = [item['product_code'], item['product_code_tr'], item['title'], item['unit'], item['stock'], item['kg']]
             for col_num, cell_value in enumerate(row, 1):
                 cell = ws.cell(row=row_num, column=col_num)
                 cell.value = cell_value
@@ -881,7 +882,7 @@ class AddProductsView(APIView):
                         unit=row["Unit"],
                         unit_secondary=row["Unit Secondary"],
                         weight = row["Weight"],
-                        currency = row["Currency"],
+                        #currency = row["Currency"],
                         price= row["Price"]
                     )
                     product.save()
@@ -902,7 +903,7 @@ class ViewProductsView(APIView):
     def get(self, request, *args, **kwargs):
         products = Products.objects.values().all()
         product_list = [[p['group'], p['subgroup'], p['feature'], p['product_code_ir'], p['product_code_tr'],
-                         p['description_tr'], p['description_ir'], p['unit'], p['unit_secondary'],p['weight'],p['currency'], p['price']] for p in products]
+                         p['description_tr'], p['description_ir'], p['unit'], p['unit_secondary'],p['weight'], p['price']] for p in products]
         return JsonResponse(product_list, safe=False)
 
 class DeleteProductView(APIView):
@@ -938,7 +939,7 @@ class EditProductView(APIView):
                     product.product_code_ir = new_product_code_ir
 
             # Update other product fields
-            for field in [ 'new_currency', 'new_description_ir', 'new_description_tr', 'new_feature', 'new_group', 'new_price', 'new_product_code_tr', 'new_subgroup', 'new_unit', 'new_unit_secondary', 'new_weight']:
+            for field in ['new_description_ir', 'new_description_tr', 'new_feature', 'new_group', 'new_price', 'new_product_code_tr', 'new_subgroup', 'new_unit', 'new_unit_secondary', 'new_weight']:
                 value = data.get(field)
                 if value is not None and value != '':
                     updated_field = field[4:]  # Remove the "new_" prefix
@@ -976,7 +977,7 @@ class ExportProductsView(APIView):
         ws.title = f"Products {jalali_date}"
         # Write the header row
         header = ['Group', 'Subgroup', 'Feature', 'Product Code (IR)', 'Product Code (TR)', 'Description (TR)', 
-                  'Description (IR)', 'Unit', 'Secondary Unit', 'Weight', 'Currency', 'Price']
+                  'Description (IR)', 'Unit', 'Secondary Unit', 'Weight', 'Price']
         for col_num, column_title in enumerate(header, 1):
             cell = ws.cell(row=1, column=col_num)
             cell.value = column_title
@@ -990,7 +991,7 @@ class ExportProductsView(APIView):
         for row_num, product in enumerate(products, 2):
             row = [product['group'], product['subgroup'], product['feature'], product['product_code_ir'], 
                    product['product_code_tr'], product['description_tr'], product['description_ir'], product['unit'], 
-                   product['unit_secondary'], product['weight'], product['currency'], product['price']]
+                   product['unit_secondary'], product['weight'], product['price']]
             for col_num, cell_value in enumerate(row, 1):
                 cell = ws.cell(row=row_num, column=col_num)
                 cell.value = cell_value
@@ -1400,6 +1401,79 @@ class SalerPerformanceView(APIView):
                                    performance['day'], performance['sale'], performance['bonus']]
                                   for performance in saler_performances]
         return JsonResponse(saler_performance_list, safe=False)
+
+@receiver(post_save, sender=Sales)
+def update_receipement_rating_with_add_sale(sender, instance, created, **kwargs):
+    receipe_rating, created = SalerReceipeRating.objects.get_or_create(
+        name=instance.saler, 
+        year=instance.date.year,
+        month=instance.date.month,
+    )
+
+    # filter the sales of the same saler, year and month that are either 'S' or 'P'
+    sales_SP = Sales.objects.filter(saler=instance.saler, 
+                                    date__year=instance.date.year, 
+                                    date__month=instance.date.month,
+                                    psr__in=['S', 'P'])
+    # Sum payment_cash and payment_check
+    payment_sum_SP = sum(sale.payment_cash + sale.payment_check for sale in sales_SP)
+
+    # filter the sales of the same saler, year and month that are either 'S' or 'R'
+    sales_SR = Sales.objects.filter(saler=instance.saler, 
+                                    date__year=instance.date.year, 
+                                    date__month=instance.date.month,
+                                    psr__in=['S', 'R'])
+    # Sum net_sales
+    net_sales_sum_SR = sum(sale.net_sales for sale in sales_SR)
+
+    # calculate receipement and save to the SalerReceipeRating instance
+    if net_sales_sum_SR != 0:  # to avoid division by zero
+        receipe_ratio = payment_sum_SP / net_sales_sum_SR
+        receipe_rating.sale_rating = calculate_receipe_rating(receipe_ratio)
+    else:
+        receipe_rating.sale_rating = 1
+    receipe_rating.save()
+
+@receiver(post_delete, sender=Sales)
+def update_receipement_rating_with_delete_sale(sender, instance, **kwargs):
+    try:
+        receipe_rating = SalerReceipeRating.objects.get(
+            name=instance.saler, 
+            year=instance.date.year,
+            month=instance.date.month,
+        )
+    except SalerReceipeRating.DoesNotExist:
+        # If the rating doesn't exist, there's nothing to update
+        return
+
+    # filter the sales of the same saler, year and month that are either 'S' or 'P'
+    sales_SP = Sales.objects.filter(saler=instance.saler, 
+                                    date__year=instance.date.year, 
+                                    date__month=instance.date.month,
+                                    psr__in=['S', 'P'])
+    # Sum payment_cash and payment_check
+    payment_sum_SP = sum(sale.payment_cash + sale.payment_check for sale in sales_SP)
+
+    # filter the sales of the same saler, year and month that are either 'S' or 'R'
+    sales_SR = Sales.objects.filter(saler=instance.saler, 
+                                    date__year=instance.date.year, 
+                                    date__month=instance.date.month,
+                                    psr__in=['S', 'R'])
+    # Sum net_sales
+    net_sales_sum_SR = sum(sale.net_sales for sale in sales_SR)
+
+    # calculate receipement and save to the SalerReceipeRating instance
+    if net_sales_sum_SR != 0:  # to avoid division by zero
+        receipe_ratio = payment_sum_SP / net_sales_sum_SR
+        receipe_rating.sale_rating = calculate_receipe_rating(receipe_ratio)
+    else:
+        receipe_rating.sale_rating = 1
+    receipe_rating.save()
+
+
+    
+
+
 
 
 

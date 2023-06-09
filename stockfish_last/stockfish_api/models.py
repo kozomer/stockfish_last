@@ -102,11 +102,11 @@ class Sales(DirtyFieldsMixin, models.Model):
 
 class Warehouse(models.Model):
     product_code = models.IntegerField(unique=True)
-    product_code_tr = models.IntegerField(null=True) # TODO: Yeni eklendi, ilgili viewslar düzenlenecek.
+    product_code_tr = models.IntegerField(null=True)
     title = models.CharField(max_length=200)
     unit = models.CharField(max_length=50)
     stock = models.FloatField(null=True, blank=True)
-    kg = models.FloatField(null=True, blank=True) # TODO: Yeni eklendi, ilgili viewslar düzenlenecek.
+    kg = models.FloatField(null=True, blank=True) 
 
 class Products(models.Model):
     group = models.CharField(max_length=255)
