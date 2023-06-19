@@ -2924,17 +2924,20 @@ class WaitingTrucksView(APIView):
         goods_on_road = GoodsOnRoad.objects.filter(is_on_truck=True).values()
         grouped_goods = {}
 
-
         for good in goods_on_road:
-
             if good['truck_name'] not in grouped_goods:
+                grouped_goods[good['truck_name']] = {'goods': [], 'total_weight': 0}
 
-                grouped_goods[good['truck_name']] = []
+            weight = good['decided_order'] * good['weight']
+            grouped_goods[good['truck_name']]['goods'].append(good)
+            grouped_goods[good['truck_name']]['total_weight'] += weight
 
-
-            grouped_goods[good['truck_name']].append(good)
+        # Convert weights to JSON serializable format if needed
+        for truck in grouped_goods:
+            grouped_goods[truck]['total_weight'] = float(grouped_goods[truck]['total_weight'])
 
         return JsonResponse(grouped_goods, safe=False)
+
 
 class ApproveWaitingTruckView(APIView):
     permission_classes = (IsAuthenticated,)
