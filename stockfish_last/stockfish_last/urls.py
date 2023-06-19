@@ -22,7 +22,7 @@ from stockfish_api.views import ( AddCustomersView, AddSalesView, AddProductsVie
                                  LoginView, LogoutView,
                                  TopCustomersView, TopProductsView,
                                  ExchangeRateAPIView, SalerDataView, TotalDataView, TotalDataByMonthlyView, CustomerAreaPieChartView, 
-                                 ExportCustomersView, ExportSalesView, ExportWarehouseView, ExportProductsView,
+                                 ExportCustomersView, ExportSalesView, PowerBIExportSalesView, ExportWarehouseView, ExportProductsView,
                                  GoodsOnRoadView, AddTruckView, WaitingTrucksView, TrucksOnRoadView, ApproveWaitingTruckView,
                                  ApproveProductsToOrderView, ApproveArrivedTruckView, NotificationsView, DeleteNotificationView
                                  )
@@ -101,6 +101,7 @@ urlpatterns = [
 
     path('api/export_customers/', ExportCustomersView.as_view(), name= 'export_customers'),
     path('api/export_sales/', ExportSalesView.as_view(), name= 'export_sales'),
+    path('api/export_sales_power_bi/', PowerBIExportSalesView.as_view(), name= 'export_sales_power_bi'),
     path('api/export_warehouse/', ExportWarehouseView.as_view(), name= 'export_warehouse'),
     path('api/export_products/', ExportProductsView.as_view(), name= 'export_products'),
 
