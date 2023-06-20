@@ -663,6 +663,89 @@ class ExportSalesView(APIView):
 
         return JsonResponse({'filename': f'sales({jalali_date}).xlsx', 'content': base64_content})
 
+class PowerBIExportSalesView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def get(self, request, *args, **kwargs):
+        def set_column_widths(worksheet):
+            for column_cells in worksheet.columns:
+                length = max(len(str(cell.value)) for cell in column_cells)
+                worksheet.column_dimensions[column_cells[0].column_letter].width = length + 2
+
+        sales = Sales.objects.all().values()
+        jalali_date= current_jalali_date().strftime('%Y-%m-%d')
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = f"Sales {jalali_date}"
+        
+        header = ['Type of Document', 'Bill Number', 'Date', 'year', 'Month', 'Day', 'Days of the Week', 'Customer Code',
+                  'Name', 'city', 'area', 'Kind of sale', 'Grupe', 'Good Code', 'Service / Goods', 'Main Unit', 'The original value',
+                  'Price', 'Amount Sale', 'Discount', 'Additional Sales', 'Net Sales', 'Secondary output value', 'Currency', '$', 'Main Unit2',
+                  'Total output value Kg', 'Seller']
+                  
+        for col_num, column_title in enumerate(header, 1):
+            cell = ws.cell(row=1, column=col_num)
+            cell.value = column_title
+            cell.font = openpyxl.styles.Font(bold=True)
+            cell.fill = openpyxl.styles.PatternFill(start_color='BFEFFF', end_color='BFEFFF', fill_type='solid')
+            cell.border = openpyxl.styles.Border(top=openpyxl.styles.Side(style='medium'),
+                                                 bottom=openpyxl.styles.Side(style='medium'),
+                                                 left=openpyxl.styles.Side(style='medium'),
+                                                 right=openpyxl.styles.Side(style='medium'))
+                                                 
+        for row_num, sale in enumerate(sales, 2):
+            row = [''] * len(header)  # Initialize empty row
+            row[header.index('Type of Document')] = "فاكتور"
+            if 'bill_number' in sale: row[header.index('Bill Number')] = sale['bill_number']
+            if 'date' in sale:
+                row[header.index('Date')] = sale['date'].strftime('%Y-%m-%d')
+                row[header.index('year')] = sale['date'].year
+                row[header.index('Month')] = sale['date'].month
+                row[header.index('Day')] = sale['date'].day
+            if 'customer_code' in sale: row[header.index('Customer Code')] = sale['customer_code']
+            if 'name' in sale: row[header.index('Name')] = sale['name']
+            if 'city' in sale: row[header.index('city')] = sale['city']
+            if 'area' in sale: row[header.index('area')] = sale['area']
+            if 'product_code' in sale: row[header.index('Good Code')] = sale['product_code']
+            if 'product_name' in sale: row[header.index('Service / Goods')] = sale['product_name']
+            if 'unit' in sale: row[header.index('Main Unit')] = sale['unit']
+            if 'original_value' in sale: row[header.index('The original value')] = sale['original_value']
+            if 'amount_sale' in sale: row[header.index('Amount Sale')] = sale['amount_sale']
+            if 'discount' in sale: row[header.index('Discount')] = sale['discount']
+            if 'additional_sales' in sale: row[header.index('Additional Sales')] = sale['additional_sales']
+            if 'net_sales' in sale: row[header.index('Net Sales')] = sale['net_sales']
+            if 'secondary_output_value' in sale: row[header.index('Secondary output value')] = sale['secondary_output_value']
+            if 'currency' in sale: row[header.index('Currency')] = sale['currency']
+            if 'price' in sale: row[header.index('Price')] = sale['price']
+            if 'unit2' in sale: row[header.index('Main Unit2')] = sale['unit2']
+            row[header.index('Total output value Kg')] = sale['kg']*sale['original_value']
+            if 'saler' in sale: row[header.index('Seller')] = sale['saler']
+            # Fill other values in similar manner...
+            
+            for col_num, cell_value in enumerate(row, 1):
+                cell = ws.cell(row=row_num, column=col_num)
+                cell.value = cell_value
+                
+        for row in ws.iter_rows(min_row=1, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
+            for cell in row:
+                cell.border = openpyxl.styles.Border(top=openpyxl.styles.Side(style='thin'),
+                                                     bottom=openpyxl.styles.Side(style='thin'),
+                                                     left=openpyxl.styles.Side(style='thin'),
+                                                     right=openpyxl.styles.Side(style='thin'))
+                cell.alignment = openpyxl.styles.Alignment(horizontal='center')
+                
+        set_column_widths(ws)
+        ws.auto_filter.ref = f"A1:Z{ws.max_row}"
+
+        buffer = BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        content = buffer.read()
+
+        base64_content = base64.b64encode(content).decode()
+
+        return JsonResponse({'filename': f'PowerBI_sales({jalali_date}).xlsx', 'content': base64_content})
 
 
 
@@ -2841,17 +2924,20 @@ class WaitingTrucksView(APIView):
         goods_on_road = GoodsOnRoad.objects.filter(is_on_truck=True).values()
         grouped_goods = {}
 
-
         for good in goods_on_road:
-
             if good['truck_name'] not in grouped_goods:
+                grouped_goods[good['truck_name']] = {'goods': [], 'total_weight': 0}
 
-                grouped_goods[good['truck_name']] = []
+            weight = good['decided_order'] * good['weight']
+            grouped_goods[good['truck_name']]['goods'].append(good)
+            grouped_goods[good['truck_name']]['total_weight'] += weight
 
-
-            grouped_goods[good['truck_name']].append(good)
+        # Convert weights to JSON serializable format if needed
+        for truck in grouped_goods:
+            grouped_goods[truck]['total_weight'] = float(grouped_goods[truck]['total_weight'])
 
         return JsonResponse(grouped_goods, safe=False)
+
 
 class ApproveWaitingTruckView(APIView):
     permission_classes = (IsAuthenticated,)
