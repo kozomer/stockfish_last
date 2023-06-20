@@ -1,7 +1,7 @@
 from django.db import models
 from django_jalali.db import models as jmodels
 from dirtyfields import DirtyFieldsMixin
-from definitions import jalali_to_greg, greg_to_jalali, current_jalali_date
+from .definitions import jalali_to_greg, greg_to_jalali, current_jalali_date
 
 class Customers(models.Model):
     customer_code = models.IntegerField(unique= True)

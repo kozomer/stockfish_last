@@ -164,3 +164,70 @@
 .scrollable-table td:last-child {
   border-right: none;
 }
+
+
+/* Daily Report switch panel.css */
+
+/* YourComponent.css */
+
+.myTabs {
+  border-bottom: 1px solid #ddd;
+  margin-bottom: 20px;
+  background-color: #f8f9fa; /* Light gray background */
+  padding: 10px;
+  border-radius: 5px; /* Rounded corners */
+}
+
+.myTabs .nav-item {
+  margin: 0 5px; /* Add space between buttons */
+}
+
+.myTabs .nav-link {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  color: #5A6268;
+  font-size: 1.1rem;
+  transition: 0.3s ease; /* Smooth transition */
+  padding: 10px 15px; /* Bigger, more button-like tabs */
+  cursor: pointer; /* Change cursor to pointer */
+}
+
+.myTabs .nav-link.active {
+  color: #495057;
+  background-color: #e0e0e0; /* Lighter gray for the active tab */
+  border-color: #ddd #ddd #fff;
+  font-weight: 500;
+}
+
+.myTabs .nav-link:hover {
+  color: #495057;
+  background-color: #ddd; /* Even lighter gray for the hover effect */
+}
+
+/* YourComponent.css */
+
+.myTable {
+  max-height: 300px; /* adjust according to your needs */
+  overflow-y: auto; /* make table scrollable */
+}
+
+.myTable th, .myTable td {
+  font-size: 0.75rem; /* reduce font-size */
+  padding: 0.25rem 0.1rem; /* reduce padding-top, padding-bottom, padding-left, padding-right */
+  line-height: 1; /* adjust line height */
+  width: 100px; /* fixed width for columns */
+  max-width: 100px; /* enforce maximum width */
+  overflow: hidden; /* hide overflow */
+  text-overflow: ellipsis; /* show ... for overflow */
+  white-space: nowrap; /* keep cell content on one line */
+}
+
+.myTable th {
+  padding: 0.5rem 0.1rem; /* reduce padding for table headers */
+}
+
+.myTable td {
+  padding: 0.25rem 0.1rem; /* reduce padding for table data */
+}
+
+

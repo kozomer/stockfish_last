@@ -53,7 +53,7 @@ function Login({ history }) {
     event.preventDefault();
     console.log(username)
     try {
-      const response = await fetch("https://vividstockfish.com/api/login/", {
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/login/`, {
         method: "POST",
       
         body: JSON.stringify({

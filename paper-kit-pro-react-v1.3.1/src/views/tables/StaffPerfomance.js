@@ -47,7 +47,7 @@ const DataTable = () => {
     async function fetchData() {
       const access_token = await localforage.getItem('access_token');
       
-      const response = await fetch('http://127.0.0.1:8000/api/saler_performance/',{
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/saler_performance/`,{
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer '+ String(access_token)
