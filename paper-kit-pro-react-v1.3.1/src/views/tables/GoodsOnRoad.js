@@ -191,7 +191,7 @@ const [editingRow, setEditingRow] = useState(null);
         data: responseData[key],
       }));
       setWaitingTrucksData(formattedData);
-
+      console.log(formattedData)
     }
     if (shouldFetchData) {
       fetchWaitingTrucksData();
@@ -799,7 +799,7 @@ const [editingRow, setEditingRow] = useState(null);
                   }}
                 >
                   <div className="d-flex justify-content-between align-items-center">
-                    <h5>{truckData.truck_name}</h5>
+                    <h5><b>{truckData.truck_name}</b>  (Total Weight: {truckData.data.total_weight} kg)</h5>
                     <FontAwesomeIcon
                       icon={faCheck}
                       className="text-success cursor-pointer"
@@ -807,7 +807,7 @@ const [editingRow, setEditingRow] = useState(null);
                     />
                   </div>
                   <ReactTable
-                    data={truckData.data.map((row, key) => {
+                    data={truckData.data.goods.map((row, key) => {
                       const newRow = {};
                       Object.keys(row).forEach((column) => {
                         if (
@@ -831,7 +831,7 @@ const [editingRow, setEditingRow] = useState(null);
                       });
                       return newRow;
                     })}
-                    columns={Object.keys(truckData.data[0] || {})
+                    columns={Object.keys(truckData.data.goods[0] || {})
                       .filter(
                         (key) =>
                           ![

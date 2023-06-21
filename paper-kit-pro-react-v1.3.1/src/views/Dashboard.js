@@ -721,7 +721,7 @@ function Dashboard() {
        
           
           <Col md="8" >
-            <Card className="m-0">
+            <Card className="m-0  h-100">
               <CardHeader>
                 <Row>
                   <Col sm="7">
@@ -732,7 +732,7 @@ function Dashboard() {
               </CardHeader>
               <CardBody>
                 <Row>
-                <Col sm="8">
+                <Col sm="8" className="pr-2" style={{ borderRight: '1px solid #ddd', marginRight: '-15px', paddingRight: '15px' }}>
                 <Table>
          <thead>
         <tr>
@@ -755,9 +755,9 @@ function Dashboard() {
       </tbody>
       </Table>
       
-
+      <hr className="my-3" />
       
-      <Table responsive>
+      <Table >
         <thead>
           <tr>
             <th>Experts</th>
@@ -782,7 +782,7 @@ function Dashboard() {
       </Col>
 
       
-     
+      <hr className="my-3" />
 
       <Col sm="4">
               <Table>
