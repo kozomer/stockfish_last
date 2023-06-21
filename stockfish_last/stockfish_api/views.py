@@ -13,7 +13,7 @@ from .definitions import (jalali_to_greg, greg_to_jalali, calculate_experience_r
 from datetime import datetime
 import datetime
 import jdatetime
-from django.db.models import Sum, Avg
+from django.db.models import Sum, Avg, F
 from django.db.models.functions import Coalesce
 from django.views.decorators.csrf import csrf_exempt
 import statistics
@@ -795,12 +795,17 @@ class AddWarehouseView(APIView):
 class ViewWarehouseView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
+
     def get(self, request, *args, **kwargs):
         # if not request.user.is_authenticated:
         #     return HttpResponse(status=401)
         warehouse_items = Warehouse.objects.values().all()
         warehouse_list = [[item['product_code'], item['product_code_tr'], item['title'], item['unit'], item['stock'], item['kg']] for item in warehouse_items]
-        return JsonResponse(warehouse_list, safe=False)
+
+        # Calculate the total weight in the warehouse.
+        total_weight = Warehouse.objects.aggregate(total_weight=Sum(F('stock') * F('kg')))['total_weight']
+        
+        return JsonResponse({'warehouse_list': warehouse_list, 'total_weight': total_weight}, safe=False)
 
 class DeleteWarehouseView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -1484,6 +1489,71 @@ class SalerPerformanceView(APIView):
                                    performance['day'], performance['sale'], performance['bonus']]
                                   for performance in saler_performances]
         return JsonResponse(saler_performance_list, safe=False)
+
+class ExportSalerPerfomanceView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def get(self, request, *args, **kwargs):
+        def set_column_widths(worksheet):
+            for column_cells in worksheet.columns:
+                length = max(len(str(cell.value)) for cell in column_cells)
+                worksheet.column_dimensions[column_cells[0].column_letter].width = length + 2
+        data = json.loads(request.body)
+        saler_name = data.get('saler_name')
+        if not saler_name:
+            return JsonResponse({"error": "Missing 'saler_name' query parameter"}, status=400)
+
+        saler_performances = SalerPerformance.objects.filter(name=saler_name).values()
+        jalali_date= current_jalali_date().strftime('%Y-%m-%d')
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = f"Saler Performance {saler_name} {jalali_date}"
+
+        # Write the header row
+        header = ['Name', 'Year', 'Month', 'Day', 'Sale', 'Bonus']
+        for col_num, column_title in enumerate(header, 1):
+            cell = ws.cell(row=1, column=col_num)
+            cell.value = column_title
+            cell.font = openpyxl.styles.Font(bold=True)
+            cell.fill = openpyxl.styles.PatternFill(start_color='BFEFFF', end_color='BFEFFF', fill_type='solid')
+            cell.border = openpyxl.styles.Border(top=openpyxl.styles.Side(style='medium'),
+                                                 bottom=openpyxl.styles.Side(style='medium'),
+                                                 left=openpyxl.styles.Side(style='medium'),
+                                                 right=openpyxl.styles.Side(style='medium'))
+        # Write the data rows
+        for row_num, performance in enumerate(saler_performances, 2):
+            row = [performance['name'], performance['year'], performance['month'], performance['day'], performance['sale'], performance['bonus']]
+            for col_num, cell_value in enumerate(row, 1):
+                cell = ws.cell(row=row_num, column=col_num)
+                cell.value = cell_value
+        # Apply some styling to the Excel file
+        for row in ws.iter_rows(min_row=1, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
+            for cell in row:
+                cell.border = openpyxl.styles.Border(top=openpyxl.styles.Side(style='thin'),
+                                                     bottom=openpyxl.styles.Side(style='thin'),
+                                                     left=openpyxl.styles.Side(style='thin'),
+                                                     right=openpyxl.styles.Side(style='thin'))
+                cell.alignment = openpyxl.styles.Alignment(horizontal='center')
+        # Set the column widths
+        set_column_widths(ws)
+
+        # Apply auto filter
+        ws.auto_filter.ref = f"A1:F{ws.max_row}"
+
+        # Set the response headers for an Excel file
+        buffer = BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        content = buffer.read()
+
+        # Encode the content in base64
+        base64_content = base64.b64encode(content).decode()
+
+        # Send the content and filename in the JSON response
+        return JsonResponse({'filename': f'saler_performance_{saler_name}({jalali_date}).xlsx', 'content': base64_content})
+
 
 @receiver(post_save, sender=Sales)
 def update_receipement_rating_with_add_sale(sender, instance, created, **kwargs):
