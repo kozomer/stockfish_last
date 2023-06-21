@@ -4,8 +4,8 @@
 * Paper Dashboard PRO React - v1.3.1
 =========================================================
 
-* Product Page: https://www.creative-tim.com/product/paper-dashboard-pro-react
-* Copyright 2022 Creative Tim (https://www.creative-tim.com)
+* Product Page: http://www.creative-tim.com/product/paper-dashboard-pro-react
+* Copyright 2022 Creative Tim (http://www.creative-tim.com)
 
 * Coded by Creative Tim
 
@@ -70,7 +70,7 @@ function UserProfile() {
     console.log(saler_id)
 
     const access_token = await localforage.getItem('access_token');
-    fetch('https://vividstockfish.com/api/salers_card/', {
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/salers_card/`, {
       method: 'POST',
       body: JSON.stringify(saler_id),
       headers: {
@@ -107,7 +107,7 @@ function UserProfile() {
       saler_type: newSalerType,
     };
     console.log(newSaler)
-    fetch("https://vividstockfish.com/api/add_salers/", {
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/add_salers/`, {
       method: "POST",
       body: JSON.stringify(newSaler),
 
@@ -140,7 +140,7 @@ function UserProfile() {
 
     const access_token = await localforage.getItem('access_token');
     console.log(access_token)
-    fetch('https://vividstockfish.com/api/collapsed_salers/', {
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/collapsed_salers/`, {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + String(access_token)
@@ -166,7 +166,7 @@ function UserProfile() {
   const fetchSalerTableData = async () => {
     const access_token = await localforage.getItem('access_token');
     try {
-      const response = await fetch("https://vividstockfish.com/api/salers_table/", {
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/salers_table/`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ' + String(access_token)
@@ -257,7 +257,7 @@ function UserProfile() {
         old_data: salersWholeData
       }
       const access_token = await localforage.getItem('access_token');
-      fetch('https://vividstockfish.com/api/edit_salers/', {
+      fetch(`${process.env.REACT_APP_PUBLIC_URL}/edit_salers/`, {
         method: "POST",
         body: JSON.stringify(all_data),
 
@@ -329,7 +329,7 @@ function UserProfile() {
       id: id
     }
     const access_token = await localforage.getItem('access_token');
-    fetch("https://vividstockfish.com/api/delete_saler/", {
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/delete_saler/`, {
       method: "POST",
       headers: {
         'Content-Type': 'application/json',

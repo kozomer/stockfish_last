@@ -2,7 +2,7 @@ import jdatetime
 from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
-from .models import ProductPerformance
+#from .models import ProductPerformance
 import numpy as np
 from itertools import product
 #import matplotlib.pyplot as plt

@@ -166,7 +166,7 @@ function Sidebar(props) {
       
         const access_token = await localforage.getItem('access_token');
         const refresh_token = await localforage.getItem('refresh_token');
-        const response = await fetch('https://vividstockfish.com/api/logout/', {
+        const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/logout/`, {
             
             method: 'POST',
             headers: {

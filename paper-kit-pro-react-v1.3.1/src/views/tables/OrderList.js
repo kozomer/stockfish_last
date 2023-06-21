@@ -40,7 +40,7 @@ const DataTable = () => {
     async function fetchData() {
       const access_token = await localforage.getItem('access_token'); 
       
-      const response = await fetch('https://vividstockfish.com/api/order_list/',{
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/order_list/`,{
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer '+ String(access_token)
@@ -107,7 +107,7 @@ useEffect(() => {
       
     };
    
-    fetch('https://vividstockfish.com/api/edit_order_list/', {
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/edit_order_list/`, {
     method: 'POST',
     body: JSON.stringify(updatedData),
     headers: {
@@ -252,7 +252,7 @@ useEffect(() => {
         if (deleteConfirm) {
          console.log("delete")
          const access_token =  await localforage.getItem('access_token'); 
-          fetch(`https://vividstockfish.com/delete_warehouse/`, {
+          fetch(`${process.env.REACT_APP_PUBLIC_URL}/delete_warehouse/`, {
             method: "POST",
             body: new URLSearchParams(deleteData),
             headers: {
