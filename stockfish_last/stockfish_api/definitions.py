@@ -8,6 +8,7 @@ from itertools import product
 #import matplotlib.pyplot as plt
 from statsmodels.tsa.api import ExponentialSmoothing, SimpleExpSmoothing, Holt
 from scipy.stats import norm
+import math
 
 def jalali_to_greg(day,month,year):
     gregorian_date = jdatetime.date(year,month,day).togregorian()
@@ -168,11 +169,14 @@ def forecast_by_holt(sales, prev_forecast_period, future_forecast_period):
     fit_data = Holt(sales, initialization_method = "estimated").fit(smoothing_level=optimal_sl, smoothing_trend=optimal_st, optimized=False)
     forecast = fit_data.forecast(future_forecast_period)
     return forecast
-def simulate_future_stocks(current_stock, future_sales):
+def simulate_future_stocks(current_stock, future_sales, float_lead_time, integer_lead_time):
     future_stocks = []
     future_stocks.append(current_stock)
-    for sls in future_sales:
-        future_stocks.append(future_stocks[-1]-sls)
+    for i in range(integer_lead_time):
+        if i < integer_lead_time - 1 or isinstance(float_lead_time,int):
+            future_stocks.append(future_stocks[-1] - future_sales[i])
+        else: 
+            future_stocks.append(future_stocks[-1] - future_sales[i] * (float_lead_time % 1)) # Take into account the fractional part of the lead time
     return future_stocks
 def create_service_level_service_factor(service_level):
     # Calculate the inverse of the standard normal cumulative distribution function
@@ -197,7 +201,13 @@ def dynamic_correction(monthly_sales, current_date):
         monthly_sales[-1] = MAX_DAY * monthly_sales[-1] / current_day
     return monthly_sales
 def get_model(model, is_dynamic, current_date, product_code, product_sales, current_stock, lead_time, service_level, prev_forecast_period, future_forecast_period):
-    lead_time = lead_time
+    if isinstance(lead_time, float):
+        float_lead_time = lead_time
+        integer_lead_time = math.ceil(lead_time)
+    else:
+        float_lead_time = lead_time
+        integer_lead_time = lead_time
+
     service_level = service_level
     bools = filter_product_sales(product_sales, product_code, dim=3)
     product_sales = remove_product_sales_by_boolean(product_sales, bools)
@@ -211,14 +221,16 @@ def get_model(model, is_dynamic, current_date, product_code, product_sales, curr
         future_sales = forecast_by_holt(prev_sales,prev_forecast_period, future_forecast_period)
     elif model == 'exp':
         future_sales = forecast_by_exp(prev_sales,prev_forecast_period, future_forecast_period)
-    future_stocks = simulate_future_stocks(current_stock,future_sales)
+    future_stocks = simulate_future_stocks(current_stock,future_sales, float_lead_time, integer_lead_time)
     all_sales = np.concatenate((prev_sales, future_sales))
-    print("service_level: ",create_service_level_service_factor(service_level) )
     safety_stock = create_service_level_service_factor(service_level) * np.std(all_sales)
 
     order_flag = any(num < safety_stock for num in future_stocks[0:lead_time])
-    rop = sum(future_sales[0:lead_time]) + safety_stock
-    base_stock_level = safety_stock + (future_sales[0] * lead_time)
+    rop = sum(future_sales[0:integer_lead_time-1]) 
+    if isinstance(float_lead_time, float):
+        rop += future_sales[integer_lead_time-1] * (float_lead_time % 1)
+    rop += safety_stock
+    base_stock_level = safety_stock + (future_sales[0] * float_lead_time)
     order = max(base_stock_level - current_stock, 0)
     order = round(order,2)
     return all_sales, prev_sales, future_sales, future_stocks, order_flag, safety_stock, rop, order
