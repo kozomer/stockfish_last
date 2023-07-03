@@ -2222,20 +2222,14 @@ class TotalDataView(APIView):
             date__year=jalali_date_now.year
         ).values('customer_code').distinct().count()
 
-        daily_kg_sale_per_customer = daily_sales_array[3] / daily_customers if daily_customers != 0 else 0
-        monthly_kg_sale_per_customer = monthly_sales_array[3] / monthly_customers if monthly_customers != 0 else 0
-        yearly_kg_sale_per_customer = yearly_sales_array[3] / yearly_customers if yearly_customers != 0 else 0
-
-        daily_dollar_sale_per_customer = daily_sales_array[2] / daily_customers if daily_customers != 0 else 0
-        monthly_dollar_sale_per_customer = monthly_sales_array[2] / monthly_customers if monthly_customers != 0 else 0
-        yearly_dollar_sale_per_customer = yearly_sales_array[2] / yearly_customers if yearly_customers != 0 else 0
+        
         
         daily_sales = SaleSummary.objects.filter(
             year=jalali_date_now.year,
             month=jalali_date_now.month,
             day=jalali_date_now.day
         ).values('sale', 'dollar_sepidar_sale', 'dollar_sale', 'kg_sale')
-        daily_sales_array = list(daily_sales.values_list('sale', 'dollar_sepidar_sale', 'dollar_sale', 'kg_sale', 'dollar_sale'/'kg_sale' )[0]) if daily_sales.exists() else [0, 0, 0, 0]
+        daily_sales_array = list(daily_sales.values_list('sale', 'dollar_sepidar_sale', 'dollar_sale', 'kg_sale')[0]) if daily_sales.exists() else [0, 0, 0, 0]
         # Divide each value in daily_sales_array by 10
         for i in range(len(daily_sales_array)):
             daily_sales_array[i] /= 10
@@ -2244,7 +2238,7 @@ class TotalDataView(APIView):
             year=jalali_date_now.year,
             month=jalali_date_now.month
         ).annotate(monthly_sale=Sum('sale'), monthly_dollar_sepidar_sale=Sum('dollar_sepidar_sale'), monthly_dollar_sale=Sum('dollar_sale'), monthly_kg_sale=Sum('kg_sale') )
-        monthly_sales_array = list(monthly_sales.values_list('monthly_sale', 'monthly_dollar_sepidar_sale', 'monthly_dollar_sale', 'monthly_kg_sale', 'monthly_dollar_sale'/'monthly_kg_sale')[0]) if monthly_sales.exists() else [0, 0, 0, 0]
+        monthly_sales_array = list(monthly_sales.values_list('monthly_sale', 'monthly_dollar_sepidar_sale', 'monthly_dollar_sale', 'monthly_kg_sale')[0]) if monthly_sales.exists() else [0, 0, 0, 0]
         # Divide each value in daily_sales_array by 10
         for i in range(len(monthly_sales_array)):
             monthly_sales_array[i] /= 10
@@ -2253,17 +2247,31 @@ class TotalDataView(APIView):
         yearly_sales = SaleSummary.objects.filter(
             year=jalali_date_now.year
         ).annotate(yearly_sale=Sum('sale'), yearly_dollar_sepidar_sale=Sum('dollar_sepidar_sale'), yearly_dollar_sale=Sum('dollar_sale'), yearly_kg_sale=Sum('kg_sale') )
-        yearly_sales_array = list(yearly_sales.values_list('yearly_sale', 'yearly_dollar_sepidar_sale', 'yearly_dollar_sale', 'yearly_kg_sale', 'yearly_dollar_sale'/'yearly_kg_sale'())[0]) if yearly_sales.exists() else [0, 0, 0, 0]
+        yearly_sales_array = list(yearly_sales.values_list('yearly_sale', 'yearly_dollar_sepidar_sale', 'yearly_dollar_sale', 'yearly_kg_sale')[0]) if yearly_sales.exists() else [0, 0, 0, 0]
         # Divide each value in daily_sales_array by 10
         for i in range(len(yearly_sales_array)):
             yearly_sales_array[i] /= 10
         
+        daily_avg_price = daily_sales_array[2] / daily_sales_array[3] if daily_sales_array[3] != 0 else 0
+        monthly_avg_price = monthly_sales_array[2] / monthly_sales_array[3] if monthly_sales_array[3] != 0 else 0
+        yearly_avg_price = yearly_sales_array[2] / yearly_sales_array[3] if yearly_sales_array[3] != 0 else 0
+
+        daily_kg_sale_per_customer = daily_sales_array[3] / daily_customers if daily_customers != 0 else 0
+        monthly_kg_sale_per_customer = monthly_sales_array[3] / monthly_customers if monthly_customers != 0 else 0
+        yearly_kg_sale_per_customer = yearly_sales_array[3] / yearly_customers if yearly_customers != 0 else 0
+
+        daily_dollar_sale_per_customer = daily_sales_array[2] / daily_customers if daily_customers != 0 else 0
+        monthly_dollar_sale_per_customer = monthly_sales_array[2] / monthly_customers if monthly_customers != 0 else 0
+        yearly_dollar_sale_per_customer = yearly_sales_array[2] / yearly_customers if yearly_customers != 0 else 0
 
         response_data = {
             "jalali_date" : jalali_date_now_str, 
             "daily_sales" : daily_sales_array, 
             "monthly_sales" : monthly_sales_array, 
             "yearly_sales" : yearly_sales_array,
+            'daily_avg_price' : daily_avg_price,
+            'monthly_avg_price' : monthly_avg_price,
+            'yearly_avg_price' : yearly_avg_price,
             "daily_customers": daily_customers,
             "monthly_customers": monthly_customers,
             "yearly_customers": yearly_customers,
