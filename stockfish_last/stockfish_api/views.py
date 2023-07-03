@@ -2208,6 +2208,27 @@ class TotalDataView(APIView):
     def get(self, request, *args, **kwargs):
         jalali_date_now = current_jalali_date()
         jalali_date_now_str = jalali_date_now.strftime('%Y-%m-%d')
+
+        daily_customers = Sales.objects.filter(
+            date=jalali_date_now
+        ).values('customer_code').distinct().count()
+
+        monthly_customers = Sales.objects.filter(
+            date__year=jalali_date_now.year,
+            date__month=jalali_date_now.month
+        ).values('customer_code').distinct().count()
+
+        yearly_customers = Sales.objects.filter(
+            date__year=jalali_date_now.year
+        ).values('customer_code').distinct().count()
+
+        daily_kg_sale_per_customer = daily_sales_array[3] / daily_customers if daily_customers != 0 else 0
+        monthly_kg_sale_per_customer = monthly_sales_array[3] / monthly_customers if monthly_customers != 0 else 0
+        yearly_kg_sale_per_customer = yearly_sales_array[3] / yearly_customers if yearly_customers != 0 else 0
+
+        daily_dollar_sale_per_customer = daily_sales_array[2] / daily_customers if daily_customers != 0 else 0
+        monthly_dollar_sale_per_customer = monthly_sales_array[2] / monthly_customers if monthly_customers != 0 else 0
+        yearly_dollar_sale_per_customer = yearly_sales_array[2] / yearly_customers if yearly_customers != 0 else 0
         
         daily_sales = SaleSummary.objects.filter(
             year=jalali_date_now.year,
@@ -2238,7 +2259,21 @@ class TotalDataView(APIView):
             yearly_sales_array[i] /= 10
         
 
-        response_data = { "jalali_date" : jalali_date_now_str, "daily_sales" : daily_sales_array, "monthly_sales" : monthly_sales_array, "yearly_sales" : yearly_sales_array }
+        response_data = {
+            "jalali_date" : jalali_date_now_str, 
+            "daily_sales" : daily_sales_array, 
+            "monthly_sales" : monthly_sales_array, 
+            "yearly_sales" : yearly_sales_array,
+            "daily_customers": daily_customers,
+            "monthly_customers": monthly_customers,
+            "yearly_customers": yearly_customers,
+            "daily_kg_sale_per_customer": daily_kg_sale_per_customer,
+            "monthly_kg_sale_per_customer": monthly_kg_sale_per_customer,
+            "yearly_kg_sale_per_customer": yearly_kg_sale_per_customer,
+            "daily_dollar_sale_per_customer": daily_kg_sale_per_customer,
+            "monthly_dollar_sale_per_customer": monthly_kg_sale_per_customer,
+            "yearly_dollar_sale_per_customer": yearly_kg_sale_per_customer
+        }
 
         # Combine the data into a single list
         
