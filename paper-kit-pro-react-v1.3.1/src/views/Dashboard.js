@@ -20,7 +20,7 @@ import { Line, Bar, Doughnut } from "react-chartjs-2";
 // react plugin for creating vector maps
 import { VectorMap } from "react-jvectormap";
 import { Pie } from "react-chartjs-2";
-
+import '../assets/css/Dashboard.css';
 // reactstrap components
 import {
   Badge,
@@ -36,6 +36,9 @@ import {
   Table,
   Row,
   Col,
+  Container,
+  Form,
+
   UncontrolledTooltip
 } from "reactstrap";
 
@@ -89,6 +92,59 @@ function Dashboard() {
   const [salesMonthlyData, setSalesMonthlyData] = useState([]);
   const [notificationData, setNotificationData] = useState([]);
   const [notificationsAdded, setNotificationsAdded] = useState(false);
+  const [kgSaleBarChartData, setKgSaleBarChartData] = useState({
+    daily_kg_sales: [],
+    average_kg_sale: [],
+    daily_target: []
+  });
+
+  const [target, setTarget] = useState(3500); // Set a default target
+
+  const [yearlyMonthlySalesData, setYearlyMonthlySalesData] = useState({});
+   // Define data for the Bar chart
+   const data = {
+    labels: [...Array(31).keys()].map(num => num + 1),
+    datasets: [
+      {
+        label: 'Kg Sale',
+        data: kgSaleBarChartData.daily_kg_sales,
+        backgroundColor: 'rgba(0,123,255,0.5)',
+      },
+      {
+        label: 'Average',
+        data: kgSaleBarChartData.average_kg_sale,
+        type: 'line',
+        borderColor: 'red',
+        borderWidth: 2,
+        fill: false,
+        lineTension: 0, // Make line straight
+        pointRadius: 0, // Remove points
+      },
+      {
+        label: 'Target',
+        data: kgSaleBarChartData.daily_target,
+        type: 'line',
+        borderColor: 'yellow',
+        borderWidth: 2,
+        fill: false,
+        lineTension: 0, // Make line straight
+        pointRadius: 0, // Remove points
+      }
+    ]
+  };
+  
+  const options = {
+    responsive: true,
+    legend: {
+      labels: {
+        // This more specific font property overrides the global property
+        fontColor: 'black',
+        fontSize: 18,
+        fontStyle: 'bold'
+      }
+    }
+  };
+  
 
   //Notification
   const notify = useCallback((place, productCode) => {
@@ -336,8 +392,50 @@ function Dashboard() {
     fetchDailyReportTotal();
   }, []);
 
+  const handleTargetChange = (event) => {
+    setTarget(event.target.value);
+  };
+
+  const handleFormSubmit = (event) => {
+    event.preventDefault(); // Prevent form from reloading the page
+    fetchKgSaleBarChartData(); // Fetch new chart data with updated target
+  };
+  
+  
+    const fetchKgSaleBarChartData = async () => {
+      const access_token = await localforage.getItem('access_token');
+     
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/daily_report/kg_sale_bar_chart/`, {
+        method: "POST",
+        headers: {
+          'Authorization': 'Bearer ' + String(access_token)
+        },
+        body: JSON.stringify({ target: target }),
+
+      });
+      const data = await response.json();
+      setKgSaleBarChartData(data);
+    };
+   
+    useEffect(() => {
+      fetchKgSaleBarChartData; // Fetch chart data when component mounts
+    }, []); // 
   
 
+  useEffect(() => {
+    const fetchYearlyMonthlySalesData = async () => {
+      const access_token = await localforage.getItem('access_token');
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/daily_report/total_kg_sale_by_monthly/`, {
+        headers: {
+          'Authorization': 'Bearer ' + String(access_token)
+        },
+      });
+      const data = await response.json();
+      console.log(data)
+      setYearlyMonthlySalesData(data);
+    };
+    fetchYearlyMonthlySalesData();
+  }, []);
   
   const rowHeaders = [
     'Current Sales (Toman)',
@@ -730,86 +828,140 @@ function Dashboard() {
                   
                 </Row>
               </CardHeader>
-              <CardBody>
-                <Row>
-                <Col sm="8" className="pr-2" style={{ borderRight: '1px solid #ddd', marginRight: '-15px', paddingRight: '15px' }}>
-                <Table>
-         <thead>
-        <tr>
-          <th scope="col"></th>
-          <th scope="col">Daily Sales</th>
-          <th scope="col">Monthly Sales</th>
-          <th scope="col">Yearly Sales</th>
+               <CardBody>
+      <Row>
+        <Col sm="8" className="pr-2" style={{ borderRight: '1px solid #ddd', marginRight: '-15px', paddingRight: '15px' }}>
+        <Table className="responsive-table">
+  <thead>
+    <tr>
+      <th scope="col"></th>
+      <th scope="col">Daily Sales</th>
+      <th scope="col">Monthly Sales</th>
+      <th scope="col">Yearly Sales</th>
+    </tr>
+  </thead>
+  <tbody>
+    {salesTotalData.daily_sales &&
+      salesTotalData.daily_sales.map((_, rowIndex) => (
+        <tr key={rowIndex}>
+          <th scope="row">{rowHeaders[rowIndex]}</th>
+          <td>{salesTotalData.daily_sales[rowIndex]}</td>
+          <td>{salesTotalData.monthly_sales[rowIndex]}</td>
+          <td>{salesTotalData.yearly_sales[rowIndex]}</td>
         </tr>
-      </thead>
-      <tbody>
-        {salesTotalData.daily_sales &&
-          salesTotalData.daily_sales.map((_, rowIndex) => (
-            <tr key={rowIndex}>
-              <th scope="row">{rowHeaders[rowIndex]}</th>
-              <td>{salesTotalData.daily_sales[rowIndex]}</td>
-              <td>{salesTotalData.monthly_sales[rowIndex]}</td>
-              <td>{salesTotalData.yearly_sales[rowIndex]}</td>
-            </tr>
-          ))}
-      </tbody>
-      </Table>
-      
-      <hr className="my-3" />
-      
-      <Table >
+      ))}
+    <tr>
+      <th scope="row">Customers</th>
+      <td>{salesTotalData.daily_customers}</td>
+      <td>{salesTotalData.monthly_customers}</td>
+      <td>{salesTotalData.yearly_customers}</td>
+    </tr>
+    <tr>
+      <th scope="row">KG Sale Per Customer</th>
+      <td>{salesTotalData.daily_kg_sale_per_customer}</td>
+      <td>{salesTotalData.monthly_kg_sale_per_customer}</td>
+      <td>{salesTotalData.yearly_kg_sale_per_customer}</td>
+    </tr>
+    <tr>
+      <th scope="row">Dollar Sale Per Customer</th>
+      <td>{salesTotalData.daily_dollar_sale_per_customer}</td>
+      <td>{salesTotalData.monthly_dollar_sale_per_customer}</td>
+      <td>{salesTotalData.yearly_dollar_sale_per_customer}</td>
+    </tr>
+    <tr>
+      <th scope="row">Dollar Sale Per Customer</th>
+      <td>{salesTotalData. daily_avg_price}</td>
+      <td>{salesTotalData.monthly_avg_price}</td>
+      <td>{salesTotalData.yearly_avg_price}</td>
+    </tr>
+    {/* Add similar rows for your other new fields */}
+  </tbody>
+</Table>
+
+
+          <hr className="my-3" />
+
+          <Table className="responsive-table">
+            <thead>
+              <tr>
+                <th>Experts</th>
+                <th>Status</th>
+                <th>Daily Sales</th>
+                <th>Monthly Sales</th>
+                <th>Yearly Sales</th>
+              </tr>
+            </thead>
+            <tbody>
+              {salesData.map((sale, index) => (
+                <tr key={index}>
+                  <td>{sale[0]}</td>
+                  <td>{sale[1] ? 'Active' : 'Inactive'}</td>
+                  <td>{sale[2]}</td>
+                  <td>{sale[3]}</td>
+                  <td>{sale[4]}</td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+          <hr className="my-3" />
+
+          <div style={{ overflowX: 'auto' }}>       
+          <Table className="responsive-table">
         <thead>
           <tr>
-            <th>Experts</th>
-            <th>Status</th>
-            <th>Daily Sales</th>
-            <th>Monthly Sales</th>
-            <th>Yearly Sales</th>
+            <th scope="col">Year / Month</th>
+            {Array.from({length: 12}, (_, i) => i + 1).map(month => (
+              <th key={month} scope="col">Month {month}</th>
+            ))}
           </tr>
         </thead>
         <tbody>
-          {salesData.map((sale, index) => (
-            <tr key={index}>
-              <td>{sale[0]}</td>
-              <td>{sale[1] ? 'Active' : 'Inactive'}</td>
-              <td>{sale[2]}</td>
-              <td>{sale[3]}</td>
-              <td>{sale[4]}</td>
+          {Object.entries(yearlyMonthlySalesData).map(([year, sales]) => (
+            <tr key={year}>
+              <th scope="row">{year}</th>
+              {sales.map((sale, index) => (
+                <td key={index}>{sale}</td>
+              ))}
             </tr>
           ))}
         </tbody>
       </Table>
-      </Col>
+      </div>
+        </Col>
 
-      
-      <hr className="my-3" />
+        <hr className="my-3" />
 
-      <Col sm="4">
-              <Table>
-              <thead>
-        <tr>
-          <th>Month</th>
-          <th>Toman</th>
-          <th>USD</th>
-          <th>KG</th>
-          <th>Sepidar</th>
+        <Col sm="4">
+        <div style={{ overflowX: 'auto' }}>
+  <Table className="responsive-table">
+    <thead>
+      <tr>
+        <th>Month</th>
+        <th>Toman</th>
+        <th>USD</th>
+        <th>KG</th>
+        <th>Sepidar</th>
+      </tr>
+    </thead>
+    <tbody>
+      {salesMonthlyData.map((sale, index) => (
+        <tr key={index}>
+          <td>{index + 1}</td>
+          <td>{sale[0]}</td>
+          <td>{sale[1]}</td>
+          <td>{sale[2]}</td>
+          <td>{sale[3]}</td>
         </tr>
-      </thead>
-      <tbody>
-        {salesMonthlyData.map((sale, index) => (
-          <tr key={index}>
-            <td>{index + 1}</td>
-            <td>{sale[0]}</td>
-            <td>{sale[1]}</td>
-            <td>{sale[2]}</td>
-            <td>{sale[3]}</td>
-          </tr>
-        ))}
-      </tbody>
-      </Table>
-      </Col>
+      ))}
+    </tbody>
+  </Table>
+</div>
+<hr className="my-3" />
+
+         
+        </Col>
       </Row>
-              </CardBody>
+    </CardBody>
               
             </Card>
           </Col>
@@ -817,7 +969,36 @@ function Dashboard() {
 
           </Row>
         
-        
+  
+          <Container fluid>
+  <Row>
+    <Col md="12">
+    <Card className="my-card">
+  <CardBody>
+  <Form onSubmit={handleFormSubmit}>
+  <FormGroup row>
+    <Label for="targetInput" sm={1}>Target:</Label>
+    <Col sm={1}>
+      <Input type="number" name="target" id="targetInput" value={target} onChange={handleTargetChange} />
+    </Col>
+    <Col sm={2}>
+      <Button type="submit" size="sm">Update Target</Button>
+    </Col>
+  </FormGroup>
+</Form>
+
+    <div className="chart-wrapper">
+      <Bar data={data} options={{ responsive: true, maintainAspectRatio: false}} />
+    </div>
+  </CardBody>
+</Card>
+
+
+
+    </Col>
+  </Row>
+  {/* Other Rows and Cols */}
+</Container>
 
        
 
@@ -1217,6 +1398,10 @@ function Dashboard() {
           </Col>
         </Row>
         */}
+       
+
+
+        {/* 
         <Row>
           <Col md="4">
             <Button
@@ -1230,7 +1415,7 @@ function Dashboard() {
             </Button>
           </Col>
         </Row>
-        
+        */}
       </div>
     </>
   );
