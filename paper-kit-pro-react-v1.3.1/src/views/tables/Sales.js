@@ -581,6 +581,40 @@ const [bonus, setBonus] = useState(null);
       link.download = filename;
       link.click();
     }
+
+    async function handleBIExportClick() {
+      // Retrieve the access token from localForage
+      const access_token = await localforage.getItem('access_token');
+    
+      // Make an AJAX request to the backend to download the CSV file
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/export_sales_power_bi/`, {
+        headers: {
+          'Authorization': 'Bearer '+ String(access_token)
+        },
+      });
+    
+      // Parse the JSON response
+      const data = await response.json();
+    
+      // Extract the filename and content from the JSON response
+      const filename = data.filename;
+      const base64Content = data.content;
+    
+      // Convert the base64 content to a Blob
+      const binaryContent = atob(base64Content);
+      const byteNumbers = new Array(binaryContent.length);
+      for (let i = 0; i < binaryContent.length; i++) {
+        byteNumbers[i] = binaryContent.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    
+      // Create a link to download the file and simulate a click to download it
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+    }
   return (
     <>
       <div className='content'>
@@ -1050,7 +1084,11 @@ const [bonus, setBonus] = useState(null);
           </Button>
           <Button className="my-button-class" color="primary" onClick={handleExportClick}>
             <i className="fa fa-download mr-1"></i>
-            Export
+             Excel Export
+          </Button>
+          <Button className="my-button-class" color="primary" onClick={handleBIExportClick}>
+            <i className="fa fa-download mr-1"></i>
+             BI Export
           </Button>
         </div>
       )}
@@ -1063,8 +1101,12 @@ const [bonus, setBonus] = useState(null);
             </Button>
             <Button className="my-button-class" color="primary" onClick={handleExportClick}>
               <i className="fa fa-download mr-1"></i>
-              Export
+              Excel Export
             </Button>
+            <Button className="my-button-class" color="primary" onClick={handleBIExportClick}>
+            <i className="fa fa-download mr-1"></i>
+              BI Export
+          </Button>
           </div>
           <div className="mt-3">
             <input type="file" className="custom-file-upload" onChange={handleFileInputChange} />
@@ -1095,44 +1137,41 @@ const [bonus, setBonus] = useState(null);
                     name: row[5],
                     city: row[6],
                     area: row[7],
-                    color_making_saler: row[8],
-                    group: row[9],
-                    product_code: row[10],
-                    product_name: row[11],
-                    unit: row[12],
-                    unit2: row[13],
-                    kg: row[14],
-                    original_value: row[15],
-                    original_output_value: row[16],
-                    secondary_output_value: row[17],
-                    price: row[18],
-                    original_price: row[19],
-                    discount_percentage: row[20],
-                    amount_sale: row[21],
-                    discount: row[22],
-                    additional_sales: row[23],
-                    net_sales: row[24],
-                    discount_percentage_2: row[25],
-                    real_discount_percentage: row[26],
-                    payment_cash: row[27],
-                    payment_check: row[28],
-                    balance: row[29],
-                    saler: row[30],
-                    currency_sepidar: row[31],
-                    dollar_sepidar: row[32],
-                    currency: row[33],
-                    dollar: row[34],
-                    manager_rating: row[35],
-                    senior_saler: row[36],
-                    tot_monthly_sales: row[37],
-                    receipment: row[38],
-                    ct: row[39],
-                    payment_type: row[40],
-                    costumer_size: row[41],
-                    saler_factor: row[42],
-                    prim_percentage: row[43],
-                    bonus_factor: row[44],
-                    bonus: row[45],
+                    product_code: row[8],
+                    product_name: row[9],
+                    unit: row[10],
+                    unit2: row[11],
+                    kg: row[12],
+                    original_value: row[13],
+                    secondary_output_value: row[14],
+                    price: row[15],
+                    original_price: row[16],
+                    discount_percentage: row[17],
+                    amount_sale: row[18],
+                    discount: row[19],
+                    additional_sales: row[20],
+                    net_sales: row[21],
+                    payment_cash: row[22],
+                    payment_check: row[23],
+                    balance: row[24],
+                    saler: row[25],
+                    currency_sepidar: row[26],
+                    dollar_sepidar: row[27],
+                    currency: row[28],
+                    dollar: row[29],
+                    manager_rating: row[30],
+                    senior_saler: row[31],
+                    tot_monthly_sales: row[32],
+                    receipment: row[33],
+                    ct: row[34],
+                    payment_type: row[35],
+                    customer_size: row[36],
+                    saler_factor: row[37],
+                    prim_percentage: row[38],
+                    bonus_factor: row[39],
+                    bonus: row[40],
+         
+
 
                     actions: (
                       <div className='actions-left'>
@@ -1217,9 +1256,7 @@ const [bonus, setBonus] = useState(null);
                   columns={[
                     {
                       Header: 'No',
-                      accessor: 'no',
-
-
+                      accessor: 'no'
                     },
                     {
                       Header: 'Bill Number',
@@ -1229,7 +1266,6 @@ const [bonus, setBonus] = useState(null);
                       Header: 'Date',
                       accessor: 'date'
                     },
-                  
                     {
                       Header: 'PSR',
                       accessor: 'psr'
@@ -1249,14 +1285,6 @@ const [bonus, setBonus] = useState(null);
                     {
                       Header: 'Area',
                       accessor: 'area'
-                    },
-                    {
-                      Header: 'Color Making Saler',
-                      accessor: 'color_making_saler'
-                    },
-                    {
-                      Header: 'Group',
-                      accessor: 'group'
                     },
                     {
                       Header: 'Product Code',
@@ -1281,10 +1309,6 @@ const [bonus, setBonus] = useState(null);
                     {
                       Header: 'Original Value',
                       accessor: 'original_value'
-                    },
-                    {
-                      Header: 'Original Output Value',
-                      accessor: 'original_output_value'
                     },
                     {
                       Header: 'Secondary Output Value',
@@ -1317,14 +1341,6 @@ const [bonus, setBonus] = useState(null);
                     {
                       Header: 'Net Sales',
                       accessor: 'net_sales'
-                    },
-                    {
-                      Header: 'Discount Percentage (2)',
-                      accessor: 'discount_percentage_2'
-                    },
-                    {
-                      Header: 'Real Discount Percentage',
-                      accessor: 'real_discount_percentage'
                     },
                     {
                       Header: 'Payment Cash',
@@ -1383,8 +1399,8 @@ const [bonus, setBonus] = useState(null);
                       accessor: 'payment_type'
                     },
                     {
-                      Header: 'Costumer Size',
-                      accessor: 'costumer_size'
+                      Header: 'Customer Size',
+                      accessor: 'customer_size'
                     },
                     {
                       Header: 'Saler Factor',
@@ -1402,6 +1418,7 @@ const [bonus, setBonus] = useState(null);
                       Header: 'Bonus',
                       accessor: 'bonus'
                     },
+                    
                     {
                       Header: 'Actions',
                       accessor: 'actions',
