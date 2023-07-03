@@ -2320,6 +2320,37 @@ class TotalDataByMonthlyView(View):
         monthly_sales_array = monthly_sales_data if len(monthly_sales_data) == 12 else monthly_sales_data + [[0, 0, 0, 0, 0]] * (12 - len(monthly_sales_data))
         return JsonResponse(monthly_sales_array, safe=False)
 
+class TotalKgSaleByMonthlyView(View):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+    
+    def get(self, request, *args, **kwargs):
+        years = SaleSummary.objects.values_list('year', flat=True).distinct()
+
+        yearly_monthly_sales = {}
+        for year in years:
+            monthly_sales = SaleSummary.objects.filter(
+            year=year
+            ).values('month').annotate(monthly_kg_sale=Sum('kg_sale'))
+            
+            monthly_sales_dict = {}
+            for monthly_sale_obj in monthly_sales:
+                monthly_sales_dict[monthly_sale_obj['month']] = monthly_sale_obj['monthly_kg_sale']
+
+            monthly_sales_data = []
+            for i in range(1, 13):
+                monthly_kg_sale = monthly_sales_dict.get(i)
+                if monthly_kg_sale:
+                    monthly_sales_data.append(monthly_kg_sale)
+                else:
+                    monthly_sales_data.append(0)
+
+            monthly_sales_array = monthly_sales_data if len(monthly_sales_data) == 12 else monthly_sales_data + [0] * (12 - len(monthly_sales_data))
+
+            yearly_monthly_sales[str(year)] = monthly_sales_array
+
+        return JsonResponse(yearly_monthly_sales, safe=False)
+
 
 # endregion
 
