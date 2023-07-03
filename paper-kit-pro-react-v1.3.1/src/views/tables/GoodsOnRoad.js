@@ -10,8 +10,10 @@ import { faCheck, faEdit, faSave } from '@fortawesome/free-solid-svg-icons';
 const DataTable = () => {
   const [dataTable, setDataTable] = useState([]);
   const [edit, setEdit] = useState({ row: -1, column: '' });
+  
   const [showUploadDiv, setShowUploadDiv] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
+  const [showPopupTruck, setShowPopupTruck] = useState(false);
   const [date, setDate] = useState(null);
   const [productCode, setProductCode] = useState(null);
   const [productNameTR, setProductNameTR] = useState(null);
@@ -23,6 +25,7 @@ const DataTable = () => {
   const [orderExp, setOrderExp] = useState(null);
   const [orderHolt, setOrderHolt] = useState(null);
   const [decidedOrder, setDecidedOrder] = useState(null);
+  const [decidedTruckOrder, setDecidedTruckOrder] = useState(null);
   const [goodsOnRoadData, setGoodsOnRoadData] = useState([]);
 
   const [alert, setAlert] = useState(null);
@@ -34,6 +37,7 @@ const DataTable = () => {
   const [dataChanged, setDataChanged] = useState(false);
   const [saveDisabled, setSaveDisabled] = useState(true);
   const [editData, setEditData] = useState(null);
+  const [editTruckData, setEditTruckData] = useState(null);
   const [oldData, setOldData] = useState(null);
 
   const [leadTime, setLeadTime] = useState('');
@@ -253,7 +257,56 @@ const [editingRow, setEditingRow] = useState(null);
 
     // Call your Django API to send the updated values here
   };
+  const handleSubmitTruck = async (e) => {
+    const access_token = await localforage.getItem('access_token');
 
+    const updatedData = {
+
+      product_code: productCode,
+
+      product_name_tr: productNameTR,
+      product_name_ir: productNameIR,
+      decided_order: decidedTruckOrder,
+      weight: weight,
+      truck_name: truckName,
+
+
+
+
+
+
+
+    };
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/edit_waiting_trucks/`, {
+      method: 'POST',
+      body: JSON.stringify(updatedData),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + String(access_token)
+      },
+
+    })
+      .then((response) => {
+        if (!response.ok) {
+          return response.json().then(data => {
+
+
+            errorUpload(data.error);
+          });
+        }
+
+        else {
+          return response.json().then(data => {
+            setEditData(updatedData);
+            successEdit(data.message);
+            setShouldFetchData(true); // Add this line
+          })
+
+        }
+      })
+
+    // Call your Django API to send the updated values here
+  };
 
   const handleMoveToGoodsOnRoad = async (truckData) => {
     try {
@@ -370,7 +423,19 @@ const [editingRow, setEditingRow] = useState(null);
 
   };
 
-
+  const handleTruckEdit = (row) => {
+    setEditTruckData(row);
+  
+    setProductCode(row.product_code);
+    setProductNameTR(row.product_name_tr);
+    setProductNameIR(row.product_name_ir);
+    setDecidedOrder(row.decided_order);
+    setWeight(row.weight);
+    setTruckName(row.truck_name);
+  
+    setShowPopupTruck(!showPopupTruck);
+  };
+  
 
   const successEdit = (s) => {
 
@@ -397,7 +462,9 @@ const [editingRow, setEditingRow] = useState(null);
 
   const handleCancel = () => {
     setShowPopup(false);
+    setShowPopupTruck(false);
     setEditData(null)
+    setEditTruckData(null)
   };
 
 
@@ -615,6 +682,101 @@ const [editingRow, setEditingRow] = useState(null);
             </Card>
           </div>
         )}
+
+
+
+{showPopupTruck && (
+          <div className="popup">
+            <Card>
+              <CardHeader>
+                <CardTitle tag="h4">Edit/Decide Truck</CardTitle>
+              </CardHeader>
+              <CardBody>
+                <Form onSubmit={handleSubmit}>
+                  <div>
+
+                    <div className="form-group-col">
+                      <label>Product Code</label>
+                      <FormGroup>
+                        <Input
+                          disabled
+                          type="text"
+                          defaultValue={productCode}
+                          onChange={(e) => setProductCode(e.target.value)}
+                        />
+                      </FormGroup>
+
+                      <label>Product Name-TR</label>
+                      <FormGroup>
+                        <Input
+                          disabled
+                          type="text"
+                          defaultValue={productNameTR}
+                          onChange={(e) => setProductNameTR(e.target.value)}
+                        />
+                      </FormGroup>
+
+                      <label>Product Name-IR</label>
+                      <FormGroup>
+                        <Input
+                          disabled
+                          type="text"
+                          defaultValue={setProductNameIR}
+                          onChange={(e) => setProductNameIR(e.target.value)}
+                        />
+                      </FormGroup>
+
+                      <label>Decided Order</label>
+                      <FormGroup>
+                        <Input
+
+                          type="text"
+                          defaultValue={decidedOrder}
+                          onChange={(e) => setDecidedTruckOrder(e.target.value)}
+                        />
+                      </FormGroup>
+
+                      <label>Weight</label>
+                      <FormGroup>
+                        <Input
+                          disabled
+                          type="text"
+                          defaultValue={weight}
+                          onChange={(e) => setWeight(e.target.value)}
+                        />
+                      </FormGroup>
+
+                      <label>Truck</label>
+                      <FormGroup>
+                        <Input
+                          disabled
+                          type="text"
+                          defaultValue={truckName}
+                          onChange={(e) => setTruckName(e.target.value)}
+                        />
+                      </FormGroup>
+
+
+
+                    </div>
+
+
+
+
+                  </div>
+                </Form>
+              </CardBody>
+              <CardFooter>
+                <Button className="btn-round" color="success" type="submit" onClick={handleSubmitTruck}>
+                  Submit
+                </Button>
+                <Button className="btn-round" color="danger" type="submit" onClick={handleCancel}>
+                  Cancel
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+        )}
         <Card>
           <CardHeader>
             <CardTitle tag="h4">
@@ -753,7 +915,7 @@ const [editingRow, setEditingRow] = useState(null);
                     { Header: 'Weight', accessor: 'weight' },
                     { Header: 'Truck', accessor: 'truck_name' },
 
-
+                        
 
 
                     {
@@ -772,95 +934,115 @@ const [editingRow, setEditingRow] = useState(null);
 
 
         <Card style={{
-          borderColor: '#DAA520',
-          borderWidth: '3px',
-          borderStyle: 'solid',
-          boxShadow: '0 6px 6px rgba(255, 215, 0, 0.2)',
-        }}>
-          <CardHeader>
-            <CardTitle tag="h4" style={{ color: '#DAA520' }}>Waiting Trucks</CardTitle>
-          </CardHeader>
-          <CardBody>
+  borderColor: '#DAA520',
+  borderWidth: '3px',
+  borderStyle: 'solid',
+  boxShadow: '0 6px 6px rgba(255, 215, 0, 0.2)',
+}}>
+  <CardHeader>
+    <CardTitle tag="h4" style={{ color: '#DAA520' }}>Waiting Trucks</CardTitle>
+  </CardHeader>
+  <CardBody>
 
-            {waitingTrucksData.length === 0 ? (
-              <p>There's no active waiting trucks</p>
-            ) : (
-              waitingTrucksData.map((truckData, index) => (
-                <div
-                  className="truck-table-container"
-                  key={index}
-                  style={{
-                    marginBottom: index < waitingTrucksData.length - 1 ? '2rem' : 0,
-                    borderBottom:
-                      index < waitingTrucksData.length - 1
-                        ? '1px solid #dee2e6'
-                        : 'none',
-                    paddingBottom: index < waitingTrucksData.length - 1 ? '2rem' : 0,
-                  }}
-                >
-                  <div className="d-flex justify-content-between align-items-center">
-                    <h5><b>{truckData.truck_name}</b>  (Total Weight: {truckData.data.total_weight} kg)</h5>
-                    <FontAwesomeIcon
-                      icon={faCheck}
-                      className="text-success cursor-pointer"
-                      onClick={() => approve(truckData)}
-                    />
-                  </div>
-                  <ReactTable
-                    data={truckData.data.goods.map((row, key) => {
-                      const newRow = {};
-                      Object.keys(row).forEach((column) => {
-                        if (
-                          ![
-                            'is_ordered',
-                            'is_terminated',
-                            'is_on_truck',
-                            'is_on_road',
-                            'is_arrived',
-                          ].includes(column)
-                        ) {
-                          const formattedKey = column
-                            .split('_')
-                            .map(
-                              (word) =>
-                                word.charAt(0).toUpperCase() + word.slice(1),
-                            )
-                            .join(' ');
-                          newRow[formattedKey] = row[column];
-                        }
-                      });
-                      return newRow;
-                    })}
-                    columns={Object.keys(truckData.data.goods[0] || {})
-                      .filter(
-                        (key) =>
-                          ![
-                            'is_ordered',
-                            'is_terminated',
-                            'is_on_truck',
-                            'is_on_road',
-                            'is_arrived',
-                          ].includes(key),
-                      )
-                      .map((key) => {
-                        const formattedKey = key
-                          .split('_')
-                          .map(
-                            (word) =>
-                              word.charAt(0).toUpperCase() + word.slice(1),
-                          )
-                          .join(' ');
-                        return { Header: formattedKey, accessor: formattedKey };
-                      })}
-                    defaultPageSize={10}
-                    className="-striped -highlight"
-                  />
+    {waitingTrucksData.length === 0 ? (
+      <p>There's no active waiting trucks</p>
+    ) : (
+      waitingTrucksData.map((truckData, index) => (
+        <div
+          className="truck-table-container"
+          key={index}
+          style={{
+            marginBottom: index < waitingTrucksData.length - 1 ? '2rem' : 0,
+            borderBottom:
+              index < waitingTrucksData.length - 1
+                ? '1px solid #dee2e6'
+                : 'none',
+            paddingBottom: index < waitingTrucksData.length - 1 ? '2rem' : 0,
+          }}
+        >
+          <div className="d-flex justify-content-between align-items-center">
+            <h5><b>{truckData.truck_name}</b>  (Total Weight: {truckData.data.total_weight} kg)</h5>
+            <FontAwesomeIcon
+              icon={faCheck}
+              className="text-success cursor-pointer"
+              onClick={() => approve(truckData)}
+            />
+          </div>
+          <ReactTable
+            data={truckData.data.goods.map((row, key) => {
+              const newRow = {};
+              newRow['actions'] = (
+                <div className='actions-left'>
+                  <Button
+                    onClick={() => handleTruckEdit(row)}
+                    color='warning'
+                    size='sm'
+                    className='btn-icon btn-link edit'
+                  >
+                    <i className='fa fa-edit' />
+                  </Button>{' '}
+                  <Button
+                    onClick={() => handleTruckDelete(row)}
+                    color="danger"
+                    size="sm"
+                    className="btn-icon btn-link remove"
+                  >
+                    <i className="fa fa-times" />
+                  </Button>
                 </div>
-              ))
+              );
+              Object.keys(row).forEach((column) => {
+                if (
+                  ![
+                    'is_ordered',
+                    'is_terminated',
+                    'is_on_truck',
+                    'is_on_road',
+                    'is_arrived',
+                  ].includes(column)
+                ) {
+                  const formattedKey = column
+                    .split('_')
+                    .map(
+                      (word) =>
+                        word.charAt(0).toUpperCase() + word.slice(1),
+                    )
+                    .join(' ');
+                  newRow[formattedKey] = row[column];
+                }
+              });
+              return newRow;
+            })}
+            columns={[...Object.keys(truckData.data.goods[0] || {})
+              .filter(
+                (key) =>
+                  ![
+                    'is_ordered',
+                    'is_terminated',
+                    'is_on_truck',
+                    'is_on_road',
+                    'is_arrived',
+                  ].includes(key),
+              )
+              .map((key) => {
+                const formattedKey = key
+                  .split('_')
+                  .map(
+                    (word) =>
+                      word.charAt(0).toUpperCase() + word.slice(1),
+                  )
+                  .join(' ');
+                return { Header: formattedKey, accessor: formattedKey };
+              }), { Header: 'Actions', accessor: 'actions', sortable: false, filterable: false }]}
+            defaultPageSize={10}
+            className="-striped -highlight"
+          />
+        </div>
+      ))
+    )}
+  </CardBody>
+</Card>
 
-            )}
-          </CardBody>
-        </Card>
 
       </div>
       <Row>
