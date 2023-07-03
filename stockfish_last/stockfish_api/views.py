@@ -1173,6 +1173,7 @@ class AddSalerView(APIView):
             print(data)
             jalali_date = data.get("job_start_date").split("-")
             saler_type = data.get("saler_type")
+            print(saler_type)
             try:
                 jalali_date = jdatetime.date(int(jalali_date[0]), int(jalali_date[1]), int(jalali_date[2]))
             except ValueError:
@@ -1184,7 +1185,7 @@ class AddSalerView(APIView):
             if the_man_from_future(jalali_date):
                 return JsonResponse({'error': "HERE'S THE MAN FROM THE FUTURE TO SAVE US ALL!!!! Job Start Date cannot be future time, please check it :) "}, status=400)
             
-            if saler_type == "Active":
+            if saler_type == "active":
                 bool_active_saler = True
                 bool_passive_saler = False
                 experience_rating = calculate_experience_rating(jalali_date)
@@ -1494,12 +1495,14 @@ class ExportSalerPerfomanceView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
 
-    def get(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         def set_column_widths(worksheet):
             for column_cells in worksheet.columns:
                 length = max(len(str(cell.value)) for cell in column_cells)
                 worksheet.column_dimensions[column_cells[0].column_letter].width = length + 2
+        
         data = json.loads(request.body)
+        
         saler_name = data.get('saler_name')
         if not saler_name:
             return JsonResponse({"error": "Missing 'saler_name' query parameter"}, status=400)

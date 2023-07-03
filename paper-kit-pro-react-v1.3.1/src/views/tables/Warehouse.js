@@ -5,13 +5,16 @@ import localforage from 'localforage';
 import ReactBSAlert from "react-bootstrap-sweetalert";
 const DataTable = () => {
   const [dataTable, setDataTable] = useState([]);
+  const [totalWeight, setTotalWeight] = useState(null);
   const [file, setFile] = useState(null);
   const [showUploadDiv, setShowUploadDiv] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [productCode, setProductCode] = useState(null);
+  const [productCodeTR, setProductCodeTR] = useState(null);
   const [productTitle, setProductTitle] = useState(null);
   const [unit, setUnit] = useState(null);
   const [stock, setStock] = useState(null);
+  const [kg, setKg] = useState(null);
   const [alert, setAlert] = useState(null);
   const [renderEdit, setRenderEdit] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -33,7 +36,9 @@ const DataTable = () => {
           'Authorization': 'Bearer '+ String(access_token)
         }});
       const data = await response.json();
-      setDataTable(data);
+      
+      setDataTable(data.warehouse_list);
+      setTotalWeight(data.total_weight);
     }
     fetchData();
   }, [dataChanged,renderEdit]);
@@ -86,7 +91,7 @@ const handleAddFileClick = () => {
           })
           .then((response) => response.json())
           .then((data) =>{
-             setDataTable(data)
+             setDataTable(data.warehouse_list)
              console.log(data.message)});
         });
       }
@@ -108,10 +113,12 @@ const handleAddFileClick = () => {
     setOldData(row);
 
     setProductCode(row.product_code);
+    setProductCodeTR(row.product_code_tr)
     setProductTitle(row.title);
     setUnit(row.unit);
     setStock(row.stock);
-   
+    setKg(row.kg);
+
     setShowPopup(!showPopup);
     console.log(row)
   };
@@ -120,16 +127,19 @@ const handleAddFileClick = () => {
     
     const updatedData = {
       new_product_code:productCode,
+      new_product_code_tr:productCodeTR,
       new_title:productTitle,
       new_unit:unit,
       new_stock:stock,
-     
+      new_kg:kg,
       
 
       old_product_code:oldData[0],
-      old_title:oldData[1],
-      old_unit:oldData[2],
-      old_stock:oldData[3],
+      old_product_code_tr:oldData[1],
+      old_title:oldData[2],
+      old_unit:oldData[3],
+      old_stock:oldData[4],
+      old_kg: oldData[5]
       
       
     };
@@ -383,6 +393,15 @@ const handleAddFileClick = () => {
               onChange={(e) => setProductCode(e.target.value)}
             />
           </FormGroup>
+          <label>Product Code TR</label>
+          <FormGroup>
+            <Input
+              
+              type="text"
+              defaultValue={productCodeTR}
+              onChange={(e) => setProductCodeTR(e.target.value)}
+            />
+          </FormGroup>
 
           <label>Product Title</label>
           <FormGroup>
@@ -411,6 +430,14 @@ const handleAddFileClick = () => {
             />
           </FormGroup>
 
+          <label>KG</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={kg}
+              onChange={(e) => setKg(e.target.value)}
+            />
+          </FormGroup>
           
           </div>
          
@@ -434,7 +461,7 @@ const handleAddFileClick = () => {
 
 <Card>
   <CardHeader>
-    <CardTitle tag='h4'>WAREHOUSE</CardTitle>
+    <CardTitle tag='h4'><b>WAREHOUSE</b> (Total Weight: {totalWeight} kg)</CardTitle>
   </CardHeader>
   <CardBody>
     <div className="upload-container">
@@ -486,10 +513,11 @@ const handleAddFileClick = () => {
                   data={dataTable.map((row, key) => ({
                     id: key,
                     product_code: row[0],
-                    title: row[1],
-                    unit: row[2],
-                    stock: row[3],
-                    
+                    product_code_tr: row[1],
+                    title: row[2],
+                    unit: row[3],
+                    stock: row[4],
+                    kg : row[5],
                     actions: (
                       <div className='actions-left'>
                          <Button
@@ -540,9 +568,11 @@ const handleAddFileClick = () => {
                   }))}
                   columns={[
                     { Header: 'Product Code', accessor: 'product_code' },
+                    { Header: 'Product CodeTR', accessor: 'product_code_tr' },
                     { Header: 'Product Title', accessor: 'title' },
                     { Header: 'Unit', accessor: 'unit' },
                     { Header: 'Stock', accessor: 'stock' },
+                    { Header: 'KG', accessor: 'kg' },
                     { Header: 'Actions', accessor: 'actions' ,sortable: false,
                     filterable: false },
                   ]}
