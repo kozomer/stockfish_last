@@ -2682,7 +2682,7 @@ class ROPView(APIView):
         data = json.loads(request.body)
         print(data)
         product_code = data.get('product_code')
-        lead_time = int(data.get('lead_time'))
+        lead_time = float(data.get('lead_time'))
         service_level = float(data.get('service_level'))
         forecast_period = int(data.get('forecast_period'))
         product_values = ProductPerformance.objects.filter(product_code=product_code)

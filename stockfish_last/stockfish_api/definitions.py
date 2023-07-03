@@ -119,6 +119,7 @@ def generate_year_month_sequence(start_year, start_month, end_year, end_month):
     months = range(1, 13)
     return [(year, month) for year, month in product(years, months) if (int(year), int(month)) >= (int(start_year), int(start_month)) and (int(year), int(month)) <= (int(end_year), int(end_month))]
 def convert_daily_to_monthly(daily_sales):
+    print(daily_sales)
     daily_sales.sort(key=lambda x: (x[2], x[1], x[0]))  # Sort daily sales by date
 
     _, start_month, start_year, _, _ = daily_sales[0]
@@ -172,7 +173,7 @@ def forecast_by_holt(sales, prev_forecast_period, future_forecast_period):
 def simulate_future_stocks(current_stock, future_sales, float_lead_time, integer_lead_time):
     future_stocks = []
     future_stocks.append(current_stock)
-    for i in range(integer_lead_time):
+    for i in range(int(integer_lead_time)):
         if i < integer_lead_time - 1 or isinstance(float_lead_time,int):
             future_stocks.append(future_stocks[-1] - future_sales[i])
         else: 
@@ -201,7 +202,7 @@ def dynamic_correction(monthly_sales, current_date):
         monthly_sales[-1] = MAX_DAY * monthly_sales[-1] / current_day
     return monthly_sales
 def get_model(model, is_dynamic, current_date, product_code, product_sales, current_stock, lead_time, service_level, prev_forecast_period, future_forecast_period):
-    if isinstance(lead_time, float):
+    if lead_time%1 != 0:
         float_lead_time = lead_time
         integer_lead_time = math.ceil(lead_time)
     else:
@@ -225,9 +226,9 @@ def get_model(model, is_dynamic, current_date, product_code, product_sales, curr
     all_sales = np.concatenate((prev_sales, future_sales))
     safety_stock = create_service_level_service_factor(service_level) * np.std(all_sales)
 
-    order_flag = any(num < safety_stock for num in future_stocks[0:lead_time])
-    rop = sum(future_sales[0:integer_lead_time-1]) 
-    if isinstance(float_lead_time, float):
+    order_flag = any(num < safety_stock for num in future_stocks[0:int(integer_lead_time)])
+    rop = sum(future_sales[0:int(integer_lead_time)-1]) 
+    if float_lead_time%1 != 0:
         rop += future_sales[integer_lead_time-1] * (float_lead_time % 1)
     rop += safety_stock
     base_stock_level = safety_stock + (future_sales[0] * float_lead_time)
