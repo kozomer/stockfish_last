@@ -2359,6 +2359,43 @@ class TotalKgSaleByMonthlyView(View):
 
         return JsonResponse(yearly_monthly_sales, safe=False)
 
+class KgSaleBarChartView(View):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def get(self, request, *args, **kwargs):
+        jalali_date_now = current_jalali_date()
+        
+        # Get all sales in the current month and year
+        current_month_sales = SaleSummary.objects.filter(
+            year=jalali_date_now.year,
+            month=jalali_date_now.month
+        ).values('day', 'kg_sale')
+        
+        # Initialize data structure for daily kg_sales, average and target
+        daily_kg_sales = [0]*31
+        total_kg_sale = 0
+
+        for sale in current_month_sales:
+            daily_kg_sales[sale['day'] - 1] = sale['kg_sale']
+            total_kg_sale += sale['kg_sale']
+
+        # Calculate average kg_sale for the current day of the month
+        average_kg_sale = total_kg_sale / jalali_date_now.day
+
+        # Get target value from request query parameters
+        target = float(request.GET.get('target', 0))
+        daily_target = target / 31
+
+        data = {
+            "daily_kg_sales": daily_kg_sales,
+            "average_kg_sale": [average_kg_sale]*jalali_date_now.day,
+            "daily_target": [daily_target]*31
+        }
+
+        return JsonResponse(data, safe=False)
+
+
 
 # endregion
 
