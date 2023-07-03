@@ -3061,8 +3061,10 @@ class EditWaitingTrucksView(APIView):
                 return JsonResponse({'error': "Decided order cannot be equal to or smaller than zero."}, status=400)
 
             goods_on_road = GoodsOnRoad.objects.get(product_code=data['product_code'], truck_name=data['truck_name'], is_on_truck=True)
-
+            print(goods_on_road.decided_order)
             goods_on_road.decided_order = data['decided_order']
+            print(data['decided_order'])
+            print(goods_on_road.decided_order)
             goods_on_road.save()
 
             return JsonResponse({'message': "GoodsOnRoad object updated successfully."}, status=200)
