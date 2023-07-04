@@ -121,6 +121,7 @@ class Products(models.Model):
     weight = models.FloatField(null= True)
     #currency = models.CharField(max_length=255) # TODO: Yeni çıkartıldı ilgili viewslardan da çıkartılacak.
     price = models.FloatField(null= True)
+    suppliers = models.CharField(max_length=400)
 
 class ROP(models.Model):
     group = models.CharField(max_length=100)
@@ -284,6 +285,7 @@ class GoodsOnRoad(models.Model):
     is_on_truck = models.BooleanField(default= False)
     is_on_road = models.BooleanField(default= False)
     is_arrived = models.BooleanField(default= False)
+    suppliers = models.CharField(max_length=500)
 
 class Trucks(models.Model):
     objects = jmodels.jManager()
