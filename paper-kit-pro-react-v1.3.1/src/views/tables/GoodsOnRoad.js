@@ -20,6 +20,7 @@ const DataTable = () => {
   const [productNameIR, setProductNameIR] = useState(null);
   const [weight, setWeight] = useState(null);
   const [truckName, setTruckName] = useState(null);
+  const [suppliers, setSuppliers] = useState(null);
   const [stock, setStock] = useState(null);
   const [orderAvrg, setOrderAvrg] = useState(null);
   const [orderExp, setOrderExp] = useState(null);
@@ -218,7 +219,7 @@ const [editingRow, setEditingRow] = useState(null);
       decided_order: decidedOrder,
       weight: weight,
       truck_name: truckName,
-
+      suppliers: suppliers,
 
 
 
@@ -269,7 +270,7 @@ const [editingRow, setEditingRow] = useState(null);
       decided_order: decidedTruckOrder,
       weight: weight,
       truck_name: truckName,
-
+      suppliers: suppliers,
 
 
 
@@ -418,7 +419,7 @@ const [editingRow, setEditingRow] = useState(null);
     setDecidedOrder(row.decided_order);
     setWeight(row.weight);
     setTruckName(row.truck_name);
-
+    setSuppliers(row.suppliers)
     setShowPopup(!showPopup);
 
   };
@@ -432,7 +433,7 @@ const [editingRow, setEditingRow] = useState(null);
     setDecidedOrder(row.decided_order);
     setWeight(row.weight);
     setTruckName(row.truck_name);
-  
+    setSuppliers(row.suppliers)
     setShowPopupTruck(!showPopupTruck);
   };
   
@@ -479,7 +480,7 @@ const [editingRow, setEditingRow] = useState(null);
       setDecidedOrder(editData[3]);
       setWeight(editData[4]);
       setTruckName(editData[5]);
-
+      setSuppliers(editData[6])
 
       setIsUpdated(true)
     }
@@ -661,6 +662,16 @@ const [editingRow, setEditingRow] = useState(null);
                         />
                       </FormGroup>
 
+                      
+                      <label>Suppliers</label>
+                      <FormGroup>
+                        <Input
+                          disabled
+                          type="text"
+                          defaultValue={suppliers}
+                          onChange={(e) => setSuppliers(e.target.value)}
+                        />
+                      </FormGroup>
 
 
                     </div>
@@ -753,6 +764,16 @@ const [editingRow, setEditingRow] = useState(null);
                           type="text"
                           defaultValue={truckName}
                           onChange={(e) => setTruckName(e.target.value)}
+                        />
+                      </FormGroup>
+
+                      <label>Suppliers</label>
+                      <FormGroup>
+                        <Input
+                          disabled
+                          type="text"
+                          defaultValue={suppliers}
+                          onChange={(e) => setSuppliers(e.target.value)}
                         />
                       </FormGroup>
 
@@ -857,6 +878,7 @@ const [editingRow, setEditingRow] = useState(null);
                     decided_order: row[3],
                     weight: row[4],
                     truck_name: row[5],
+                    suppliers: row[6],
 
                     actions: (
                       <div className='actions-left'>
@@ -914,6 +936,7 @@ const [editingRow, setEditingRow] = useState(null);
                     { Header: 'Decided Order', accessor: 'decided_order' },
                     { Header: 'Weight', accessor: 'weight' },
                     { Header: 'Truck', accessor: 'truck_name' },
+                    { Header: 'Suppliers', accessor: 'suppliers' },
 
                         
 

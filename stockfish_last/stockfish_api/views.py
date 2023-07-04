@@ -971,8 +971,7 @@ class AddProductsView(APIView):
                         unit_secondary=row["Unit Secondary"],
                         weight = row["Weight"],
                         #currency = row["Currency"],
-                        price= row["Price"],
-                        suppliers = row["Suppliers"]
+                        price= row["Price"]
                     )
                     product.save()
                 except KeyError as e:
@@ -992,7 +991,7 @@ class ViewProductsView(APIView):
     def get(self, request, *args, **kwargs):
         products = Products.objects.values().all()
         product_list = [[p['group'], p['subgroup'], p['feature'], p['product_code_ir'], p['product_code_tr'],
-                         p['description_tr'], p['description_ir'], p['suppliers'],  p['unit'], p['unit_secondary'],p['weight'], p['price']] for p in products]
+                         p['description_tr'], p['description_ir'], p['unit'], p['unit_secondary'],p['weight'], p['price']] for p in products]
         return JsonResponse(product_list, safe=False)
 
 class DeleteProductView(APIView):
@@ -1028,7 +1027,7 @@ class EditProductView(APIView):
                     product.product_code_ir = new_product_code_ir
 
             # Update other product fields
-            for field in ['new_description_ir', 'new_description_tr', 'new_feature', 'new_group', 'new_price','new_suppliers', 'new_product_code_tr', 'new_subgroup', 'new_unit', 'new_unit_secondary', 'new_weight']:
+            for field in ['new_description_ir', 'new_description_tr', 'new_feature', 'new_group', 'new_price', 'new_product_code_tr', 'new_subgroup', 'new_unit', 'new_unit_secondary', 'new_weight']:
                 value = data.get(field)
                 if value is not None and value != '':
                     updated_field = field[4:]  # Remove the "new_" prefix
@@ -1066,7 +1065,7 @@ class ExportProductsView(APIView):
         ws.title = f"Products {jalali_date}"
         # Write the header row
         header = ['Group', 'Subgroup', 'Feature', 'Product Code (IR)', 'Product Code (TR)', 'Description (TR)', 
-                  'Description (IR)', 'Suppliers' , 'Unit', 'Secondary Unit', 'Weight', 'Price']
+                  'Description (IR)', 'Unit', 'Secondary Unit', 'Weight', 'Price']
         for col_num, column_title in enumerate(header, 1):
             cell = ws.cell(row=1, column=col_num)
             cell.value = column_title
@@ -1079,7 +1078,7 @@ class ExportProductsView(APIView):
         # Write the data rows
         for row_num, product in enumerate(products, 2):
             row = [product['group'], product['subgroup'], product['feature'], product['product_code_ir'], 
-                   product['product_code_tr'], product['description_tr'], product['description_ir'], product['suppliers'],  product['unit'], 
+                   product['product_code_tr'], product['description_tr'], product['description_ir'], product['unit'], 
                    product['unit_secondary'], product['weight'], product['price']]
             for col_num, cell_value in enumerate(row, 1):
                 cell = ws.cell(row=row_num, column=col_num)
@@ -3014,7 +3013,6 @@ def update_goods_on_road(sender, instance, created, **kwargs):
         goods_on_road.truck_id = None
         goods_on_road.is_ordered = instance.is_ordered
         goods_on_road.is_on_truck = False
-        goods_on_road.suppliers = product.suppliers
         goods_on_road.save()
 
 class GoodsOnRoadView(APIView):
@@ -3024,7 +3022,7 @@ class GoodsOnRoadView(APIView):
     def get(self, request, *args, **kwargs):
         goods_on_road = GoodsOnRoad.objects.filter(is_terminated=False).values()
         goods_on_road_data = [
-            [g['product_code'], g['product_name_tr'], g['product_name_ir'], g['suppliers'], g['decided_order'], g['weight'], g['truck_name']]
+            [g['product_code'], g['product_name_tr'], g['product_name_ir'], g['decided_order'], g['weight'], g['truck_name']]
             for g in goods_on_road
         ]
         return JsonResponse(goods_on_road_data, safe=False)

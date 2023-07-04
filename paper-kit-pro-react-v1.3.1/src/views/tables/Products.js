@@ -32,6 +32,7 @@ const DataTable = () => {
   const [weight, setWeight] = useState(null);
   
   const [price, setPrice] = useState(null);
+  const [suppliers, setSuppliers] = useState(null);
 
   const [oldData, setOldData] = useState(null);
 
@@ -54,6 +55,7 @@ const DataTable = () => {
         },
       });
       const data = await response.json();
+      console.log(data)
       setDataTable(data);
       setDataChanged(false);
       setRenderEdit(false)
@@ -282,6 +284,7 @@ const DataTable = () => {
   setWeight(row.weight);
   
   setPrice(row.price);
+  setSuppliers(row.suppliers)
       setShowPopup(!showPopup);
       console.log(row)
     };
@@ -303,6 +306,7 @@ const DataTable = () => {
         new_weight:weight,
         
         new_price:price,
+        new_suppliers:suppliers,
 
         old_group:oldData[0],
         old_subgroup:oldData[1],
@@ -316,6 +320,7 @@ const DataTable = () => {
         old_weight:oldData[9],
         
         old_price:oldData[10],
+        old_suppliers:oldData[11],
       };
       console.log(updatedData)
       fetch(`${process.env.REACT_APP_PUBLIC_URL}/edit_products/`, {
@@ -368,6 +373,7 @@ const DataTable = () => {
           setWeight(editData[9]);
           
           setPrice(editData[10]);
+          setSuppliers(editData[11]),
           setIsUpdated(true)
       }
     }, [editData])
@@ -526,6 +532,14 @@ const DataTable = () => {
               onChange={(e) => setPrice(e.target.value)}
             />
           </FormGroup>
+          <label>Suppliers</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={suppliers}
+              onChange={(e) => setSuppliers(e.target.value)}
+            />
+          </FormGroup>
         </div>
         </div>
               </Form>
@@ -608,6 +622,7 @@ const DataTable = () => {
                     weight: row[9],
                     
                     price:row[10],
+                    suppliers: row[11],
 
                     actions: (
                       <div className='actions-left'>
@@ -736,6 +751,10 @@ const DataTable = () => {
                     {
                       Header: 'Price',
                       accessor: 'price'
+                    },
+                    {
+                      Header: 'Suppliers',
+                      accessor: 'suppliers'
                     },
                     {
                       Header: 'Actions',

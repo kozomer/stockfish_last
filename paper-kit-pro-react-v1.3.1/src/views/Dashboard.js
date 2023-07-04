@@ -87,7 +87,7 @@ function Dashboard() {
   const [currentDateTime] = useState(new Date());
   const [date, setDate] = useState([]);
   const [salesData, setSalesData] = useState([]);
-  
+
   const [salesTotalData, setSalesTotalData] = useState([]);
   const [salesMonthlyData, setSalesMonthlyData] = useState([]);
   const [notificationData, setNotificationData] = useState([]);
@@ -101,8 +101,8 @@ function Dashboard() {
   const [target, setTarget] = useState(3500); // Set a default target
 
   const [yearlyMonthlySalesData, setYearlyMonthlySalesData] = useState({});
-   // Define data for the Bar chart
-   const data = {
+  // Define data for the Bar chart
+  const data = {
     labels: [...Array(31).keys()].map(num => num + 1),
     datasets: [
       {
@@ -132,7 +132,7 @@ function Dashboard() {
       }
     ]
   };
-  
+
   const options = {
     responsive: true,
     legend: {
@@ -144,7 +144,7 @@ function Dashboard() {
       }
     }
   };
-  
+
 
   //Notification
   const notify = useCallback((place, productCode) => {
@@ -187,10 +187,10 @@ function Dashboard() {
     };
     notifications.push(options);
     localforage.setItem('notifications', JSON.stringify([...notifications]));
-   // notificationAlert.current.notificationAlert(options);
+    // notificationAlert.current.notificationAlert(options);
     console.log(notifications)
   }, []);
-  
+
   const fetchNotificationData = async () => {
     const access_token = await localforage.getItem('access_token');
     try {
@@ -212,7 +212,7 @@ function Dashboard() {
   useEffect(() => {
     fetchNotificationData();
   }, []);
-  
+
   useEffect(() => {
     if (!notificationsAdded && notificationData.length > 0) {
       notificationData.forEach((notification) => {
@@ -223,7 +223,7 @@ function Dashboard() {
       setNotificationsAdded(true);
     }
   }, [notificationData, notificationsAdded]);
-  
+
   useEffect(() => {
     const fetchData = async () => {
       const access_token = await localforage.getItem('access_token');
@@ -248,7 +248,7 @@ function Dashboard() {
           },
         ],
       });
-      
+
 
     };
     fetchData();
@@ -295,7 +295,7 @@ function Dashboard() {
 
       });
       const data = await response.json();
-      
+
       setSalesMonthlyData(data);
       console.log(data)
     };
@@ -305,7 +305,7 @@ function Dashboard() {
   useEffect(() => {
     const fetchDataArea = async () => {
       const access_token = await localforage.getItem('access_token');
-      
+
       const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/customer_area/`, {
         method: "POST",
         headers: {
@@ -315,7 +315,7 @@ function Dashboard() {
         body: JSON.stringify({ report_type: filterOptionArea }),
       });
       const data = await response.json();
-      
+
       setTopAreas(data.table_data);
       setTopAreasPieData({
         labels: data.chart_data_percent.map((item) => item[0]),
@@ -328,7 +328,7 @@ function Dashboard() {
         ],
       });
     };
-   
+
     fetchDataArea();
   }, [filterOptionArea])
 
@@ -368,11 +368,11 @@ function Dashboard() {
       console.log(data)
       setSalesData(data.sales_data || []);
       setDate(data.jalali_date || []);
-      
+
     };
     fetchDailyReportSaler();
   }, []);
-  
+
   useEffect(() => {
     const fetchDailyReportTotal = async () => {
       const access_token = await localforage.getItem('access_token');
@@ -385,7 +385,7 @@ function Dashboard() {
 
       });
       const data = await response.json();
-      
+
       setSalesTotalData(data);
       console.log(salesTotalData)
     };
@@ -400,27 +400,27 @@ function Dashboard() {
     event.preventDefault(); // Prevent form from reloading the page
     fetchKgSaleBarChartData(); // Fetch new chart data with updated target
   };
-  
-  
-    const fetchKgSaleBarChartData = async () => {
-      const access_token = await localforage.getItem('access_token');
-     
-      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/daily_report/kg_sale_bar_chart/`, {
-        method: "POST",
-        headers: {
-          'Authorization': 'Bearer ' + String(access_token)
-        },
-        body: JSON.stringify({ target: target }),
 
-      });
-      const data = await response.json();
-      setKgSaleBarChartData(data);
-    };
-   
-    useEffect(() => {
-      fetchKgSaleBarChartData; // Fetch chart data when component mounts
-    }, []); // 
-  
+
+  const fetchKgSaleBarChartData = async () => {
+    const access_token = await localforage.getItem('access_token');
+
+    const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/daily_report/kg_sale_bar_chart/`, {
+      method: "POST",
+      headers: {
+        'Authorization': 'Bearer ' + String(access_token)
+      },
+      body: JSON.stringify({ target: target }),
+
+    });
+    const data = await response.json();
+    setKgSaleBarChartData(data);
+  };
+
+  useEffect(() => {
+    fetchKgSaleBarChartData; // Fetch chart data when component mounts
+  }, []); // 
+
 
   useEffect(() => {
     const fetchYearlyMonthlySalesData = async () => {
@@ -436,15 +436,15 @@ function Dashboard() {
     };
     fetchYearlyMonthlySalesData();
   }, []);
-  
+
   const rowHeaders = [
     'Current Sales (Toman)',
     'Current Sales ($) (Sepidar)',
     'Current Sales ($) (Tablo)',
     'Current Sales (KG)',
   ];
-  
-    
+
+
   return (
     <>
       <NotificationAlert ref={notificationAlert} />
@@ -516,259 +516,259 @@ function Dashboard() {
 */}
 
 
-        <Row  noGutters>
-        <Col lg="4" md="12" sm="12" className="d-flex">
-    <Card className="card-stats m-2 flex-fill">
-        <CardBody>
-           
+        <Row noGutters>
+          <Col lg="4" md="12" sm="12" className="d-flex">
+            <Card className="card-stats m-2 flex-fill">
+              <CardBody>
 
-             <Row noGutters className="justify-content-center">
-                <Col xs="12" sm="12" md="12" lg="12" className="p-2">
+
+                <Row noGutters className="justify-content-center">
+                  <Col xs="12" sm="12" md="12" lg="12" className="p-2">
                     <Card className="m-0">
-                        <CardHeader>
-                            <Row>
-                                <Col xs="6">
-                                    <CardTitle tag="h5">Top Five Products</CardTitle>
-                                </Col>
-                                <Col xs="6">
-                                    <Label for="selectType">Select Type:</Label>
-                                    <Input type="select" name="select" id="selectType" onChange={(e) => setFilterOption(e.target.value)} style={{fontSize: "0.8rem"}}>
-                                        <option value="">Select Type</option>
-                                        <option value="monthly">Monthly</option>
-                                        <option value="yearly">Yearly</option>
-                                    </Input>
-                                </Col>
-                            </Row>
-                        </CardHeader>
-                        <CardBody className="p-2">
-                            <Row className="justify-content-center">
-                            <Col xs="10">
-    <div style={{ height: '200px', marginTop: "20px", marginBottom: "20px" }}>
-        <Doughnut
-            data={topProductsPieData}
-            options={{
-                maintainAspectRatio: false, // Add this line
-                plugins: {
-                    legend: {
-                        position: "right",
-                        labels: {
-                            font: {
-                                size: 10,
-                            },
-                            usePointStyle: true,
-                        },
-                    },
-                    tooltips: {
-                        enabled: false,
-                    },
-                    title: {
-                        display: true,
-                        position: "top",
-                        text: "Top Products",
-                        color: "#66615c",
-                        font: {
-                            weight: 400,
-                            size: 14,
-                        },
-                    },
-                },
-                cutout: "70%",
-                scales: {
-                    y: {
-                        ticks: {
-                            display: false,
-                        },
-                        grid: {
-                            drawBorder: false,
-                            display: false,
-                        },
-                    },
-                    x: {
-                        grid: {
-                            drawBorder: false,
-                            display: false,
-                        },
-                        ticks: {
-                            display: false,
-                        },
-                    },
-                },
-            }}
-        />
-    </div>
-</Col>
+                      <CardHeader>
+                        <Row>
+                          <Col xs="6">
+                            <CardTitle tag="h5">Top Five Products</CardTitle>
+                          </Col>
+                          <Col xs="6">
+                            <Label for="selectType">Select Type:</Label>
+                            <Input type="select" name="select" id="selectType" onChange={(e) => setFilterOption(e.target.value)} style={{ fontSize: "0.8rem" }}>
+                              <option value="">Select Type</option>
+                              <option value="monthly">Monthly</option>
+                              <option value="yearly">Yearly</option>
+                            </Input>
+                          </Col>
+                        </Row>
+                      </CardHeader>
+                      <CardBody className="p-2">
+                        <Row className="justify-content-center">
+                          <Col xs="10">
+                            <div style={{ height: '200px', marginTop: "20px", marginBottom: "20px" }}>
+                              <Doughnut
+                                data={topProductsPieData}
+                                options={{
+                                  maintainAspectRatio: false, // Add this line
+                                  plugins: {
+                                    legend: {
+                                      position: "right",
+                                      labels: {
+                                        font: {
+                                          size: 10,
+                                        },
+                                        usePointStyle: true,
+                                      },
+                                    },
+                                    tooltips: {
+                                      enabled: false,
+                                    },
+                                    title: {
+                                      display: true,
+                                      position: "top",
+                                      text: "Top Products",
+                                      color: "#66615c",
+                                      font: {
+                                        weight: 400,
+                                        size: 14,
+                                      },
+                                    },
+                                  },
+                                  cutout: "70%",
+                                  scales: {
+                                    y: {
+                                      ticks: {
+                                        display: false,
+                                      },
+                                      grid: {
+                                        drawBorder: false,
+                                        display: false,
+                                      },
+                                    },
+                                    x: {
+                                      grid: {
+                                        drawBorder: false,
+                                        display: false,
+                                      },
+                                      ticks: {
+                                        display: false,
+                                      },
+                                    },
+                                  },
+                                }}
+                              />
+                            </div>
+                          </Col>
 
-                            </Row>
-                        </CardBody>
+                        </Row>
+                      </CardBody>
                     </Card>
-                </Col>
-            </Row>
+                  </Col>
+                </Row>
 
-            <Row noGutters className="justify-content-center">
-                <Col xs="12" sm="12" md="12" lg="12" className="p-2">
+                <Row noGutters className="justify-content-center">
+                  <Col xs="12" sm="12" md="12" lg="12" className="p-2">
                     <Card className="m-0">
-                        <CardHeader>
-                            <Row>
-                                <Col xs="6">
-                                    <CardTitle tag="h5">Top Five Areas</CardTitle>
-                                </Col>
-                                <Col xs="6">
-                                    <Label for="selectType">Select Type:</Label>
-                                    <Input type="select" name="select" id="selectType" onChange={(e) => setFilterOptionArea(e.target.value)} style={{fontSize: "0.8rem"}}>
-                                        <option value="">Select Type</option>
-                                        <option value="monthly">Monthly</option>
-                                        <option value="yearly">Yearly</option>
-                                    </Input>
-                                </Col>
-                            </Row>
-                        </CardHeader>
-                        <CardBody className="p-2">
-                            <Row className="justify-content-center">
-                            <Col xs="10">
-    <div style={{ height: '200px', marginTop: "20px", marginBottom: "20px" }}>
-        <Doughnut
-            data={topAreasPieData}
-            options={{
-                maintainAspectRatio: false, // Add this line
-                plugins: {
-                    legend: {
-                        position: "right",
-                        labels: {
-                            font: {
-                                size: 10,
-                            },
-                            usePointStyle: true,
-                        },
-                    },
-                    tooltips: {
-                        enabled: false,
-                    },
-                    title: {
-                        display: true,
-                        position: "top",
-                        text: "Top Areas",
-                        color: "#66615c",
-                        font: {
-                            weight: 400,
-                            size: 14,
-                        },
-                    },
-                },
-                cutout: "70%",
-                scales: {
-                    y: {
-                        ticks: {
-                            display: false,
-                        },
-                        grid: {
-                            drawBorder: false,
-                            display: false,
-                        },
-                    },
-                    x: {
-                        grid: {
-                            drawBorder: false,
-                            display: false,
-                        },
-                        ticks: {
-                            display: false,
-                        },
-                    },
-                },
-            }}
-        />
-    </div>
-</Col>
+                      <CardHeader>
+                        <Row>
+                          <Col xs="6">
+                            <CardTitle tag="h5">Top Five Areas</CardTitle>
+                          </Col>
+                          <Col xs="6">
+                            <Label for="selectType">Select Type:</Label>
+                            <Input type="select" name="select" id="selectType" onChange={(e) => setFilterOptionArea(e.target.value)} style={{ fontSize: "0.8rem" }}>
+                              <option value="">Select Type</option>
+                              <option value="monthly">Monthly</option>
+                              <option value="yearly">Yearly</option>
+                            </Input>
+                          </Col>
+                        </Row>
+                      </CardHeader>
+                      <CardBody className="p-2">
+                        <Row className="justify-content-center">
+                          <Col xs="10">
+                            <div style={{ height: '200px', marginTop: "20px", marginBottom: "20px" }}>
+                              <Doughnut
+                                data={topAreasPieData}
+                                options={{
+                                  maintainAspectRatio: false, // Add this line
+                                  plugins: {
+                                    legend: {
+                                      position: "right",
+                                      labels: {
+                                        font: {
+                                          size: 10,
+                                        },
+                                        usePointStyle: true,
+                                      },
+                                    },
+                                    tooltips: {
+                                      enabled: false,
+                                    },
+                                    title: {
+                                      display: true,
+                                      position: "top",
+                                      text: "Top Areas",
+                                      color: "#66615c",
+                                      font: {
+                                        weight: 400,
+                                        size: 14,
+                                      },
+                                    },
+                                  },
+                                  cutout: "70%",
+                                  scales: {
+                                    y: {
+                                      ticks: {
+                                        display: false,
+                                      },
+                                      grid: {
+                                        drawBorder: false,
+                                        display: false,
+                                      },
+                                    },
+                                    x: {
+                                      grid: {
+                                        drawBorder: false,
+                                        display: false,
+                                      },
+                                      ticks: {
+                                        display: false,
+                                      },
+                                    },
+                                  },
+                                }}
+                              />
+                            </div>
+                          </Col>
 
-                            </Row>
-                        </CardBody>
+                        </Row>
+                      </CardBody>
                     </Card>
-                </Col>
-            </Row> 
+                  </Col>
+                </Row>
 
-            <Row noGutters className="justify-content-center">
-                <Col xs="12" sm="12" md="12" lg="12" className="p-2">
+                <Row noGutters className="justify-content-center">
+                  <Col xs="12" sm="12" md="12" lg="12" className="p-2">
                     <Card className="m-0">
-                        <CardHeader>
-                            <Row>
-                                <Col xs="6">
-                                    <CardTitle tag="h5">Top Five Customers</CardTitle>
-                                </Col>
-                                <Col xs="6">
-                                    <Label for="selectType">Select Type:</Label>
-                                    <Input type="select" name="select" id="selectType" onChange={(e) => setFilterOptionCust(e.target.value)} style={{fontSize: "0.8rem"}}>
-                                        <option value="">Select Type</option>
-                                        <option value="monthly">Monthly</option>
-                                        <option value="yearly">Yearly</option>
-                                    </Input>
-                                </Col>
-                            </Row>
-                        </CardHeader>
-                        <CardBody className="p-2">
-                            <Row className="justify-content-center">
-                            <Col xs="10">
-    <div style={{ height: '200px', marginTop: "20px", marginBottom: "20px" }}>
-        <Doughnut
-            data={topCustomersPieData}
-            options={{
-                maintainAspectRatio: false, // Add this line
-                plugins: {
-                    legend: {
-                        position: "right",
-                        labels: {
-                            font: {
-                                size: 10,
-                            },
-                            usePointStyle: true,
-                        },
-                    },
-                    tooltips: {
-                        enabled: false,
-                    },
-                    title: {
-                        display: true,
-                        position: "top",
-                        text: "Top Customers",
-                        color: "#66615c",
-                        font: {
-                            weight: 400,
-                            size: 14,
-                        },
-                    },
-                },
-                cutout: "70%",
-                scales: {
-                    y: {
-                        ticks: {
-                            display: false,
-                        },
-                        grid: {
-                            drawBorder: false,
-                            display: false,
-                        },
-                    },
-                    x: {
-                        grid: {
-                            drawBorder: false,
-                            display: false,
-                        },
-                        ticks: {
-                            display: false,
-                        },
-                    },
-                },
-            }}
-        />
-    </div>
-</Col>
+                      <CardHeader>
+                        <Row>
+                          <Col xs="6">
+                            <CardTitle tag="h5">Top Five Customers</CardTitle>
+                          </Col>
+                          <Col xs="6">
+                            <Label for="selectType">Select Type:</Label>
+                            <Input type="select" name="select" id="selectType" onChange={(e) => setFilterOptionCust(e.target.value)} style={{ fontSize: "0.8rem" }}>
+                              <option value="">Select Type</option>
+                              <option value="monthly">Monthly</option>
+                              <option value="yearly">Yearly</option>
+                            </Input>
+                          </Col>
+                        </Row>
+                      </CardHeader>
+                      <CardBody className="p-2">
+                        <Row className="justify-content-center">
+                          <Col xs="10">
+                            <div style={{ height: '200px', marginTop: "20px", marginBottom: "20px" }}>
+                              <Doughnut
+                                data={topCustomersPieData}
+                                options={{
+                                  maintainAspectRatio: false, // Add this line
+                                  plugins: {
+                                    legend: {
+                                      position: "right",
+                                      labels: {
+                                        font: {
+                                          size: 10,
+                                        },
+                                        usePointStyle: true,
+                                      },
+                                    },
+                                    tooltips: {
+                                      enabled: false,
+                                    },
+                                    title: {
+                                      display: true,
+                                      position: "top",
+                                      text: "Top Customers",
+                                      color: "#66615c",
+                                      font: {
+                                        weight: 400,
+                                        size: 14,
+                                      },
+                                    },
+                                  },
+                                  cutout: "70%",
+                                  scales: {
+                                    y: {
+                                      ticks: {
+                                        display: false,
+                                      },
+                                      grid: {
+                                        drawBorder: false,
+                                        display: false,
+                                      },
+                                    },
+                                    x: {
+                                      grid: {
+                                        drawBorder: false,
+                                        display: false,
+                                      },
+                                      ticks: {
+                                        display: false,
+                                      },
+                                    },
+                                  },
+                                }}
+                              />
+                            </div>
+                          </Col>
 
-                            </Row>
-                        </CardBody>
+                        </Row>
+                      </CardBody>
                     </Card>
-                </Col>
-            </Row> 
-        </CardBody>
-        {/*
+                  </Col>
+                </Row>
+              </CardBody>
+              {/*
         <CardFooter>
             <hr />
             <div className="stats">
@@ -777,10 +777,10 @@ function Dashboard() {
             </div>
         </CardFooter>
          */}
-    </Card>
-</Col>
+            </Card>
+          </Col>
 
-          
+
           {/* 
           <Col lg="3" md="6" sm="6" className="d-flex">
             <Card className="card-stats m-2 flex-fill">
@@ -814,195 +814,193 @@ function Dashboard() {
             </Card>
           </Col>
 */}
-        
-         
-       
-          
+
+
+
+
           <Col md="8" >
-            <Card className="m-0  h-100">
+            <Card className="m-0  ">
               <CardHeader>
                 <Row>
                   <Col sm="7">
                     <div className="numbers pull-left">Daily Reports</div>
                   </Col>
-                  
+
                 </Row>
               </CardHeader>
-               <CardBody>
-      <Row>
-        <Col sm="8" className="pr-2" style={{ borderRight: '1px solid #ddd', marginRight: '-15px', paddingRight: '15px' }}>
-        <Table className="responsive-table">
-  <thead>
-    <tr>
-      <th scope="col"></th>
-      <th scope="col">Daily Sales</th>
-      <th scope="col">Monthly Sales</th>
-      <th scope="col">Yearly Sales</th>
-    </tr>
-  </thead>
-  <tbody>
-    {salesTotalData.daily_sales &&
-      salesTotalData.daily_sales.map((_, rowIndex) => (
-        <tr key={rowIndex}>
-          <th scope="row">{rowHeaders[rowIndex]}</th>
-          <td>{salesTotalData.daily_sales[rowIndex]}</td>
-          <td>{salesTotalData.monthly_sales[rowIndex]}</td>
-          <td>{salesTotalData.yearly_sales[rowIndex]}</td>
-        </tr>
-      ))}
-    <tr>
-      <th scope="row">Customers</th>
-      <td>{salesTotalData.daily_customers}</td>
-      <td>{salesTotalData.monthly_customers}</td>
-      <td>{salesTotalData.yearly_customers}</td>
-    </tr>
-    <tr>
-      <th scope="row">KG Sale Per Customer</th>
-      <td>{salesTotalData.daily_kg_sale_per_customer}</td>
-      <td>{salesTotalData.monthly_kg_sale_per_customer}</td>
-      <td>{salesTotalData.yearly_kg_sale_per_customer}</td>
-    </tr>
-    <tr>
-      <th scope="row">Dollar Sale Per Customer</th>
-      <td>{salesTotalData.daily_dollar_sale_per_customer}</td>
-      <td>{salesTotalData.monthly_dollar_sale_per_customer}</td>
-      <td>{salesTotalData.yearly_dollar_sale_per_customer}</td>
-    </tr>
-    <tr>
-      <th scope="row">Dollar Sale Per Customer</th>
-      <td>{salesTotalData. daily_avg_price}</td>
-      <td>{salesTotalData.monthly_avg_price}</td>
-      <td>{salesTotalData.yearly_avg_price}</td>
-    </tr>
-    {/* Add similar rows for your other new fields */}
-  </tbody>
-</Table>
+              <CardBody>
+                <Row>
+                  <Col sm="8" className="pr-2" style={{ borderRight: '1px solid #ddd', marginRight: '-15px', paddingRight: '15px' }}>
+                    <Table className="responsive-table">
+                      <thead>
+                        <tr>
+                          <th scope="col"></th>
+                          <th scope="col">Daily Sales</th>
+                          <th scope="col">Monthly Sales</th>
+                          <th scope="col">Yearly Sales</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {salesTotalData.daily_sales &&
+                          salesTotalData.daily_sales.map((_, rowIndex) => (
+                            <tr key={rowIndex}>
+                              <th scope="row">{rowHeaders[rowIndex]}</th>
+                              <td>{salesTotalData.daily_sales[rowIndex]}</td>
+                              <td>{salesTotalData.monthly_sales[rowIndex]}</td>
+                              <td>{salesTotalData.yearly_sales[rowIndex]}</td>
+                            </tr>
+                          ))}
+                          <tr>
+                          <th scope="row">Average Price</th>
+                          <td>{salesTotalData.daily_avg_price}</td>
+                          <td>{salesTotalData.monthly_avg_price}</td>
+                          <td>{salesTotalData.yearly_avg_price}</td>
+                        </tr>
+                        <tr>
+                          <th scope="row">Unique Customers</th>
+                          <td>{salesTotalData.daily_customers}</td>
+                          <td>{salesTotalData.monthly_customers}</td>
+                          <td>{salesTotalData.yearly_customers}</td>
+                        </tr>
+                        <tr>
+                          <th scope="row">Average Unique Customers($)</th>
+                          <td>{salesTotalData.daily_dollar_sale_per_customer}</td>
+                          <td>{salesTotalData.monthly_dollar_sale_per_customer}</td>
+                          <td>{salesTotalData.yearly_dollar_sale_per_customer}</td>
+                        </tr>
+                        <tr>
+                          <th scope="row">Average Unique Customers(KG)</th>
+                          <td>{salesTotalData.daily_kg_sale_per_customer}</td>
+                          <td>{salesTotalData.monthly_kg_sale_per_customer}</td>
+                          <td>{salesTotalData.yearly_kg_sale_per_customer}</td>
+                        </tr>
+                        
+                        
+                        {/* Add similar rows for your other new fields */}
+                      </tbody>
+                    </Table>
 
 
-          <hr className="my-3" />
+                    <hr className="my-3" />
 
-          <Table className="responsive-table">
-            <thead>
-              <tr>
-                <th>Experts</th>
-                <th>Status</th>
-                <th>Daily Sales</th>
-                <th>Monthly Sales</th>
-                <th>Yearly Sales</th>
-              </tr>
-            </thead>
-            <tbody>
-              {salesData.map((sale, index) => (
-                <tr key={index}>
-                  <td>{sale[0]}</td>
-                  <td>{sale[1] ? 'Active' : 'Inactive'}</td>
-                  <td>{sale[2]}</td>
-                  <td>{sale[3]}</td>
-                  <td>{sale[4]}</td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-          <hr className="my-3" />
+                    <Table className="responsive-table">
+                      <thead>
+                        <tr>
+                          <th>Experts</th>
+                          <th>Status</th>
+                          <th>Daily Sales</th>
+                          <th>Monthly Sales</th>
+                          <th>Yearly Sales</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {salesData.map((sale, index) => (
+                          <tr key={index}>
+                            <td>{sale[0]}</td>
+                            <td>{sale[1] ? 'Active' : 'Inactive'}</td>
+                            <td>{sale[2]}</td>
+                            <td>{sale[3]}</td>
+                            <td>{sale[4]}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+                    <hr className="my-3" />
 
-          <div style={{ overflowX: 'auto' }}>       
-          <Table className="responsive-table">
-        <thead>
-          <tr>
-            <th scope="col">Year / Month</th>
-            {Array.from({length: 12}, (_, i) => i + 1).map(month => (
-              <th key={month} scope="col">Month {month}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {Object.entries(yearlyMonthlySalesData).map(([year, sales]) => (
-            <tr key={year}>
-              <th scope="row">{year}</th>
-              {sales.map((sale, index) => (
-                <td key={index}>{sale}</td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </Table>
-      </div>
-        </Col>
+                    <div style={{ overflowX: 'auto' }}>
+                      <Table className="responsive-table">
+                        <thead>
+                          <tr>
+                            <th scope="col">Year / Month</th>
+                            {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
+                              <th key={month} scope="col">Month {month}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {Object.entries(yearlyMonthlySalesData).map(([year, sales]) => (
+                            <tr key={year}>
+                              <th scope="row">{year}</th>
+                              {sales.map((sale, index) => (
+                                <td key={index}>{sale}</td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </Table>
+                    </div>
+                  </Col>
 
-        <hr className="my-3" />
+                  <hr className="my-3" />
 
-        <Col sm="4">
-        <div style={{ overflowX: 'auto' }}>
-  <Table className="responsive-table">
-    <thead>
-      <tr>
-        <th>Month</th>
-        <th>Toman</th>
-        <th>USD</th>
-        <th>KG</th>
-        <th>Sepidar</th>
-      </tr>
-    </thead>
-    <tbody>
-      {salesMonthlyData.map((sale, index) => (
-        <tr key={index}>
-          <td>{index + 1}</td>
-          <td>{sale[0]}</td>
-          <td>{sale[1]}</td>
-          <td>{sale[2]}</td>
-          <td>{sale[3]}</td>
-        </tr>
-      ))}
-    </tbody>
-  </Table>
-</div>
-<hr className="my-3" />
+                  <Col sm="4">
+                    <div style={{ overflowX: 'auto' }}>
+                      <Table className="responsive-table">
+                        <thead>
+                          <tr>
+                            <th>Month</th>
+                            <th>Toman</th>
+                            <th>USD</th>
+                            <th>KG</th>
+                            <th>Sepidar</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {salesMonthlyData.map((sale, index) => (
+                            <tr key={index}>
+                              <td>{index + 1}</td>
+                              <td>{sale[0]}</td>
+                              <td>{sale[1]}</td>
+                              <td>{sale[2]}</td>
+                              <td>{sale[3]}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </Table>
+                    </div>
+                    <hr className="my-3" />
 
-         
-        </Col>
-      </Row>
-    </CardBody>
-              
+
+                  </Col>
+                </Row>
+              </CardBody>
+
             </Card>
           </Col>
-          
 
+
+        </Row>
+
+
+        <Container fluid>
+          <Row>
+            <Col md="12">
+              <Card className="my-card">
+                <CardBody>
+                  <Form onSubmit={handleFormSubmit}>
+                    <FormGroup row>
+                      <Label for="targetInput" sm={1}>Target:</Label>
+                      <Col sm={1}>
+                        <Input type="number" name="target" id="targetInput" value={target} onChange={handleTargetChange} />
+                      </Col>
+                      <Col sm={2}>
+                        <Button type="submit" size="sm">Update Target</Button>
+                      </Col>
+                    </FormGroup>
+                  </Form>
+
+                  <div className="chart-wrapper">
+                    <Bar data={data} options={{ responsive: true, maintainAspectRatio: false }} />
+                  </div>
+                </CardBody>
+              </Card>
+
+
+
+            </Col>
           </Row>
-        
-  
-          <Container fluid>
-  <Row>
-    <Col md="12">
-    <Card className="my-card">
-  <CardBody>
-  <Form onSubmit={handleFormSubmit}>
-  <FormGroup row>
-    <Label for="targetInput" sm={1}>Target:</Label>
-    <Col sm={1}>
-      <Input type="number" name="target" id="targetInput" value={target} onChange={handleTargetChange} />
-    </Col>
-    <Col sm={2}>
-      <Button type="submit" size="sm">Update Target</Button>
-    </Col>
-  </FormGroup>
-</Form>
-
-    <div className="chart-wrapper">
-      <Bar data={data} options={{ responsive: true, maintainAspectRatio: false}} />
-    </div>
-  </CardBody>
-</Card>
-
-
-
-    </Col>
-  </Row>
-  {/* Other Rows and Cols */}
-</Container>
-
-       
-
-        
+          {/* Other Rows and Cols */}
+        </Container>
 
 
 
@@ -1010,7 +1008,11 @@ function Dashboard() {
 
 
 
-{/* 
+
+
+
+
+        {/* 
         <Row>
           <Col md="6">
             <Card className="card-tasks">
@@ -1398,7 +1400,7 @@ function Dashboard() {
           </Col>
         </Row>
         */}
-       
+
 
 
         {/* 
