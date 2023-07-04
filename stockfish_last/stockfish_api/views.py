@@ -2364,7 +2364,7 @@ class KgSaleBarChartView(View):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
 
-    def get(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         jalali_date_now = current_jalali_date()
         
         # Get all sales in the current month and year
@@ -2385,7 +2385,9 @@ class KgSaleBarChartView(View):
         average_kg_sale = total_kg_sale / jalali_date_now.day
 
         # Get target value from request query parameters
-        target = float(request.GET.get('target', 0))
+        data = json.loads(request.body)
+        target = float(data.get('target'))
+        print(target)
         daily_target = target / 31
 
         data = {
