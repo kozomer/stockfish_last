@@ -18,12 +18,13 @@ class Sales(DirtyFieldsMixin, models.Model):
     no = models.PositiveIntegerField(unique=True, db_index=True)
     bill_number = models.PositiveIntegerField(null=True, blank=True)
     date = jmodels.jDateField()
+    gregorian_date = models.DateField()
     psr = models.CharField(max_length=1) 
     customer_code = models.PositiveIntegerField(null=True, blank=True)
     name = models.CharField(max_length=50)
     city = models.CharField(max_length=50)
     area = models.CharField(max_length=50)
-    color_making_saler = models.CharField(max_length=50) 
+    color_making_saler = models.CharField(max_length=50, null=True) 
     #group = models.CharField(max_length=50) Removed as not used in view
     product_code = models.PositiveIntegerField(null=True, blank=True)
     product_name = models.CharField(max_length=100)
@@ -68,6 +69,8 @@ class Sales(DirtyFieldsMixin, models.Model):
         product = Products.objects.get(product_code_ir=self.product_code)
         saler = Salers.objects.get(name=self.saler)
 
+        self.gregorian_date = jalali_to_greg(self.date.day,self.date.month,self.date.year)
+
         # Calculation of "KG"
         self.kg = float(self.original_value) if self.unit.lower() == "kg" else float(self.original_value) * float(product.unit_secondary)
 
@@ -83,13 +86,18 @@ class Sales(DirtyFieldsMixin, models.Model):
             self.manager_rating = float(saler.manager_performance_rating)
 
         # Calculation of monthly sale rating
-        monthly_sale_rating_object = SalerMonthlySaleRating.objects.get(name=saler.name, year=self.date.year, month=self.date.month)
-        self.tot_monthly_sales = float(monthly_sale_rating_object.sale_rating)
+        try:
+            monthly_sale_rating_object = SalerMonthlySaleRating.objects.get(name=saler.name, year=self.date.year, month=self.date.month)
+            self.tot_monthly_sales = float(monthly_sale_rating_object.sale_rating)
+        except Exception as e:
+            self.tot_monthly_sales = 1
 
         # Calculation of receipe rating
-        receipe_rating_object = SalerReceipeRating.objects.get(name=saler.name, year=self.date.year, month=self.date.month)
-        self.receipment = float(receipe_rating_object.sale_rating)
-
+        try:
+            receipe_rating_object = SalerReceipeRating.objects.get(name=saler.name, year=self.date.year, month=self.date.month)
+            self.receipment = float(receipe_rating_object.sale_rating)
+        except Exception as e:
+             self.receipment = 1
         # Calculation of Saler Factor
         self.saler_factor = float(self.tot_monthly_sales) * float(self.manager_rating) * float(self.receipment) * float(saler.experience_rating) * float(self.payment_type if self.payment_type else 1)* float(self.ct if self.ct else 1)
         

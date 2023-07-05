@@ -144,10 +144,15 @@ def forecast_by_average(sales, prev_forecast_period, future_forecast_period):
     ave = np.mean(sales[-prev_forecast_period:])
     return [ave for _ in range(future_forecast_period)]
 def forecast_by_exp(sales, prev_forecast_period, future_forecast_period):
+    # if len(np.shape(sales)) > 1:
+    #     # Assuming sales is a pandas DataFrame and you want the first column
+    #     sales = sales.iloc[:, 0]
     fit_data = SimpleExpSmoothing(sales, initialization_method = "estimated").fit()
     forecast = fit_data.forecast(future_forecast_period)
     return forecast
 def forecast_by_holt(sales, prev_forecast_period, future_forecast_period):
+    # if len(sales) < 2:
+    #     return [] # return an empty list when there are not enough data points
     bool_optimize = len(sales) > 6
     test_size = 3
     optimal_sl = 0.8
@@ -220,6 +225,10 @@ def get_model(model, is_dynamic, current_date, product_code, product_sales, curr
         future_sales = forecast_by_average(prev_sales,prev_forecast_period, future_forecast_period)
     elif model == 'holt':
         future_sales = forecast_by_holt(prev_sales,prev_forecast_period, future_forecast_period)
+    #     if not future_sales: # if future_sales is empty, continue to the next iteration
+    #         future_sales = []
+    # if model == 'holt' and len(future_sales) < integer_lead_time:
+    #     return [], [], [], [], False, 0, 0, 0
     elif model == 'exp':
         future_sales = forecast_by_exp(prev_sales,prev_forecast_period, future_forecast_period)
     future_stocks = simulate_future_stocks(current_stock,future_sales, float_lead_time, integer_lead_time)

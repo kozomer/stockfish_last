@@ -39,7 +39,7 @@ from rest_framework.decorators import  permission_classes, authentication_classe
 from django.db.utils import OperationalError
 from rest_framework.exceptions import ValidationError
 import filetype
-
+from datetime import datetime
 
 
 
@@ -279,6 +279,7 @@ class AddSalesView(APIView):
 
             count = 0
             for i, row in data.iterrows():
+                print(row)
                 no = row["No"]
                 if Sales.objects.filter(no=no).exists():
                     continue
@@ -300,8 +301,9 @@ class AddSalesView(APIView):
 
                 # Check valid date format
                 try:
-                    date_raw = row["Date"].split("/")
+                    date_raw = row["Date"].split("-")
                     date = jdatetime.date(int(date_raw[0]), int(date_raw[1]), int(date_raw[2]))
+                    gregorian_date = jalali_to_greg(date.day,date.month,date.year)
                 except ValueError:
                     return JsonResponse({'error': "Date should be in the format of YYYY-MM-DD"}, status=400)
                 except IndexError as e:
@@ -359,16 +361,22 @@ class AddSalesView(APIView):
                 dollar = net_sales/currency
 
                 #Calculation of monthly sale rating
-                monthly_sale_rating_object = SalerMonthlySaleRating.objects.get(name = saler.name, year = date.year, month = date.month)
-                monthly_sale_rating = monthly_sale_rating_object.sale_rating
+                try:
+                    monthly_sale_rating_object = SalerMonthlySaleRating.objects.get(name = saler.name, year = date.year, month = date.month)
+                    monthly_sale_rating = monthly_sale_rating_object.sale_rating
+                except Exception as e:
+                    monthly_sale_rating = 1
                 #Calculation of Manager Rating
                 if current_jalali_date().month == date.month and current_jalali_date().year == date.year:
                     manager_rating =saler.manager_performance_rating
                 else:
                     manager_rating = 1
                 
-                receipe_rating_object = SalerReceipeRating.objects.get(name = saler.name, year = date.year, month = date.month)
-                receipe_rating = receipe_rating_object.sale_rating
+                try:
+                    receipe_rating_object = SalerReceipeRating.objects.get(name = saler.name, year = date.year, month = date.month)
+                    receipe_rating = receipe_rating_object.sale_rating
+                except Exception as e:
+                    receipe_rating = 1
                 # Saler Factor
                 saler_factor = monthly_sale_rating * manager_rating * receipe_rating * saler.experience_rating * (row["Payment Type"] if row["Payment Type"] else 1)* (row["CT"] if row["CT"] else 1)
                 prim_percantage = row["Prim Percantage"]
@@ -384,6 +392,7 @@ class AddSalesView(APIView):
                     no=no,
                     bill_number=row["Bill Number"],
                     date=date,
+                    gregorian_date = gregorian_date,
                     psr= row["PSR"],
                     customer_code=row["Customer Code"],
                     name= customer.description,
@@ -2209,18 +2218,20 @@ class TotalDataView(APIView):
     def get(self, request, *args, **kwargs):
         jalali_date_now = current_jalali_date()
         jalali_date_now_str = jalali_date_now.strftime('%Y-%m-%d')
-
+        current_date = datetime.now().date()
+        print(current_date)
         daily_customers = Sales.objects.filter(
             date=jalali_date_now
         ).values('customer_code').distinct().count()
 
         monthly_customers = Sales.objects.filter(
-            date__year=jalali_date_now.year,
-            date__month=jalali_date_now.month
+            gregorian_date__year=current_date.year,
+            gregorian_date__month=current_date.month
         ).values('customer_code').distinct().count()
+        #print("monthly customers: ",Sales.objects.filter(gregorian_date__year=current_date.year, gregorian_date__month=current_date.month).count())
 
         yearly_customers = Sales.objects.filter(
-            date__year=jalali_date_now.year
+            gregorian_date__year=current_date.year
         ).values('customer_code').distinct().count()
 
         
@@ -2232,26 +2243,27 @@ class TotalDataView(APIView):
         ).values('sale', 'dollar_sepidar_sale', 'dollar_sale', 'kg_sale')
         daily_sales_array = list(daily_sales.values_list('sale', 'dollar_sepidar_sale', 'dollar_sale', 'kg_sale')[0]) if daily_sales.exists() else [0, 0, 0, 0]
         # Divide each value in daily_sales_array by 10
-        for i in range(len(daily_sales_array)):
-            daily_sales_array[i] /= 10
+        daily_sales_array[0] /= 10
+
 
         monthly_sales = SaleSummary.objects.filter(
             year=jalali_date_now.year,
             month=jalali_date_now.month
-        ).annotate(monthly_sale=Sum('sale'), monthly_dollar_sepidar_sale=Sum('dollar_sepidar_sale'), monthly_dollar_sale=Sum('dollar_sale'), monthly_kg_sale=Sum('kg_sale') )
+        ).values('month').annotate(monthly_sale=Sum('sale'), monthly_dollar_sepidar_sale=Sum('dollar_sepidar_sale'), monthly_dollar_sale=Sum('dollar_sale'), monthly_kg_sale=Sum('kg_sale') )
+        print(monthly_sales)
         monthly_sales_array = list(monthly_sales.values_list('monthly_sale', 'monthly_dollar_sepidar_sale', 'monthly_dollar_sale', 'monthly_kg_sale')[0]) if monthly_sales.exists() else [0, 0, 0, 0]
         # Divide each value in daily_sales_array by 10
-        for i in range(len(monthly_sales_array)):
-            monthly_sales_array[i] /= 10
+        monthly_sales_array[0] /= 10
 
 
         yearly_sales = SaleSummary.objects.filter(
             year=jalali_date_now.year
-        ).annotate(yearly_sale=Sum('sale'), yearly_dollar_sepidar_sale=Sum('dollar_sepidar_sale'), yearly_dollar_sale=Sum('dollar_sale'), yearly_kg_sale=Sum('kg_sale') )
+        ).values('year').annotate(yearly_sale=Sum('sale'), yearly_dollar_sepidar_sale=Sum('dollar_sepidar_sale'), yearly_dollar_sale=Sum('dollar_sale'), yearly_kg_sale=Sum('kg_sale') )
         yearly_sales_array = list(yearly_sales.values_list('yearly_sale', 'yearly_dollar_sepidar_sale', 'yearly_dollar_sale', 'yearly_kg_sale')[0]) if yearly_sales.exists() else [0, 0, 0, 0]
         # Divide each value in daily_sales_array by 10
-        for i in range(len(yearly_sales_array)):
-            yearly_sales_array[i] /= 10
+        # for i in range(len(yearly_sales_array)):
+        yearly_sales_array[0] /= 10
+
         
         daily_avg_price = daily_sales_array[2] / daily_sales_array[3] if daily_sales_array[3] != 0 else 0
         monthly_avg_price = monthly_sales_array[2] / monthly_sales_array[3] if monthly_sales_array[3] != 0 else 0
@@ -2881,6 +2893,11 @@ def create_sales_signal(sender, instance, created, **kwargs):
         order_flags = {'average': False, 'holt': False, 'exp': False}
         orders = {'average': 0, 'holt': 0, 'exp': 0}
         product_code = instance.product_code
+        # Check if there are enough sales records
+        num_sales = MonthlyProductSales.objects.filter(product_code=product_code).count()
+        if num_sales <= 1:
+            # Not enough sales records, return without doing anything
+            return
         product_values = ProductPerformance.objects.filter(product_code=product_code)
         product_values = [[1, item.month, item.year, item.product_code, item.sale_amount] for item in product_values]
         weight = Products.objects.get(product_code_ir = product_code).weight
