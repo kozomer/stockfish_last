@@ -47,7 +47,8 @@ const DataTable = () => {
         }});
       const data = await response.json();
       setDataTable(data);
-      console.log(data)
+      setDataChanged(false);
+      setRenderEdit(false)
     }
     fetchData();
   }, [dataChanged,renderEdit]);

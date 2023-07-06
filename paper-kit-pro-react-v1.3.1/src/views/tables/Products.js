@@ -106,6 +106,7 @@ const DataTable = () => {
       setIsLoading(false);
       successUpload(data.message);
       
+      
       fetch(`${process.env.REACT_APP_PUBLIC_URL}/products/`,{
         headers: {
           'Authorization': 'Bearer '+ String(access_token)
@@ -113,8 +114,10 @@ const DataTable = () => {
       })
         .then((response) => response.json())
         
-        .then((data) => setDataTable(data));
-        console.log(dataTable)
+        .then((data) =>
+          
+         setDataTable(data));
+       
        
     })
     
@@ -475,7 +478,14 @@ const DataTable = () => {
             />
           </FormGroup>
 
-          
+          <label>Price</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={price}
+              onChange={(e) => setPrice(e.target.value)}
+            />
+          </FormGroup>
         </div>
 
         <div className="form-group-col">
@@ -524,14 +534,7 @@ const DataTable = () => {
             />
           </FormGroup>
 
-          <label>Price</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={price}
-              onChange={(e) => setPrice(e.target.value)}
-            />
-          </FormGroup>
+         
           <label>Suppliers</label>
           <FormGroup>
             <Input

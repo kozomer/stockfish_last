@@ -835,7 +835,7 @@ class EditWarehouseView(APIView):
     def post(self, request, *args, **kwargs):
         try:
             data = json.loads(request.body)
-
+            print(data)
             # Check if old_product_code is provided
             old_product_code = data.get('old_product_code')
             if not old_product_code:
@@ -984,6 +984,7 @@ class AddProductsView(APIView):
                         suppliers = row["Suppliers"]
                     )
                     product.save()
+                    
                 except KeyError as e:
                     return JsonResponse({'error': f"Column '{e}' not found in the uploaded file"}, status=400)
                 except Exception as e:
@@ -1001,7 +1002,7 @@ class ViewProductsView(APIView):
     def get(self, request, *args, **kwargs):
         products = Products.objects.values().all()
         product_list = [[p['group'], p['subgroup'], p['feature'], p['product_code_ir'], p['product_code_tr'],
-                         p['description_tr'], p['description_ir'], p['suppliers'],  p['unit'], p['unit_secondary'],p['weight'], p['price']] for p in products]
+                         p['description_tr'], p['description_ir'],  p['unit'], p['unit_secondary'],p['weight'], p['price'], p['suppliers']] for p in products]
         return JsonResponse(product_list, safe=False)
 
 class DeleteProductView(APIView):
@@ -1977,6 +1978,7 @@ class TopCustomersView(APIView):
             
             # Get the data for the current year
             top_5_customer_data = CustomerPerformance.objects.filter(year=date).order_by('-sale')[:5]
+            print(top_5_customer_data)
             
             # Calculate the total sales for the current year
             total_sales = CustomerPerformance.objects.filter(year=date).aggregate(total_sales=Sum('sale'))['total_sales']
@@ -1993,6 +1995,7 @@ class TopCustomersView(APIView):
             else:
                 # Handle the case when there is no sales data available
                 top_customers_pie_chart = [["No data available", 100]]
+            print("top_customers: ",top_customers_list)
         
         return JsonResponse({"top_customers_list": top_customers_list,"top_customers_pie_chart": top_customers_pie_chart}, safe=False)
 
@@ -2376,7 +2379,7 @@ class KgSaleBarChartView(View):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
 
-    def get(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         jalali_date_now = current_jalali_date()
         
         # Get all sales in the current month and year
@@ -2397,7 +2400,8 @@ class KgSaleBarChartView(View):
         average_kg_sale = total_kg_sale / jalali_date_now.day
 
         # Get target value from request query parameters
-        target = float(request.GET.get('target', 0))
+        data = json.loads(request.body)
+        target = float(data.get('target', 0))
         daily_target = target / 31
 
         data = {

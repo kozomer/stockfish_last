@@ -39,6 +39,8 @@ const DataTable = () => {
       
       setDataTable(data.warehouse_list);
       setTotalWeight(data.total_weight);
+      setDataChanged(false);
+      setRenderEdit(false)
     }
     fetchData();
   }, [dataChanged,renderEdit]);
@@ -108,19 +110,19 @@ const handleAddFileClick = () => {
   };
   
   const handleClick = (row) => {
-     
+     console.log(row[2])
     setEditData(row);
     setOldData(row);
 
-    setProductCode(row.product_code);
-    setProductCodeTR(row.product_code_tr)
-    setProductTitle(row.title);
-    setUnit(row.unit);
-    setStock(row.stock);
-    setKg(row.kg);
+    setProductCode(row[0]);
+    setProductCodeTR(row[1])
+    setProductTitle(row[2]);
+    setUnit(row[3]);
+    setStock(row[4]);
+    setKg(row[5]);
 
     setShowPopup(!showPopup);
-    console.log(row)
+    
   };
   const handleSubmit = async (e) => {
     const access_token = await localforage.getItem('access_token'); 
@@ -221,10 +223,11 @@ const handleAddFileClick = () => {
     if(editData){
       
       setProductCode(editData[0]);
-      setProductTitle(editData[1]);
-      setUnit(editData[2]);
-      setStock(editData[3]);
-       
+      setProductCodeTR(editData[1])
+      setProductTitle(editData[2]);
+      setUnit(editData[3]);
+      setStock(editData[4]);
+      setKg(editData[5]);
         setIsUpdated(true)
     }
   }, [editData])

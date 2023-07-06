@@ -115,6 +115,7 @@ function Dashboard() {
         data: kgSaleBarChartData.average_kg_sale,
         type: 'line',
         borderColor: 'red',
+        backgroundColor: 'red',
         borderWidth: 2,
         fill: false,
         lineTension: 0, // Make line straight
@@ -124,7 +125,8 @@ function Dashboard() {
         label: 'Target',
         data: kgSaleBarChartData.daily_target,
         type: 'line',
-        borderColor: 'yellow',
+        borderColor: 'green',
+        backgroundColor: 'green',
         borderWidth: 2,
         fill: false,
         lineTension: 0, // Make line straight
@@ -224,6 +226,28 @@ function Dashboard() {
     }
   }, [notificationData, notificationsAdded]);
 
+ 
+
+  
+  useEffect(() => {
+    const fetchDailyReportMotnhly = async () => {
+      const access_token = await localforage.getItem('access_token');
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/daily_report/total_data_by_monthly/`, {
+
+        headers: {
+
+          'Authorization': 'Bearer ' + String(access_token)
+        },
+
+      });
+      const data = await response.json();
+
+      setSalesMonthlyData(data);
+      console.log(data)
+    };
+    fetchDailyReportMotnhly();
+  }, []);
+
   useEffect(() => {
     const fetchData = async () => {
       const access_token = await localforage.getItem('access_token');
@@ -256,53 +280,6 @@ function Dashboard() {
 
 
   useEffect(() => {
-    const fetchDataCustomers = async () => {
-      const access_token = await localforage.getItem('access_token');
-      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/top_customers/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          'Authorization': 'Bearer ' + String(access_token)
-        },
-        body: JSON.stringify({ report_type: filterOptionCust }),
-      });
-      const data = await response.json();
-      console.log(data)
-      setTopCustomers(data.top_customers_list);
-      setTopCustomersPieData({
-        labels: data.top_customers_pie_chart.map((item) => item[0]),
-        datasets: [
-          {
-            label: "Top Customers",
-            data: data.top_customers_pie_chart.map((item) => item[1]),
-            backgroundColor: ["#53b100", "#61e8e1", "#f25757", "#f2a05d", "#f2e863", "#5e55ff"],
-          },
-        ],
-      });
-    };
-    fetchDataCustomers();
-  }, [filterOptionCust])
-
-  useEffect(() => {
-    const fetchDailyReportMotnhly = async () => {
-      const access_token = await localforage.getItem('access_token');
-      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/daily_report/total_data_by_monthly/`, {
-
-        headers: {
-
-          'Authorization': 'Bearer ' + String(access_token)
-        },
-
-      });
-      const data = await response.json();
-
-      setSalesMonthlyData(data);
-      console.log(data)
-    };
-    fetchDailyReportMotnhly();
-  }, []);
-
-  useEffect(() => {
     const fetchDataArea = async () => {
       const access_token = await localforage.getItem('access_token');
 
@@ -331,6 +308,35 @@ function Dashboard() {
 
     fetchDataArea();
   }, [filterOptionArea])
+
+  useEffect(() => {
+    const fetchDataCustomers = async () => {
+      const access_token = await localforage.getItem('access_token');
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/top_customers/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': 'Bearer ' + String(access_token)
+        },
+        body: JSON.stringify({ report_type: filterOptionCust }),
+      });
+      const data = await response.json();
+      console.log(data)
+      setTopCustomers(data.top_customers_list);
+      setTopCustomersPieData({
+        labels: data.top_customers_pie_chart.map((item) => item[0]),
+        datasets: [
+          {
+            label: "Top Customers",
+            data: data.top_customers_pie_chart.map((item) => item[1]),
+            backgroundColor: ["#53b100", "#61e8e1", "#f25757", "#f2a05d", "#f2e863", "#5e55ff"],
+          },
+        ],
+      });
+    };
+    fetchDataCustomers();
+  }, [filterOptionCust])
+
 
 
   useEffect(() => {
@@ -404,7 +410,7 @@ function Dashboard() {
 
   const fetchKgSaleBarChartData = async () => {
     const access_token = await localforage.getItem('access_token');
-
+    
     const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/daily_report/kg_sale_bar_chart/`, {
       method: "POST",
       headers: {
@@ -418,7 +424,7 @@ function Dashboard() {
   };
 
   useEffect(() => {
-    fetchKgSaleBarChartData; // Fetch chart data when component mounts
+    fetchKgSaleBarChartData(); // Fetch chart data when component mounts
   }, []); // 
 
 
@@ -913,7 +919,7 @@ function Dashboard() {
                           <tr>
                             <th scope="col">Year / Month</th>
                             {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
-                              <th key={month} scope="col">Month {month}</th>
+                              <th key={month} scope="col">{month}</th>
                             ))}
                           </tr>
                         </thead>

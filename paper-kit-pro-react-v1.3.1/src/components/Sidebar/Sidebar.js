@@ -145,7 +145,8 @@ function Sidebar(props) {
     if (navigator.platform.indexOf("Win") > -1) {
       ps = new PerfectScrollbar(sidebar.current, {
         suppressScrollX: true,
-        suppressScrollY: false
+        suppressScrollY: false,
+        
       });
     }
     return function cleanup() {
@@ -248,7 +249,7 @@ function Sidebar(props) {
               style={{
                 display: "block",
                 margin: "auto",
-                marginTop: "120px",
+                marginTop: "50px",
                 width: "120px",
                 height: "40px",
                 borderRadius: "20px",

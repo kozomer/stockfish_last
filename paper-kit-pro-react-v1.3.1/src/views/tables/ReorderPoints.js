@@ -275,6 +275,16 @@ function Charts() {
 
           console.log(data)
           errorUpload(data.error);
+          setTableData(null);
+          setResult(null);
+          setOrder(null);
+          setOrderFlag(null)
+      
+          setOrderHolt(null);
+          setOrderFlagHolt(null)
+        
+          setOrderExp(null);
+          setOrderFlagExp(null)
         });
       }
 
