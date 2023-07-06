@@ -71,7 +71,8 @@ const [editingRow, setEditingRow] = useState(null);
       });
       const data = await response.json();
       setDataTable(data);
-      console.log(data)
+      setDataChanged(false);
+      setRenderEdit(false)
     }
     fetchData();
   }, [dataChanged, renderEdit]);
@@ -264,7 +265,6 @@ const [editingRow, setEditingRow] = useState(null);
     const updatedData = {
 
       product_code: productCode,
-
       product_name_tr: productNameTR,
       product_name_ir: productNameIR,
       decided_order: decidedTruckOrder,
@@ -477,10 +477,11 @@ const [editingRow, setEditingRow] = useState(null);
       setProductCode(editData[0]);
       setProductNameTR(editData[1]);
       setProductNameIR(editData[2]);
-      setDecidedOrder(editData[3]);
-      setWeight(editData[4]);
-      setTruckName(editData[5]);
-      setSuppliers(editData[6])
+      setSuppliers(editData[3])
+      setDecidedOrder(editData[4]);
+      setWeight(editData[5]);
+      setTruckName(editData[6]);
+      
 
       setIsUpdated(true)
     }
@@ -628,20 +629,22 @@ const [editingRow, setEditingRow] = useState(null);
                         <Input
                           disabled
                           type="text"
-                          defaultValue={setProductNameIR}
+                          defaultValue={productNameIR}
                           onChange={(e) => setProductNameIR(e.target.value)}
                         />
                       </FormGroup>
 
-                      <label>Decided Order</label>
+                      <label>Suppliers</label>
                       <FormGroup>
                         <Input
-
+                          disabled
                           type="text"
-                          defaultValue={decidedOrder}
-                          onChange={(e) => setDecidedOrder(e.target.value)}
+                          defaultValue={suppliers}
+                          onChange={(e) => setSuppliers(e.target.value)}
                         />
                       </FormGroup>
+
+                     
 
                       <label>Weight</label>
                       <FormGroup>
@@ -662,16 +665,18 @@ const [editingRow, setEditingRow] = useState(null);
                         />
                       </FormGroup>
 
-                      
-                      <label>Suppliers</label>
+                      <label>Decided Order</label>
                       <FormGroup>
                         <Input
-                          disabled
+
                           type="text"
-                          defaultValue={suppliers}
-                          onChange={(e) => setSuppliers(e.target.value)}
+                          defaultValue={decidedOrder}
+                          onChange={(e) => setDecidedOrder(e.target.value)}
                         />
                       </FormGroup>
+
+                      
+                     
 
 
                     </div>
@@ -737,15 +742,17 @@ const [editingRow, setEditingRow] = useState(null);
                         />
                       </FormGroup>
 
-                      <label>Decided Order</label>
+                      <label>Suppliers</label>
                       <FormGroup>
                         <Input
-
+                          disabled
                           type="text"
-                          defaultValue={decidedOrder}
-                          onChange={(e) => setDecidedTruckOrder(e.target.value)}
+                          defaultValue={suppliers}
+                          onChange={(e) => setSuppliers(e.target.value)}
                         />
                       </FormGroup>
+
+                     
 
                       <label>Weight</label>
                       <FormGroup>
@@ -767,16 +774,17 @@ const [editingRow, setEditingRow] = useState(null);
                         />
                       </FormGroup>
 
-                      <label>Suppliers</label>
+                      
+
+                      <label>Decided Order</label>
                       <FormGroup>
                         <Input
-                          disabled
+
                           type="text"
-                          defaultValue={suppliers}
-                          onChange={(e) => setSuppliers(e.target.value)}
+                          defaultValue={decidedOrder}
+                          onChange={(e) => setDecidedTruckOrder(e.target.value)}
                         />
                       </FormGroup>
-
 
 
                     </div>
@@ -875,10 +883,11 @@ const [editingRow, setEditingRow] = useState(null);
                     product_code: row[0],
                     product_name_tr: row[1],
                     product_name_ir: row[2],
-                    decided_order: row[3],
-                    weight: row[4],
-                    truck_name: row[5],
-                    suppliers: row[6],
+                    suppliers: row[3],
+                    decided_order: row[4],
+                    weight: row[5],
+                    truck_name: row[6],
+                    
 
                     actions: (
                       <div className='actions-left'>
@@ -933,10 +942,11 @@ const [editingRow, setEditingRow] = useState(null);
                     { Header: 'Product Code', accessor: 'product_code' },
                     { Header: 'Product Name-TR', accessor: 'product_name_tr' },
                     { Header: 'Product Name-IR', accessor: 'product_name_ir' },
+                    { Header: 'Suppliers', accessor: 'suppliers' },
                     { Header: 'Decided Order', accessor: 'decided_order' },
                     { Header: 'Weight', accessor: 'weight' },
                     { Header: 'Truck', accessor: 'truck_name' },
-                    { Header: 'Suppliers', accessor: 'suppliers' },
+                   
 
                         
 

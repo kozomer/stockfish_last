@@ -29,14 +29,14 @@ const [name, setName] = useState(null);
 const [city, setCity] = useState(null);
 const [area, setArea] = useState(null);
 const [colorMake, setColorMake] = useState(null);
-const [group, setGroup] = useState(null);
+
 const [productCode, setProductCode] = useState(null);
 const [productName, setProductName] = useState(null);
 const [unit, setUnit] = useState(null);
 const [unit2, setUnit2] = useState(null);
 const [kg, setKg] = useState(null);
 const [originalValue, setOriginalValue] = useState(null);
-const [originalOutputValue, setOriginalOutputValue] = useState(null);
+
 const [secondaryOutputValue, setSecondaryOutputValue] = useState(null);
 const [price, setPrice] = useState(null);
 const [originalPrice, setOriginalPrice] = useState(null);
@@ -45,8 +45,6 @@ const [amountSale, setAmountSale] = useState(null);
 const [discount, setDiscount] = useState(null);
 const [additionalSales, setAdditionalSales] = useState(null);
 const [netSales, setNetSales] = useState(null);
-const [discountPercentage2, setDiscountPercentage2] = useState(null);
-const [realDiscountPercentage, setRealDiscountPercentage] = useState(null);
 const [paymentCash, setPaymentCash] = useState(null);
 const [paymentCheck, setPaymentCheck] = useState(null);
 const [balance, setBalance] = useState(null);
@@ -61,7 +59,7 @@ const [totMonthlySales, setTotMonthlySales] = useState(null);
 const [receipment, setReceipment] = useState(null);
 const [ct, setCt] = useState(null);
 const [paymentType, setPaymentType] = useState(null);
-const [costumerSize, setCostumerSize] = useState(null);
+const [customerSize, setCustomerSize] = useState(null);
 const [salerFactor, setSalerFactor] = useState(null);
 const [primPercentage, setPrimPercentage] = useState(null);
 const [bonusFactor, setBonusFactor] = useState(null);
@@ -296,24 +294,20 @@ const [bonus, setBonus] = useState(null);
       setCity(row.city)
       setArea(row.area);
       setColorMake(row.color_making_saler)
-      setGroup(row.group);
       setProductCode(row.product_code);
       setProductName(row.product_name);
       setUnit(row.unit);
       setUnit2(row.unit2);
       setKg(row.kg)
       setOriginalValue(row.original_value);
-      setOriginalOutputValue(row.original_output_value);
       setSecondaryOutputValue(row.secondary_output_value);
-      setPrice(row.price);
-      setOriginalPrice(row.original_price);
+      setPrice(row.price_dollar);
+      setOriginalPrice(row.original_price_dollar);
       setDiscountPercentage(row.discount_percentage);
       setAmountSale(row.amount_sale);
       setDiscount(row.discount);
       setAdditionalSales(row.additional_sales);
       setNetSales(row.net_sales);
-      setDiscountPercentage2(row.discount_percentage_2);
-      setRealDiscountPercentage(row.real_discount_percentage);
       setPaymentCash(row.payment_cash);
       setPaymentCheck(row.payment_check);
       setBalance(row.balance);
@@ -328,7 +322,7 @@ const [bonus, setBonus] = useState(null);
       setReceipment(row.receipment);
       setCt(row.ct);
       setPaymentType(row.payment_type);
-      setCostumerSize(row.costumer_size);
+      setCustomerSize(row.customer_size);
       setSalerFactor(row.saler_factor);
       setPrimPercentage(row.prim_percentage);
       setBonusFactor(row.bonus_factor);
@@ -351,25 +345,21 @@ const [bonus, setBonus] = useState(null);
         new_name: name,
         new_city: city,
         new_area: area,
-        new_color_making_saler: colorMake,
-        new_group: group,
+        new_color_making_saler: colorMake,      
         new_product_code: productCode,
         new_product_name: productName,
         new_unit: unit,
         new_unit2: unit2,
         new_kg: kg,
         new_original_value: originalValue,
-        new_original_output_value: originalOutputValue,
         new_secondary_output_value: secondaryOutputValue,
-        new_price: price,
-        new_original_price: originalPrice,
+        new_price_dollar: price,
+        new_original_price_dollar: originalPrice,
         new_discount_percentage: discountPercentage,
         new_amount_sale: amountSale,
         new_discount: discount,
         new_additional_sales: additionalSales,
         new_net_sales: netSales,
-        new_discount_percentage_2: discountPercentage2,
-        new_real_discount_percentage: realDiscountPercentage,
         new_payment_cash: paymentCash,
         new_payment_check: paymentCheck,
         new_balance: balance,
@@ -384,7 +374,7 @@ const [bonus, setBonus] = useState(null);
         new_receipment: receipment,
         new_ct: ct,
         new_payment_type: paymentType,
-        new_costumer_size: costumerSize,
+        new_customer_size: customerSize,
         new_saler_factor: salerFactor,
         new_prim_percentage: primPercentage,
         new_bonus_factor: bonusFactor,
@@ -399,43 +389,39 @@ const [bonus, setBonus] = useState(null);
         old_city: oldData[6],
         old_area: oldData[7],
         old_color_making_saler: oldData[8],
-        old_group: oldData[9],
-        old_product_code: oldData[10],
-        old_product_name: oldData[11],
-        old_unit: oldData[12],
-        old_unit2: oldData[13],
-        old_kg: oldData[14],
-        old_original_value: oldData[15],
-        old_original_output_value: oldData[16],
-        old_secondary_output_value: oldData[17],
-        old_price: oldData[18],
-        old_original_price: oldData[19],
-        old_discount_percentage: oldData[20],
-        old_amount_sale: oldData[21],
-        old_discount: oldData[22],
-        old_additional_sales: oldData[23],
-        old_net_sales: oldData[24],
-        old_discount_percentage_2: oldData[25],
-        old_real_discount_percentage: oldData[26],
-        old_payment_cash: oldData[27],
-        old_payment_check: oldData[28],
-        old_balance: oldData[29],
-        old_saler: oldData[30],
-        old_currency_sepidar: oldData[31],
-        old_dollar_sepidar: oldData[32],
-        old_currency: oldData[33],
-        old_dollar: oldData[34],
-        old_manager_rating: oldData[35],
-        old_senior_saler: oldData[36],
-        old_tot_monthly_sales: oldData[37],
-        old_receipment: oldData[38],
-        old_ct: oldData[39],
-        old_payment_type: oldData[40],
-        old_costumer_size: oldData[41],
-        old_saler_factor: oldData[42],
-        old_prim_percentage: oldData[43],
-        old_bonus_factor: oldData[44],
-        old_bonus: oldData[45],
+        old_product_code: oldData[9],
+        old_product_name: oldData[10],
+        old_unit: oldData[11],
+        old_unit2: oldData[12],
+        old_kg: oldData[13],
+        old_original_value: oldData[14],
+        old_secondary_output_value: oldData[15],
+        old_price: oldData[16],
+        old_original_price: oldData[17],
+        old_discount_percentage: oldData[18],
+        old_amount_sale: oldData[19],
+        old_discount: oldData[20],
+        old_additional_sales: oldData[21],
+        old_net_sales: oldData[22],
+        old_payment_cash: oldData[23],
+        old_payment_check: oldData[24],
+        old_balance: oldData[25],
+        old_saler: oldData[26],
+        old_currency_sepidar: oldData[27],
+        old_dollar_sepidar: oldData[28],
+        old_currency: oldData[29],
+        old_dollar: oldData[30],
+        old_manager_rating: oldData[31],
+        old_senior_saler: oldData[32],
+        old_tot_monthly_sales: oldData[33],
+        old_receipment: oldData[34],
+        old_ct: oldData[35],
+        old_payment_type: oldData[36],
+        old_customer_size: oldData[37],
+        old_saler_factor: oldData[38],
+        old_prim_percentage: oldData[39],
+        old_bonus_factor: oldData[40],
+        old_bonus: oldData[41]
       };
       
       fetch(`${process.env.REACT_APP_PUBLIC_URL}/edit_sales/`, {
@@ -482,46 +468,42 @@ const [bonus, setBonus] = useState(null);
         setPsr(editData[3]);
         setCustomerCode(editData[4]);
         setName(editData[5]);
-        setCity(editData[6])
+        setCity(editData[6]);
         setArea(editData[7]);
-        setColorMake(editData[8])
-        setGroup(editData[9]);
-        setProductCode(editData[10]);
-        setProductName(editData[11]);
-        setUnit(editData[12]);
-        setUnit2(editData[13]);
-        setKg(editData[14])
-        setOriginalValue(editData[15]);
-        setOriginalOutputValue(editData[16]);
-        setSecondaryOutputValue(editData[17]);
-        setPrice(editData[18]);
-        setOriginalPrice(editData[19]);
-        setDiscountPercentage(editData[20]);
-        setAmountSale(editData[21]);
-        setDiscount(editData[22]);
-        setAdditionalSales(editData[23]);
-        setNetSales(editData[24]);
-        setDiscountPercentage2(editData[25]);
-        setRealDiscountPercentage(editData[26]);
-        setPaymentCash(editData[27]);
-        setPaymentCheck(editData[28]);
-        setBalance(editData[29]);
-        setSaler(editData[30]);
-        setCurrSepidar(editData[31])
-        setDollarSepidar(editData[32])
-        setCurrency(editData[33]);
-        setDollar(editData[34]);
-        setManagerRating(editData[35]);
-        setSeniorSaler(editData[36]);
-        setTotMonthlySales(editData[37]);
-        setReceipment(editData[38]);
-        setCt(editData[39]);
-        setPaymentType(editData[40]);
-        setCostumerSize(editData[41]);
-        setSalerFactor(editData[42]);
-        setPrimPercentage(editData[43]);
-        setBonusFactor(editData[44]);
-        setBonus(editData[45]);
+        setColorMake(editData[8]);
+        setProductCode(editData[9]);
+        setProductName(editData[10]);
+        setUnit(editData[11]);
+        setUnit2(editData[12]);
+        setKg(editData[13]);
+        setOriginalValue(editData[14]);
+        setSecondaryOutputValue(editData[15]);
+        setPrice(editData[16]);
+        setOriginalPrice(editData[17]);
+        setDiscountPercentage(editData[18]);
+        setAmountSale(editData[19]);
+        setDiscount(editData[20]);
+        setAdditionalSales(editData[21]);
+        setNetSales(editData[22]);
+        setPaymentCash(editData[23]);
+        setPaymentCheck(editData[24]);
+        setBalance(editData[25]);
+        setSaler(editData[26]);
+        setCurrSepidar(editData[27]);
+        setDollarSepidar(editData[28]);
+        setCurrency(editData[29]);
+        setDollar(editData[30]);
+        setManagerRating(editData[31]);
+        setSeniorSaler(editData[32]);
+        setTotMonthlySales(editData[33]);
+        setReceipment(editData[34]);
+        setCt(editData[35]);
+        setPaymentType(editData[36]);
+        setCustomerSize(editData[37]);
+        setSalerFactor(editData[38]);
+        setPrimPercentage(editData[39]);
+        setBonusFactor(editData[40]);
+        setBonus(editData[41]);
           setIsUpdated(true)
       }
     }, [editData])
@@ -719,14 +701,7 @@ const [bonus, setBonus] = useState(null);
           </FormGroup>
           
           
-          <label>Group</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={group}
-              onChange={(e) => setGroup(e.target.value)}
-            />
-          </FormGroup>
+          
 
           <label>Product Code</label>
           <FormGroup>
@@ -763,6 +738,15 @@ const [bonus, setBonus] = useState(null);
               onChange={(e) => setUnit2(e.target.value)}
             />
           </FormGroup>
+
+          <label>Bonus Factor</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={bonusFactor}
+              onChange={(e) =>setBonusFactor(e.target.value)}
+            />
+          </FormGroup>
           </div>
 
           <div className="form-group-col-sales">
@@ -776,14 +760,7 @@ const [bonus, setBonus] = useState(null);
             />
           </FormGroup>
           
-          <label>Orig. Output Val.</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={originalOutputValue}
-              onChange={(e) => setOriginalOutputValue(e.target.value)}
-            />
-          </FormGroup>
+  
 
           <label>Second. Output Val.</label>
           <FormGroup>
@@ -832,6 +809,14 @@ const [bonus, setBonus] = useState(null);
               onChange={(e) =>  setDiscount(e.target.value)}
             />
           </FormGroup>
+             <label>Bonus</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={bonus}
+              onChange={(e) =>setBonus(e.target.value)}
+            />
+          </FormGroup>
           </div>
 
 
@@ -854,23 +839,7 @@ const [bonus, setBonus] = useState(null);
             />
           </FormGroup>
 
-          <label>Discount Perc.(2)</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={discountPercentage2}
-              onChange={(e) => setDiscountPercentage2(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>Real Discount Perc.</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={realDiscountPercentage}
-              onChange={(e) =>  setRealDiscountPercentage(e.target.value)}
-            />
-          </FormGroup>
+          
 
           <label>Payment Cash</label>
           <FormGroup>
@@ -900,6 +869,26 @@ const [bonus, setBonus] = useState(null);
               onChange={(e) =>   setBalance(e.target.value)}
             />
           </FormGroup>
+
+          <label>Senior Saler</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={seniorSaler}
+              onChange={(e) =>   setSeniorSaler(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Prim Percentage</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={primPercentage}
+              onChange={(e) =>setPrimPercentage(e.target.value)}
+            />
+          </FormGroup>
+          
+
           </div>
 
           <div className="form-group-col-sales">
@@ -957,15 +946,7 @@ const [bonus, setBonus] = useState(null);
             />
           </FormGroup>
 
-          <label>Senior Saler</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={seniorSaler}
-              onChange={(e) =>   setSeniorSaler(e.target.value)}
-            />
-          </FormGroup>
-
+        
           </div>
 
           <div className="form-group-col-sales">
@@ -1012,8 +993,8 @@ const [bonus, setBonus] = useState(null);
           <FormGroup>
             <Input
               type="text"
-              defaultValue={costumerSize}
-              onChange={(e) => setCostumerSize(e.target.value)}
+              defaultValue={customerSize}
+              onChange={(e) => setCustomerSize(e.target.value)}
             />
           </FormGroup>
           
@@ -1026,34 +1007,10 @@ const [bonus, setBonus] = useState(null);
             />
           </FormGroup>
 
-          <label>Prim Percentage</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={primPercentage}
-              onChange={(e) =>setPrimPercentage(e.target.value)}
-            />
-          </FormGroup>
-          
+         
 
           
-          <label>Bonus Factor</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={bonusFactor}
-              onChange={(e) =>setBonusFactor(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>Bonus</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={bonus}
-              onChange={(e) =>setBonus(e.target.value)}
-            />
-          </FormGroup>
+         
           </div>
         </div>
         
@@ -1137,40 +1094,40 @@ const [bonus, setBonus] = useState(null);
                     name: row[5],
                     city: row[6],
                     area: row[7],
-                    product_code: row[8],
-                    product_name: row[9],
-                    unit: row[10],
-                    unit2: row[11],
-                    kg: row[12],
-                    original_value: row[13],
-                    secondary_output_value: row[14],
-                    price: row[15],
-                    original_price: row[16],
-                    discount_percentage: row[17],
-                    amount_sale: row[18],
-                    discount: row[19],
-                    additional_sales: row[20],
-                    net_sales: row[21],
-                    payment_cash: row[22],
-                    payment_check: row[23],
-                    balance: row[24],
-                    saler: row[25],
-                    currency_sepidar: row[26],
-                    dollar_sepidar: row[27],
-                    currency: row[28],
-                    dollar: row[29],
-                    manager_rating: row[30],
-                    senior_saler: row[31],
-                    tot_monthly_sales: row[32],
-                    receipment: row[33],
-                    ct: row[34],
-                    payment_type: row[35],
-                    customer_size: row[36],
-                    saler_factor: row[37],
-                    prim_percentage: row[38],
-                    bonus_factor: row[39],
-                    bonus: row[40],
-         
+                    color_making_saler: row[8],
+                    product_code: row[9],
+                    product_name: row[10],
+                    unit: row[11],
+                    unit2: row[12],
+                    kg: row[13],
+                    original_value: row[14],
+                    secondary_output_value: row[15],
+                    price_dollar: row[16],
+                    original_price_dollar: row[17],
+                    discount_percentage: row[18],
+                    amount_sale: row[19],
+                    discount: row[20],
+                    additional_sales: row[21],
+                    net_sales: row[22],
+                    payment_cash: row[23],
+                    payment_check: row[24],
+                    balance: row[25],
+                    saler: row[26],
+                    currency_sepidar: row[27],
+                    dollar_sepidar: row[28],
+                    currency: row[29],
+                    dollar: row[30],
+                    manager_rating: row[31],
+                    senior_saler: row[32],
+                    tot_monthly_sales: row[33],
+                    receipment: row[34],
+                    ct: row[35],
+                    payment_type: row[36],
+                    customer_size: row[37],
+                    saler_factor: row[38],
+                    prim_percentage: row[39],
+                    bonus_factor: row[40],
+                    bonus: row[41],
 
 
                     actions: (
@@ -1287,6 +1244,10 @@ const [bonus, setBonus] = useState(null);
                       accessor: 'area'
                     },
                     {
+                      Header: 'Color Making Saler',
+                      accessor: 'color_making_saler'
+                    },
+                    {
                       Header: 'Product Code',
                       accessor: 'product_code'
                     },
@@ -1315,12 +1276,12 @@ const [bonus, setBonus] = useState(null);
                       accessor: 'secondary_output_value'
                     },
                     {
-                      Header: 'Price',
-                      accessor: 'price'
+                      Header: 'Price($)',
+                      accessor: 'price_dollar'
                     },
                     {
-                      Header: 'Original Price',
-                      accessor: 'original_price'
+                      Header: 'Original Price($)',
+                      accessor: 'original_price_dollar'
                     },
                     {
                       Header: 'Discount Percentage',
