@@ -1579,16 +1579,16 @@ def update_receipement_rating_with_add_sale(sender, instance, created, **kwargs)
 
     # filter the sales of the same saler, year and month that are either 'S' or 'P'
     sales_SP = Sales.objects.filter(saler=instance.saler, 
-                                    date__year=instance.date.year, 
-                                    date__month=instance.date.month,
+                                    gregorian_date__year=instance.gregorian_date.year, 
+                                    gregorian_date__month=instance.gregorian_date.month,
                                     psr__in=['S', 'P'])
     # Sum payment_cash and payment_check
     payment_sum_SP = sum(sale.payment_cash + sale.payment_check for sale in sales_SP)
 
     # filter the sales of the same saler, year and month that are either 'S' or 'R'
     sales_SR = Sales.objects.filter(saler=instance.saler, 
-                                    date__year=instance.date.year, 
-                                    date__month=instance.date.month,
+                                    gregorian_date__year=instance.gregorian_date.year, 
+                                    gregorian_date__month=instance.gregorian_date.month,
                                     psr__in=['S', 'R'])
     # Sum net_sales
     net_sales_sum_SR = sum(sale.net_sales for sale in sales_SR)
@@ -1615,16 +1615,16 @@ def update_receipement_rating_with_delete_sale(sender, instance, **kwargs):
 
     # filter the sales of the same saler, year and month that are either 'S' or 'P'
     sales_SP = Sales.objects.filter(saler=instance.saler, 
-                                    date__year=instance.date.year, 
-                                    date__month=instance.date.month,
+                                    gregorian_date__year=instance.gregorian_date.year, 
+                                    gregorian_date__month=instance.gregorian_date.month,
                                     psr__in=['S', 'P'])
     # Sum payment_cash and payment_check
     payment_sum_SP = sum(sale.payment_cash + sale.payment_check for sale in sales_SP)
 
     # filter the sales of the same saler, year and month that are either 'S' or 'R'
     sales_SR = Sales.objects.filter(saler=instance.saler, 
-                                    date__year=instance.date.year, 
-                                    date__month=instance.date.month,
+                                    gregorian_date__year=instance.gregorian_date.year, 
+                                    gregorian_date__month=instance.gregorian_date.month,
                                     psr__in=['S', 'R'])
     # Sum net_sales
     net_sales_sum_SR = sum(sale.net_sales for sale in sales_SR)
@@ -1977,8 +1977,10 @@ class TopCustomersView(APIView):
             date= current_jalali_date().year
             
             # Get the data for the current year
-            top_5_customer_data = CustomerPerformance.objects.filter(year=date).order_by('-sale')[:5]
-            print(top_5_customer_data)
+            customer_data = CustomerPerformance.objects.filter(year=date).values('customer_code').annotate(total_sale=Sum('sale')).order_by('-total_sale')
+            
+            # Get the top 5 customers
+            top_5_customer_data = customer_data[:5]
             
             # Calculate the total sales for the current year
             total_sales = CustomerPerformance.objects.filter(year=date).aggregate(total_sales=Sum('sale'))['total_sales']
@@ -2107,7 +2109,10 @@ class TopProductsView(APIView):
             date= current_jalali_date().year
             
             # Get the data for the current year
-            top_5_product_data = ProductPerformance.objects.filter(year=date).order_by('-sale')[:5]
+            product_data = ProductPerformance.objects.filter(year=date).values('product_code').annotate(total_sale=Sum('sale')).order_by('-total_sale')
+           
+            # Get the top 5 products
+            top_5_product_data = product_data[:5]
             
             # Calculate the total sales for the current year
             total_sales = ProductPerformance.objects.filter(year=date).aggregate(total_sales=Sum('sale'))['total_sales']
