@@ -449,7 +449,6 @@ class AddSalesView(APIView):
                 except Warehouse.DoesNotExist:
                     return JsonResponse({'error': f"No product found with code '{row['Good Code']}' in warehouse"}, status=400)
 
-                count += 1
             return JsonResponse({'message': f"{count} sales data added successfully"}, status=200)
 
         except OperationalError as e:
@@ -1944,6 +1943,7 @@ class TopCustomersView(APIView):
         data = json.loads(request.body)
 
         report_type = data.get('report_type')
+        print(report_type)
         if report_type == 'monthly':
             top_customers_list = []
             
@@ -1971,22 +1971,24 @@ class TopCustomersView(APIView):
                 top_customers_pie_chart = [["No data available", 100]]
         
         elif report_type == 'yearly':
+            print("xxx")
             top_customers_list = []
             
             # Get the current year using jdatetime library
             date= current_jalali_date().year
             
             # Get the data for the current year
-            customer_data = CustomerPerformance.objects.filter(year=date).values('customer_code').annotate(total_sale=Sum('sale')).order_by('-total_sale')
+            customer_data = CustomerPerformance.objects.filter(year=date).values('customer_code', 'customer_name').annotate(total_sale=Sum('sale')).order_by('-total_sale')
             
             # Get the top 5 customers
             top_5_customer_data = customer_data[:5]
+            print(d["customer_name"] for d in top_5_customer_data )
             
             # Calculate the total sales for the current year
             total_sales = CustomerPerformance.objects.filter(year=date).aggregate(total_sales=Sum('sale'))['total_sales']
             if total_sales is not None:
                 # Calculate the sales data for the top 5 customers and others
-                top_customers_list = [[d.customer_name, d.sale] for d in top_5_customer_data]
+                top_customers_list = [[d['customer_name'], d['total_sale']] for d in top_5_customer_data]
                 top_customers_sale_sum = [d[1] for d in top_customers_list ]
                 top_5_customer_total_sale = sum(top_customers_sale_sum)
                 others_sales = total_sales - top_5_customer_total_sale
@@ -1998,7 +2000,7 @@ class TopCustomersView(APIView):
                 # Handle the case when there is no sales data available
                 top_customers_pie_chart = [["No data available", 100]]
             print("top_customers: ",top_customers_list)
-        
+        print(top_customers_list)
         return JsonResponse({"top_customers_list": top_customers_list,"top_customers_pie_chart": top_customers_pie_chart}, safe=False)
 
 # endregion
@@ -2109,7 +2111,7 @@ class TopProductsView(APIView):
             date= current_jalali_date().year
             
             # Get the data for the current year
-            product_data = ProductPerformance.objects.filter(year=date).values('product_code').annotate(total_sale=Sum('sale')).order_by('-total_sale')
+            product_data = ProductPerformance.objects.filter(year=date).values('product_code', 'product_name').annotate(total_sale=Sum('sale')).order_by('-total_sale')
            
             # Get the top 5 products
             top_5_product_data = product_data[:5]
@@ -2118,7 +2120,7 @@ class TopProductsView(APIView):
             total_sales = ProductPerformance.objects.filter(year=date).aggregate(total_sales=Sum('sale'))['total_sales']
             if total_sales is not None:
                 # Calculate the sales data for the top 5 products and others
-                top_products_list = [[d.product_name, d.sale] for d in top_5_product_data]
+                top_products_list = [[d['product_name'], d['total_sale']] for d in top_5_product_data]
                 top_products_sale_sum = [d[1] for d in top_products_list ]
                 top_5_product_total_sale = sum(top_products_sale_sum)
                 others_sales = total_sales - top_5_product_total_sale
@@ -2129,7 +2131,7 @@ class TopProductsView(APIView):
             else:
                 # Handle the case when there is no sales data available
                 top_products_pie_chart = [["No data available", 100]]
-        
+        print(top_products_list)
         return JsonResponse({"top_products_list": top_products_list,"top_products_pie_chart": top_products_pie_chart}, safe=False)
 
 # endregion
@@ -2193,8 +2195,8 @@ class SalerDataView(APIView):
                     name,
                     is_active,
                     0,  # Set daily sale value to zero
-                    monthly_sale['monthly_sale'] / 10,
-                    yearly_sale / 10
+                    format(round(monthly_sale['monthly_sale'] / 10), ',d'),  # round off the value and add separators
+                    format(round(yearly_sale / 10), ',d')  # round off the value and add separators
                 ])
         else:
             for daily_sale in daily_sales:
@@ -2210,9 +2212,9 @@ class SalerDataView(APIView):
                 combined_data.append([
                     name,
                     is_active,
-                    daily_sale['sale'] / 10,
-                    monthly_sale / 10,
-                    yearly_sale / 10
+                    format(round(daily_sale['sale'] / 10), ',d'),  # round off the value and add separators
+                    format(round(monthly_sale / 10), ',d'),  # round off the value and add separators
+                    format(round(yearly_sale / 10), ',d')  # round off the value and add separators
                 ])
 
         response_data = {"jalali_date": jalali_date_now_str, "sales_data": combined_data}
@@ -2223,11 +2225,12 @@ class SalerDataView(APIView):
 class TotalDataView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
+
     def get(self, request, *args, **kwargs):
         jalali_date_now = current_jalali_date()
         jalali_date_now_str = jalali_date_now.strftime('%Y-%m-%d')
         current_date = datetime.now().date()
-        print(current_date)
+
         daily_customers = Sales.objects.filter(
             date=jalali_date_now
         ).values('customer_code').distinct().count()
@@ -2236,78 +2239,82 @@ class TotalDataView(APIView):
             gregorian_date__year=current_date.year,
             gregorian_date__month=current_date.month
         ).values('customer_code').distinct().count()
-        #print("monthly customers: ",Sales.objects.filter(gregorian_date__year=current_date.year, gregorian_date__month=current_date.month).count())
 
         yearly_customers = Sales.objects.filter(
             gregorian_date__year=current_date.year
         ).values('customer_code').distinct().count()
 
-        
-        
         daily_sales = SaleSummary.objects.filter(
             year=jalali_date_now.year,
             month=jalali_date_now.month,
             day=jalali_date_now.day
         ).values('sale', 'dollar_sepidar_sale', 'dollar_sale', 'kg_sale')
-        daily_sales_array = list(daily_sales.values_list('sale', 'dollar_sepidar_sale', 'dollar_sale', 'kg_sale')[0]) if daily_sales.exists() else [0, 0, 0, 0]
-        # Divide each value in daily_sales_array by 10
-        daily_sales_array[0] /= 10
+        daily_sales_array_float = list(daily_sales.values_list('sale', 'dollar_sepidar_sale', 'dollar_sale', 'kg_sale')[0]) if daily_sales.exists() else [0, 0, 0, 0]
+        daily_sales_array_float[0] = daily_sales_array_float[0] / 10
+        daily_sales_array = [0,0,0,0]
+        daily_sales_array[0] = format(round(daily_sales_array_float[0]), ',d')
+        daily_sales_array[1] = format(round(daily_sales_array_float[1] ), ',d')
+        daily_sales_array[2] = format(round(daily_sales_array_float[2] ), ',d')
+        daily_sales_array[3] = format(round(daily_sales_array_float[3] ), ',d')
 
 
         monthly_sales = SaleSummary.objects.filter(
             year=jalali_date_now.year,
             month=jalali_date_now.month
         ).values('month').annotate(monthly_sale=Sum('sale'), monthly_dollar_sepidar_sale=Sum('dollar_sepidar_sale'), monthly_dollar_sale=Sum('dollar_sale'), monthly_kg_sale=Sum('kg_sale') )
-        print(monthly_sales)
-        monthly_sales_array = list(monthly_sales.values_list('monthly_sale', 'monthly_dollar_sepidar_sale', 'monthly_dollar_sale', 'monthly_kg_sale')[0]) if monthly_sales.exists() else [0, 0, 0, 0]
-        # Divide each value in daily_sales_array by 10
-        monthly_sales_array[0] /= 10
+        monthly_sales_array_float = list(monthly_sales.values_list('monthly_sale', 'monthly_dollar_sepidar_sale', 'monthly_dollar_sale', 'monthly_kg_sale')[0]) if monthly_sales.exists() else [0, 0, 0, 0]
+        monthly_sales_array_float[0] = monthly_sales_array_float[0] / 10
+        monthly_sales_array = [0,0,0,0]
+        monthly_sales_array[0] = format(round(monthly_sales_array_float[0] ), ',d')
+        monthly_sales_array[1] = format(round(monthly_sales_array_float[1] ), ',d')
+        monthly_sales_array[2] = format(round(monthly_sales_array_float[2] ), ',d')
+        monthly_sales_array[3] = format(round(monthly_sales_array_float[3] ), ',d')
 
 
         yearly_sales = SaleSummary.objects.filter(
             year=jalali_date_now.year
         ).values('year').annotate(yearly_sale=Sum('sale'), yearly_dollar_sepidar_sale=Sum('dollar_sepidar_sale'), yearly_dollar_sale=Sum('dollar_sale'), yearly_kg_sale=Sum('kg_sale') )
-        yearly_sales_array = list(yearly_sales.values_list('yearly_sale', 'yearly_dollar_sepidar_sale', 'yearly_dollar_sale', 'yearly_kg_sale')[0]) if yearly_sales.exists() else [0, 0, 0, 0]
-        # Divide each value in daily_sales_array by 10
-        # for i in range(len(yearly_sales_array)):
-        yearly_sales_array[0] /= 10
+        yearly_sales_array_float = list(yearly_sales.values_list('yearly_sale', 'yearly_dollar_sepidar_sale', 'yearly_dollar_sale', 'yearly_kg_sale')[0]) if yearly_sales.exists() else [0, 0, 0, 0]
+        yearly_sales_array_float[0] = yearly_sales_array_float[0] / 10
+        yearly_sales_array = [0,0,0,0]
+        yearly_sales_array[0] = format(round(yearly_sales_array_float[0] ), ',d')
+        yearly_sales_array[1] = format(round(yearly_sales_array_float[1] ), ',d')
+        yearly_sales_array[2] = format(round(yearly_sales_array_float[2] ), ',d')
+        yearly_sales_array[3] = format(round(yearly_sales_array_float[3] ), ',d')
+        print(daily_sales_array)
+        daily_avg_price = daily_sales_array_float[2] / daily_sales_array_float[3] if daily_sales_array_float[3] != 0 else 0
+        monthly_avg_price = monthly_sales_array_float[2] / monthly_sales_array_float[3] if monthly_sales_array_float[3] != 0 else 0
+        yearly_avg_price = yearly_sales_array_float[2] / yearly_sales_array_float[3] if yearly_sales_array_float[3] != 0 else 0
 
+        daily_kg_sale_per_customer = daily_sales_array_float[3] / daily_customers if daily_customers != 0 else 0
+        monthly_kg_sale_per_customer = monthly_sales_array_float[3] / monthly_customers if monthly_customers != 0 else 0
+        yearly_kg_sale_per_customer = yearly_sales_array_float[3] / yearly_customers if yearly_customers != 0 else 0
+
+        daily_dollar_sale_per_customer = daily_sales_array_float[2] / daily_customers if daily_customers != 0 else 0
+        monthly_dollar_sale_per_customer = monthly_sales_array_float[2] / monthly_customers if monthly_customers != 0 else 0
+        yearly_dollar_sale_per_customer = yearly_sales_array_float[2] / yearly_customers if yearly_customers != 0 else 0
         
-        daily_avg_price = daily_sales_array[2] / daily_sales_array[3] if daily_sales_array[3] != 0 else 0
-        monthly_avg_price = monthly_sales_array[2] / monthly_sales_array[3] if monthly_sales_array[3] != 0 else 0
-        yearly_avg_price = yearly_sales_array[2] / yearly_sales_array[3] if yearly_sales_array[3] != 0 else 0
-
-        daily_kg_sale_per_customer = daily_sales_array[3] / daily_customers if daily_customers != 0 else 0
-        monthly_kg_sale_per_customer = monthly_sales_array[3] / monthly_customers if monthly_customers != 0 else 0
-        yearly_kg_sale_per_customer = yearly_sales_array[3] / yearly_customers if yearly_customers != 0 else 0
-
-        daily_dollar_sale_per_customer = daily_sales_array[2] / daily_customers if daily_customers != 0 else 0
-        monthly_dollar_sale_per_customer = monthly_sales_array[2] / monthly_customers if monthly_customers != 0 else 0
-        yearly_dollar_sale_per_customer = yearly_sales_array[2] / yearly_customers if yearly_customers != 0 else 0
-
         response_data = {
             "jalali_date" : jalali_date_now_str, 
             "daily_sales" : daily_sales_array, 
             "monthly_sales" : monthly_sales_array, 
             "yearly_sales" : yearly_sales_array,
-            'daily_avg_price' : daily_avg_price,
-            'monthly_avg_price' : monthly_avg_price,
-            'yearly_avg_price' : yearly_avg_price,
-            "daily_customers": daily_customers,
-            "monthly_customers": monthly_customers,
-            "yearly_customers": yearly_customers,
-            "daily_kg_sale_per_customer": daily_kg_sale_per_customer,
-            "monthly_kg_sale_per_customer": monthly_kg_sale_per_customer,
-            "yearly_kg_sale_per_customer": yearly_kg_sale_per_customer,
-            "daily_dollar_sale_per_customer": daily_dollar_sale_per_customer,
-            "monthly_dollar_sale_per_customer": monthly_dollar_sale_per_customer,
-            "yearly_dollar_sale_per_customer": yearly_dollar_sale_per_customer
+            'daily_avg_price' : format(round(daily_avg_price), ',d'),
+            'monthly_avg_price' : format(round(monthly_avg_price), ',d'),
+            'yearly_avg_price' : format(round(yearly_avg_price), ',d'),
+            "daily_customers": format(round(daily_customers), ',d'),
+            "monthly_customers": format(round(monthly_customers), ',d'),
+            "yearly_customers": format(round(yearly_customers), ',d'),
+            "daily_kg_sale_per_customer": format(round(daily_kg_sale_per_customer), ',d'),
+            "monthly_kg_sale_per_customer": format(round(monthly_kg_sale_per_customer), ',d'),
+            "yearly_kg_sale_per_customer": format(round(yearly_kg_sale_per_customer), ',d'),
+            "daily_dollar_sale_per_customer": format(round(daily_dollar_sale_per_customer), ',d'),
+            "monthly_dollar_sale_per_customer": format(round(monthly_dollar_sale_per_customer), ',d'),
+            "yearly_dollar_sale_per_customer": format(round(yearly_dollar_sale_per_customer), ',d')
         }
-
-        # Combine the data into a single list
-        
         
         return JsonResponse(response_data, safe=False)
+
         
 
 class TotalDataByMonthlyView(View):
@@ -2325,29 +2332,30 @@ class TotalDataByMonthlyView(View):
         monthly_sales_dict = {}
         for monthly_sale_obj in monthly_sales:
             monthly_sales_dict[monthly_sale_obj['month']] = {
-                'monthly_sale': monthly_sale_obj['monthly_sale'] / 10,
-                'monthly_dollar_sepidar_sale': monthly_sale_obj['monthly_dollar_sepidar_sale'],
-                'monthly_dollar_sale': monthly_sale_obj['monthly_dollar_sale'],
-                'monthly_kg_sale': monthly_sale_obj['monthly_kg_sale']
+                'monthly_sale': format(round(monthly_sale_obj['monthly_sale'] / 10), ',d'),
+                'monthly_dollar_sepidar_sale': format(round(monthly_sale_obj['monthly_dollar_sepidar_sale']), ',d'),
+                'monthly_dollar_sale': format(round(monthly_sale_obj['monthly_dollar_sale']), ',d'),
+                'monthly_kg_sale': format(round(monthly_sale_obj['monthly_kg_sale']), ',d')
             }
 
         monthly_sales_data = []
         for i in range(1, 13):
             monthly_sales_obj = monthly_sales_dict.get(i)
             if monthly_sales_obj:
-                dollar_sale_per_kg = monthly_sales_obj['monthly_dollar_sale'] / monthly_sales_obj['monthly_kg_sale'] if monthly_sales_obj['monthly_kg_sale'] != 0 else 0
+                dollar_sale_per_kg = int(monthly_sales_obj['monthly_dollar_sale'].replace(',', '')) / int(monthly_sales_obj['monthly_kg_sale'].replace(',', '')) if monthly_sales_obj['monthly_kg_sale'] != '0' else 0
                 monthly_sales_data.append([
                     monthly_sales_obj['monthly_sale'],
                     monthly_sales_obj['monthly_dollar_sepidar_sale'],
                     monthly_sales_obj['monthly_dollar_sale'],
                     monthly_sales_obj['monthly_kg_sale'],
-                    dollar_sale_per_kg
+                    format(round(dollar_sale_per_kg), ',d')
                 ])
             elif i <= jalali_date_now.month:
-                monthly_sales_data.append([0, 0, 0, 0, 0])
+                monthly_sales_data.append(['0', '0', '0', '0', '0'])
 
-        monthly_sales_array = monthly_sales_data if len(monthly_sales_data) == 12 else monthly_sales_data + [[0, 0, 0, 0, 0]] * (12 - len(monthly_sales_data))
+        monthly_sales_array = monthly_sales_data if len(monthly_sales_data) == 12 else monthly_sales_data + [['0', '0', '0', '0', '0']] * (12 - len(monthly_sales_data))
         return JsonResponse(monthly_sales_array, safe=False)
+
 
 class TotalKgSaleByMonthlyView(View):
     permission_classes = (IsAuthenticated,)
@@ -2364,7 +2372,8 @@ class TotalKgSaleByMonthlyView(View):
             
             monthly_sales_dict = {}
             for monthly_sale_obj in monthly_sales:
-                monthly_sales_dict[monthly_sale_obj['month']] = monthly_sale_obj['monthly_kg_sale']
+                # Format and round off the value of 'monthly_kg_sale'
+                monthly_sales_dict[monthly_sale_obj['month']] = format(round(monthly_sale_obj['monthly_kg_sale']), ',d')
 
             monthly_sales_data = []
             for i in range(1, 13):
@@ -2372,13 +2381,16 @@ class TotalKgSaleByMonthlyView(View):
                 if monthly_kg_sale:
                     monthly_sales_data.append(monthly_kg_sale)
                 else:
-                    monthly_sales_data.append(0)
+                    # For months without data, append '0' (as a string) to the list
+                    monthly_sales_data.append('0')
 
-            monthly_sales_array = monthly_sales_data if len(monthly_sales_data) == 12 else monthly_sales_data + [0] * (12 - len(monthly_sales_data))
+            # If there is not enough data for all months, fill the rest with '0' (as a string)
+            monthly_sales_array = monthly_sales_data if len(monthly_sales_data) == 12 else monthly_sales_data + ['0'] * (12 - len(monthly_sales_data))
 
             yearly_monthly_sales[str(year)] = monthly_sales_array
 
         return JsonResponse(yearly_monthly_sales, safe=False)
+
 
 class KgSaleBarChartView(View):
     permission_classes = (IsAuthenticated,)
