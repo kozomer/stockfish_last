@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef} from 'react';
 import { Button, Card, CardHeader,Modal, ModalHeader, ModalBody, ModalFooter, CardBody, CardTitle, Row, Col, Input, Form, FormGroup, Label, CardFooter } from 'reactstrap';
 import { Link } from 'react-router-dom';
 import ReactTable from 'components/ReactTable/ReactTable.js';
@@ -55,7 +55,10 @@ const [data, setData] = useState(goodsOnRoadData);
 const [shouldFetchData, setShouldFetchData] = useState(true);
 const [fetchGoodData, setFetchGoodData] = useState(true);
 const [editingRow, setEditingRow] = useState(null);
-  const [updatedOrder, setUpdatedOrder] = useState(null);
+const [updatedOrder, setUpdatedOrder] = useState({});
+const inputRef = useRef(null);
+
+
 
   useEffect(() => {
     async function fetchData() {
@@ -80,18 +83,23 @@ const [editingRow, setEditingRow] = useState(null);
 
 
   const handleEditClick = (row) => {
-    console.log(row.values["Product Code"])
+    console.log(row.values["Product Code"]);
     setEditingRow(row.index);
-    setProductCode(row.values["Product Code"])
-  };
+    setProductCode(row.values["Product Code"]);
+    setUpdatedOrder((prevState) => ({
+        ...prevState,
+        [row.index]: row.original["Decided Order"]
+    }));
+};
+
 
   const handleSaveClick = async () => {
     // Save the updated order value
     console.log(productCode)
     const updatedData = {
       product_code: productCode,
-      new_decided_order: updatedOrder,
-    };
+      new_decided_order: updatedOrder[editingRow],
+  };
     const access_token = await localforage.getItem('access_token');
     const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/edit_goods_on_road/`, {
       method: 'POST',
@@ -134,6 +142,7 @@ const [editingRow, setEditingRow] = useState(null);
 
   // Function to handle form submission
   const handleNewTruckSubmit = async () => {
+    event.preventDefault();
     const access_token = await localforage.getItem('access_token');
     const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/add_truck/`, {
       method: 'POST',
@@ -342,7 +351,7 @@ const [editingRow, setEditingRow] = useState(null);
         hideAlert();
         fetchGoodsOnRoadData();
       } else {
-        console.error("Failed to approve waiting truck");
+        errorUpload(data.error);
       }
     } catch (error) {
       console.error("Error approving waiting truck:", error);
@@ -350,7 +359,7 @@ const [editingRow, setEditingRow] = useState(null);
   };
 
 
-  useEffect(() => {
+  
     const fetchGoodsOnRoadData = async () => {
       const access_token = await localforage.getItem('access_token');
       const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/trucks_on_road/`, {
@@ -362,7 +371,7 @@ const [editingRow, setEditingRow] = useState(null);
       });
 
       const responseData = await response.json();
-
+      
       const formattedData = Object.keys(responseData).map((key) => ({
         truck_name: key,
         data: responseData[key],
@@ -373,7 +382,20 @@ const [editingRow, setEditingRow] = useState(null);
     fetchGoodsOnRoadData();
     setFetchGoodData(false);
     }
-  }, [fetchGoodData]);
+  
+
+  useEffect(()=> {
+    fetchGoodsOnRoadData();
+  }, [fetchGoodData])
+
+
+
+  useEffect(() => {
+    if(inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [updatedOrder]);
+  
 
   const approveTruck = async (truckName) => {
     
@@ -819,7 +841,7 @@ const [editingRow, setEditingRow] = useState(null);
           </CardHeader>
           <CardBody>
             {showForm && (
-              <Form>
+              <Form onSubmit={handleNewTruckSubmit}>
                 <FormGroup>
                   <Label for="truck_name">Truck Name</Label>
                   <Input
@@ -1123,6 +1145,7 @@ const [editingRow, setEditingRow] = useState(null);
               />
             </div>
           </div>
+          {goodsOnRoadTruck.data ? (
           <ReactTable
             data={goodsOnRoadTruck.data.map((row, key) => {
               const newRow = {};
@@ -1173,23 +1196,31 @@ const [editingRow, setEditingRow] = useState(null);
                   Header: "Decided Order",
                   id: "decidedOrder",
                   Cell: ({ row }) =>
-                    editingRow === row.index ? (
-                      <div>
-                        <input
-                          type="text"
-                          defaultValue={row.original["Decided Order"]}
-                          onChange={(e) => setUpdatedOrder(e.target.value)}
-                        />
-                        <FontAwesomeIcon
-                          icon={faSave}
-                          className="text-success cursor-pointer ml-2"
-                          onClick={handleSaveClick}
-                        />
-                      </div>
-                    ) : (
-                      row.original["Decided Order"]
-                    ),
-                },
+                      editingRow === row.index ? (
+                          <div>
+                              <input
+                                      type="text"
+                                      ref={inputRef}
+                                      value={updatedOrder[row.index]}
+                                      onChange={(e) =>
+                                        setUpdatedOrder((prevState) => ({
+                                          ...prevState,
+                                          [row.index]: e.target.value,
+                                        }))
+                                      }
+                                    />
+
+                              <FontAwesomeIcon
+                                  icon={faSave}
+                                  className="text-success cursor-pointer ml-2"
+                                  onClick={handleSaveClick}
+                              />
+                          </div>
+                      ) : (
+                          row.original["Decided Order"]
+                      ),
+              },
+              
                 {
                   Header: "",
                   id: "edit",
@@ -1207,6 +1238,9 @@ const [editingRow, setEditingRow] = useState(null);
             defaultPageSize={10}
             className="-striped -highlight"
           />
+          ) : (
+            <div>Loading...</div>
+          )}
         </div>
       ))
     )}
