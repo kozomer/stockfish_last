@@ -3076,12 +3076,12 @@ class ApproveProductsToOrderView(APIView):
             if not data.get("truck_name"):
                 return JsonResponse({'error': "Truck Name cannot be empty."}, status=400)
 
-            truck = Trucks.objects.filter(truck_name=data.get("truck_name"), is_ordered=False).first()
+            truck = Trucks.objects.filter(truck_name=data.get("truck_name"), is_ordered=False, is_arrived = False).first()
             if not truck:
                 return JsonResponse({'error': "No active truck found with the given Name."}, status=404)
 
-            if float(data.get("decided_order", 0)) <= 0:
-                return JsonResponse({'error': "Decided order cannot be equal to or smaller than zero."}, status=400)
+            if float(data.get("decided_order", 0)) < 0:
+                return JsonResponse({'error': "Decided order cannot be smaller than zero."}, status=400)
 
             goods_on_road = GoodsOnRoad.objects.get(product_code=data['product_code'], is_terminated=False)
             goods_on_road.truck_name = data['truck_name']
@@ -3184,8 +3184,8 @@ class EditWaitingTrucksView(APIView):
             if not data.get("truck_name"):
                 return JsonResponse({'error': "Truck Name cannot be empty."}, status=400)
 
-            if float(data.get("decided_order", 0)) <= 0:
-                return JsonResponse({'error': "Decided order cannot be equal to or smaller than zero."}, status=400)
+            if float(data.get("decided_order", 0)) < 0:
+                return JsonResponse({'error': "Decided order cannot be smaller than zero."}, status=400)
 
             goods_on_road = GoodsOnRoad.objects.get(product_code=data['product_code'], truck_name=data['truck_name'], is_on_truck=True)
             print(goods_on_road.decided_order)
@@ -3260,7 +3260,7 @@ class EditGoodsOnRoadView(APIView):
             data = json.loads(request.body)
 
             product_code = data.get('product_code')
-            good_on_road = GoodsOnRoad.objects.get(product_code=product_code)
+            good_on_road = GoodsOnRoad.objects.get(product_code=product_code, is_on_road=True)
 
             # Update decided_order
             new_decided_order = float(data.get('new_decided_order'))

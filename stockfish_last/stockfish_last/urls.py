@@ -23,7 +23,7 @@ from stockfish_api.views import ( AddCustomersView, AddSalesView, AddProductsVie
                                  TopCustomersView, TopProductsView,
                                  ExchangeRateAPIView, SalerDataView, TotalDataView, TotalDataByMonthlyView, KgSaleBarChartView,  TotalKgSaleByMonthlyView, CustomerAreaPieChartView, 
                                  ExportCustomersView, ExportSalesView, PowerBIExportSalesView, ExportWarehouseView, ExportProductsView, ExportSalerPerfomanceView,
-                                 GoodsOnRoadView, AddTruckView, WaitingTrucksView, TrucksOnRoadView, ApproveWaitingTruckView, EditWaitingTrucksView,
+                                 GoodsOnRoadView, AddTruckView, WaitingTrucksView, TrucksOnRoadView, ApproveWaitingTruckView, EditWaitingTrucksView, ActiveTrucksView,
                                  ApproveProductsToOrderView, ApproveArrivedTruckView, NotificationsView, DeleteNotificationView
                                  )
 from rest_framework_simplejwt.views import (
@@ -69,6 +69,7 @@ urlpatterns = [
     path('api/notifications/', NotificationsView.as_view(), name='notifications'),
     path('api/saler_performance/', SalerPerformanceView.as_view(), name='saler_performance'),
 
+     path('api/active_trucks/',  ActiveTrucksView.as_view(), name='active_trucks'),
 
     path('api/delete_sales/',  DeleteSaleView.as_view(), name='delete_sales'),
     path('api/delete_customers/',  DeleteCustomerView.as_view(), name='delete_customers'),

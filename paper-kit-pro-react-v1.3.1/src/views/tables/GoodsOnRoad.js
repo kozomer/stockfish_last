@@ -1,16 +1,18 @@
-import React, { useState, useEffect, useRef} from 'react';
-import { Button, Card, CardHeader,Modal, ModalHeader, ModalBody, ModalFooter, CardBody, CardTitle, Row, Col, Input, Form, FormGroup, Label, CardFooter } from 'reactstrap';
+import React, { useState, useEffect, useRef } from 'react';
+import { Button, Card, CardHeader, Modal, ModalHeader, ModalBody, ModalFooter, CardBody, CardTitle, Row, Col, Input, Form, FormGroup, Label, CardFooter } from 'reactstrap';
 import { Link } from 'react-router-dom';
 import ReactTable from 'components/ReactTable/ReactTable.js';
 import localforage from 'localforage';
 import ReactBSAlert from "react-bootstrap-sweetalert";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTruck } from '@fortawesome/free-solid-svg-icons';
+
 
 import { faCheck, faEdit, faSave } from '@fortawesome/free-solid-svg-icons';
 const DataTable = () => {
   const [dataTable, setDataTable] = useState([]);
   const [edit, setEdit] = useState({ row: -1, column: '' });
-  
+
   const [showUploadDiv, setShowUploadDiv] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [showPopupTruck, setShowPopupTruck] = useState(false);
@@ -50,13 +52,14 @@ const DataTable = () => {
   });
 
   const [waitingTrucksData, setWaitingTrucksData] = useState([]);
- 
-const [data, setData] = useState(goodsOnRoadData);
-const [shouldFetchData, setShouldFetchData] = useState(true);
-const [fetchGoodData, setFetchGoodData] = useState(true);
-const [editingRow, setEditingRow] = useState(null);
-const [updatedOrder, setUpdatedOrder] = useState({});
-const inputRef = useRef(null);
+
+  const [data, setData] = useState(goodsOnRoadData);
+  const [shouldFetchData, setShouldFetchData] = useState(true);
+  const [fetchGoodData, setFetchGoodData] = useState(true);
+  const [editingRow, setEditingRow] = useState(null);
+  const [updatedOrder, setUpdatedOrder] = useState({});
+  const inputRef = useRef(null);
+  const [activeTrucks, setActiveTrucks] = useState([]);
 
 
 
@@ -87,10 +90,10 @@ const inputRef = useRef(null);
     setEditingRow(row.index);
     setProductCode(row.values["Product Code"]);
     setUpdatedOrder((prevState) => ({
-        ...prevState,
-        [row.index]: row.original["Decided Order"]
+      ...prevState,
+      [row.index]: row.original["Decided Order"]
     }));
-};
+  };
 
 
   const handleSaveClick = async () => {
@@ -99,7 +102,7 @@ const inputRef = useRef(null);
     const updatedData = {
       product_code: productCode,
       new_decided_order: updatedOrder[editingRow],
-  };
+    };
     const access_token = await localforage.getItem('access_token');
     const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/edit_goods_on_road/`, {
       method: 'POST',
@@ -115,7 +118,7 @@ const inputRef = useRef(null);
       .then((response) => {
         if (!response.ok) {
           return response.json().then(data => {
-            
+
 
             errorUpload(data.error);
           });
@@ -133,9 +136,9 @@ const inputRef = useRef(null);
         }
       })
     // Reset the states
-    
+
   };
-  
+
   const handleNewTruckInputChange = (e) => {
     setNewTruck({ ...newTruck, [e.target.name]: e.target.value });
   };
@@ -168,12 +171,31 @@ const inputRef = useRef(null);
           return response.json().then(data => {
 
             successEdit(data.message);
-            handleShowForm()
+            handleShowForm();
+            fetchActiveTrucks();
           })
 
         }
       })
   }
+
+  const fetchActiveTrucks = async () => {
+    const access_token = await localforage.getItem('access_token');
+    const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/active_trucks/`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + String(access_token)
+      },
+    });
+    const data = await response.json();
+    console.log(data)
+    setActiveTrucks(data);
+  };
+
+  useEffect(() => {
+    fetchActiveTrucks();
+  }, [])
 
 
   // Y
@@ -211,7 +233,7 @@ const inputRef = useRef(null);
     if (shouldFetchData) {
       fetchWaitingTrucksData();
       setShouldFetchData(false);
-    
+
 
     }
   }, [shouldFetchData]);
@@ -359,56 +381,56 @@ const inputRef = useRef(null);
   };
 
 
-  
-    const fetchGoodsOnRoadData = async () => {
-      const access_token = await localforage.getItem('access_token');
-      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/trucks_on_road/`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + String(access_token),
-        },
-      });
 
-      const responseData = await response.json();
-      
-      const formattedData = Object.keys(responseData).map((key) => ({
-        truck_name: key,
-        data: responseData[key],
-      }));
-      setGoodsOnRoadData(formattedData);
-    };
-    if (fetchGoodData) {
+  const fetchGoodsOnRoadData = async () => {
+    const access_token = await localforage.getItem('access_token');
+    const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/trucks_on_road/`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + String(access_token),
+      },
+    });
+
+    const responseData = await response.json();
+
+    const formattedData = Object.keys(responseData).map((key) => ({
+      truck_name: key,
+      data: responseData[key],
+    }));
+    setGoodsOnRoadData(formattedData);
+  };
+  if (fetchGoodData) {
     fetchGoodsOnRoadData();
     setFetchGoodData(false);
-    }
-  
+  }
 
-  useEffect(()=> {
+
+  useEffect(() => {
     fetchGoodsOnRoadData();
   }, [fetchGoodData])
 
 
 
   useEffect(() => {
-    if(inputRef.current) {
+    if (inputRef.current) {
       inputRef.current.focus();
     }
   }, [updatedOrder]);
-  
 
-  const approveTruck = async (truckName) => {
-    
-       const access_token = await localforage.getItem('access_token');
-      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/approve_arrived_truck/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + String(access_token),
-        },
-        body: JSON.stringify({ truck_name: truckName }),
-      })
-  
+
+  const approveTruckHandle = async (truckName) => {
+
+    const access_token = await localforage.getItem('access_token');
+    const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/approve_arrived_truck/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + String(access_token),
+      },
+      body: JSON.stringify({ truck_name: truckName }),
+    })
+
       .then((response) => {
         if (!response.ok) {
           return response.json().then(data => {
@@ -421,14 +443,14 @@ const inputRef = useRef(null);
         else {
           return response.json().then(data => {
             setGoodsOnRoadData((prevData) =>
-            prevData.filter((item) => item.truck_name !== truckName)
-          );
+              prevData.filter((item) => item.truck_name !== truckName)
+            );
             successEdit(data.message);
           })
 
         }
       })
-    }
+  }
 
   const handleClick = (row) => {
 
@@ -448,7 +470,7 @@ const inputRef = useRef(null);
 
   const handleTruckEdit = (row) => {
     setEditTruckData(row);
-  
+
     setProductCode(row.product_code);
     setProductNameTR(row.product_name_tr);
     setProductNameIR(row.product_name_ir);
@@ -458,7 +480,7 @@ const inputRef = useRef(null);
     setSuppliers(row.suppliers)
     setShowPopupTruck(!showPopupTruck);
   };
-  
+
 
   const successEdit = (s) => {
 
@@ -503,7 +525,7 @@ const inputRef = useRef(null);
       setDecidedOrder(editData[4]);
       setWeight(editData[5]);
       setTruckName(editData[6]);
-      
+
 
       setIsUpdated(true)
     }
@@ -567,8 +589,33 @@ const inputRef = useRef(null);
     );
   };
 
-  
-  
+  const approveTruck = (truck) => {
+
+    setAlert(
+
+      <ReactBSAlert
+        warning
+        style={{ display: "block", marginTop: "-100px" }}
+        title="Are you sure?"
+        onConfirm={() => {
+          approveTruckHandle(truck)
+        }}
+        onCancel={() => {
+          hideAlert()
+        }}
+        confirmBtnBsStyle="info"
+        cancelBtnBsStyle="danger"
+        confirmBtnText="Yes!"
+        cancelBtnText="Cancel"
+        showCancel
+        btnSize=""
+      >
+        Please be sure about the weight of the arrived truck. Accroding to this, warehouse shall be updated. Are you sure to approve this truck to road.?
+      </ReactBSAlert>
+    );
+  };
+
+
 
 
 
@@ -666,7 +713,7 @@ const inputRef = useRef(null);
                         />
                       </FormGroup>
 
-                     
+
 
                       <label>Weight</label>
                       <FormGroup>
@@ -681,10 +728,15 @@ const inputRef = useRef(null);
                       <label>Truck</label>
                       <FormGroup>
                         <Input
-                          type="text"
-                          defaultValue={truckName}
+                          type="select"
+                          value={truckName}
                           onChange={(e) => setTruckName(e.target.value)}
-                        />
+                        >
+                          <option value="">Select a truck</option>
+                          {activeTrucks.map((truck, index) => (
+                            <option key={index} value={truck}>{truck}</option>
+                          ))}
+                        </Input>
                       </FormGroup>
 
                       <label>Decided Order</label>
@@ -697,8 +749,8 @@ const inputRef = useRef(null);
                         />
                       </FormGroup>
 
-                      
-                     
+
+
 
 
                     </div>
@@ -723,7 +775,7 @@ const inputRef = useRef(null);
 
 
 
-{showPopupTruck && (
+        {showPopupTruck && (
           <div className="popup">
             <Card>
               <CardHeader>
@@ -774,7 +826,7 @@ const inputRef = useRef(null);
                         />
                       </FormGroup>
 
-                     
+
 
                       <label>Weight</label>
                       <FormGroup>
@@ -796,7 +848,7 @@ const inputRef = useRef(null);
                         />
                       </FormGroup>
 
-                      
+
 
                       <label>Decided Order</label>
                       <FormGroup>
@@ -828,424 +880,450 @@ const inputRef = useRef(null);
             </Card>
           </div>
         )}
-        <Card>
-          <CardHeader>
-            <CardTitle tag="h4">
-              Add Truck
 
-              <Button onClick={handleShowForm} color="success" size="sm" className="btn-icon btn-link">
-                <i className="fa fa-plus" />
-              </Button>
-
-            </CardTitle>
-          </CardHeader>
-          <CardBody>
-            {showForm && (
-              <Form onSubmit={handleNewTruckSubmit}>
-                <FormGroup>
-                  <Label for="truck_name">Truck Name</Label>
-                  <Input
-                    type="text"
-                    name="truck_name"
-                    id="truck_name"
-                    value={newTruck.truck_name}
-                    onChange={handleNewTruckInputChange}
-                  />
-                </FormGroup>
-                <FormGroup>
-                  <Label for="estimated_order_date">Estimated Order Date(YYYY-MM-DD)</Label>
-                  <Input
-                    type="text"
-                    name="estimated_order_date"
-                    id="estimated_order_date"
-                    value={newTruck.estimated_order_date}
-                    onChange={handleNewTruckInputChange}
-                  />
-                </FormGroup>
-                <FormGroup>
-                  <Label for="estimated_arrival_date">Estimated Arrival Date(YYYY-MM-DD)</Label>
-                  <Input
-                    type="text"
-                    name="estimated_arrival_date"
-                    id="estimated_arrival_date"
-                    value={newTruck.estimated_arrival_date}
-                    onChange={handleNewTruckInputChange}
-                  />
-                </FormGroup>
-                <Button  className="btn-round" color="success" type="submit" onClick={handleNewTruckSubmit} >
-                  Submit
-                </Button>
-                <Button className="btn-round" color="danger" type="submit" onClick={handleCancelForm} >
-                  Cancel
-                </Button>
-              </Form>
-            )}
-          </CardBody>
-        </Card>
-
-
-
-        <Row>
-          <Col md='12'>
-            <Card style={{
-              borderColor: '#1E90FF',
-              borderWidth: '3px',
-              borderStyle: 'solid',
-              boxShadow: '0 6px 6px rgba(30, 144, 255, 0.2)',
-            }}>
+        <div className="row">
+          <div className="col-md-6">
+            <Card>
               <CardHeader>
-                <CardTitle tag="h4" style={{ color: '#1E90FF' }}>Products to Order</CardTitle>
+                <CardTitle tag="h4">
+                  Add Truck
+
+                  <Button onClick={handleShowForm} color="success" size="sm" className="btn-icon btn-link">
+                    <i className="fa fa-plus" />
+                  </Button>
+
+                </CardTitle>
               </CardHeader>
-              <CardBody >
+              <CardBody>
 
-                <ReactTable
+                {showForm && (
+                  <Form onSubmit={handleNewTruckSubmit}>
+                    <FormGroup>
+                      <Label for="truck_name">Truck Name</Label>
+                      <Input
+                        type="text"
+                        name="truck_name"
+                        id="truck_name"
+                        value={newTruck.truck_name}
+                        onChange={handleNewTruckInputChange}
+                      />
+                    </FormGroup>
+                    <FormGroup>
+                      <Label for="estimated_order_date">Estimated Order Date(YYYY-MM-DD)</Label>
+                      <Input
+                        type="text"
+                        name="estimated_order_date"
+                        id="estimated_order_date"
+                        value={newTruck.estimated_order_date}
+                        onChange={handleNewTruckInputChange}
+                      />
+                    </FormGroup>
+                    <FormGroup>
+                      <Label for="estimated_arrival_date">Estimated Arrival Date(YYYY-MM-DD)</Label>
+                      <Input
+                        type="text"
+                        name="estimated_arrival_date"
+                        id="estimated_arrival_date"
+                        value={newTruck.estimated_arrival_date}
+                        onChange={handleNewTruckInputChange}
+                      />
+                    </FormGroup>
+                    <Button className="btn-round" color="success" type="submit" onClick={handleNewTruckSubmit} >
+                      Submit
+                    </Button>
+                    <Button className="btn-round" color="danger" type="submit" onClick={handleCancelForm} >
+                      Cancel
+                    </Button>
+                  </Form>
+                )}
+              
 
-                  data={dataTable.map((row, key) => ({
-                    id: key,
-                    product_code: row[0],
-                    product_name_tr: row[1],
-                    product_name_ir: row[2],
-                    suppliers: row[3],
-                    decided_order: row[4],
-                    weight: row[5],
-                    truck_name: row[6],
-                    
 
-                    actions: (
-                      <div className='actions-left'>
+            </CardBody>
+          </Card>
+        </div>
+
+        <div className="col-md-6">
+          <Card>
+            <CardHeader>
+              <CardTitle tag="h4" className="text-secondary">Active Trucks</CardTitle>
+            </CardHeader>
+            <CardBody>
+              <ul className="list-unstyled">
+                {activeTrucks.map((truck, index) => (
+                  <li key={index} style={{ fontSize: '0.9rem', lineHeight: '1.6' }}>
+                    <FontAwesomeIcon icon={faTruck} className="mr-2 text-primary" />
+                    {truck}
+                  </li>
+                ))}
+              </ul>
+            </CardBody>
+          </Card>
+        </div>
+
+      </div>
+
+      <Row>
+        <Col md='12'>
+          <Card style={{
+            borderColor: '#1E90FF',
+            borderWidth: '3px',
+            borderStyle: 'solid',
+            boxShadow: '0 6px 6px rgba(30, 144, 255, 0.2)',
+          }}>
+            <CardHeader>
+              <CardTitle tag="h4" style={{ color: '#1E90FF' }}>Products to Order</CardTitle>
+            </CardHeader>
+            <CardBody >
+
+              <ReactTable
+
+                data={dataTable.map((row, key) => ({
+                  id: key,
+                  product_code: row[0],
+                  product_name_tr: row[1],
+                  product_name_ir: row[2],
+                  suppliers: row[3],
+                  decided_order: row[4],
+                  weight: row[5],
+                  truck_name: row[6],
+
+
+                  actions: (
+                    <div className='actions-left'>
+                      <Button
+                        disabled={showPopup}
+                        onClick={() => {
+                          // Enable edit mode
+
+                          { handleClick(row) }
+
+
+                        }}
+
+                        color='warning'
+                        size='sm'
+                        className='btn-icon btn-link edit'
+                      >
+                        <i className='fa fa-edit' />
+                      </Button>{' '}
+
+                      <>
+
+
                         <Button
                           disabled={showPopup}
                           onClick={() => {
-                            // Enable edit mode
 
-                            { handleClick(row) }
+                            warningWithConfirmAndCancelMessage()
+                            const rowToDelete = { ...row };
+                            const data = {
+                              product_code: rowToDelete[0],
+
+                            };
+                            setDeleteData(data);
+                            console.log(deleteConfirm)
 
 
-                          }}
+                          }
+                          }
+                          color="danger"
+                          size="sm"
+                          className="btn-icon btn-link remove"
+                        >
+                          <i className="fa fa-times" />
+                        </Button>
+                      </>
+                    </div>
+                  ),
+                }))}
+                columns={[
 
+                  { Header: 'Product Code', accessor: 'product_code' },
+                  { Header: 'Product Name-TR', accessor: 'product_name_tr' },
+                  { Header: 'Product Name-IR', accessor: 'product_name_ir' },
+                  { Header: 'Suppliers', accessor: 'suppliers' },
+                  { Header: 'Decided Order', accessor: 'decided_order' },
+                  { Header: 'Weight', accessor: 'weight' },
+                  { Header: 'Truck', accessor: 'truck_name' },
+
+
+
+
+
+                  {
+                    Header: 'Actions', accessor: 'actions', sortable: false,
+                    filterable: false
+                  },
+                ]}
+                defaultPageSize={10}
+                className='-striped -highlight'
+              />
+            </CardBody>
+          </Card>
+        </Col>
+      </Row>
+
+
+
+      <Card style={{
+        borderColor: '#DAA520',
+        borderWidth: '3px',
+        borderStyle: 'solid',
+        boxShadow: '0 6px 6px rgba(255, 215, 0, 0.2)',
+      }}>
+        <CardHeader>
+          <CardTitle tag="h4" style={{ color: '#DAA520' }}>Waiting Trucks</CardTitle>
+        </CardHeader>
+        <CardBody>
+
+          {waitingTrucksData.length === 0 ? (
+            <p>There's no active waiting trucks</p>
+          ) : (
+            waitingTrucksData.map((truckData, index) => (
+              <div
+                className="truck-table-container"
+                key={index}
+                style={{
+                  marginBottom: index < waitingTrucksData.length - 1 ? '2rem' : 0,
+                  borderBottom:
+                    index < waitingTrucksData.length - 1
+                      ? '1px solid #dee2e6'
+                      : 'none',
+                  paddingBottom: index < waitingTrucksData.length - 1 ? '2rem' : 0,
+                }}
+              >
+                <div className="d-flex justify-content-between align-items-center">
+                  <h5><b>{truckData.truck_name}</b>  (Total Weight: {truckData.data.total_weight} kg)</h5>
+                  <FontAwesomeIcon
+                    icon={faCheck}
+                    className="text-success cursor-pointer"
+                    onClick={() => approve(truckData)}
+                  />
+                </div>
+                <ReactTable
+                  data={truckData.data.goods.map((row, key) => {
+                    const newRow = {};
+                    newRow['actions'] = (
+                      <div className='actions-left'>
+                        <Button
+                          onClick={() => handleTruckEdit(row)}
                           color='warning'
                           size='sm'
                           className='btn-icon btn-link edit'
                         >
                           <i className='fa fa-edit' />
                         </Button>{' '}
-
-                        <>
-
-
-                          <Button
-                            disabled={showPopup}
-                            onClick={() => {
-
-                              warningWithConfirmAndCancelMessage()
-                              const rowToDelete = { ...row };
-                              const data = {
-                                product_code: rowToDelete[0],
-
-                              };
-                              setDeleteData(data);
-                              console.log(deleteConfirm)
-
-
-                            }
-                            }
-                            color="danger"
-                            size="sm"
-                            className="btn-icon btn-link remove"
-                          >
-                            <i className="fa fa-times" />
-                          </Button>
-                        </>
+                        <Button
+                          onClick={() => handleTruckDelete(row)}
+                          color="danger"
+                          size="sm"
+                          className="btn-icon btn-link remove"
+                        >
+                          <i className="fa fa-times" />
+                        </Button>
                       </div>
-                    ),
-                  }))}
-                  columns={[
-
-                    { Header: 'Product Code', accessor: 'product_code' },
-                    { Header: 'Product Name-TR', accessor: 'product_name_tr' },
-                    { Header: 'Product Name-IR', accessor: 'product_name_ir' },
-                    { Header: 'Suppliers', accessor: 'suppliers' },
-                    { Header: 'Decided Order', accessor: 'decided_order' },
-                    { Header: 'Weight', accessor: 'weight' },
-                    { Header: 'Truck', accessor: 'truck_name' },
-                   
-
-                        
-
-
-                    {
-                      Header: 'Actions', accessor: 'actions', sortable: false,
-                      filterable: false
-                    },
-                  ]}
-                  defaultPageSize={10}
-                  className='-striped -highlight'
-                />
-              </CardBody>
-            </Card>
-          </Col>
-        </Row>
-
-
-
-        <Card style={{
-  borderColor: '#DAA520',
-  borderWidth: '3px',
-  borderStyle: 'solid',
-  boxShadow: '0 6px 6px rgba(255, 215, 0, 0.2)',
-}}>
-  <CardHeader>
-    <CardTitle tag="h4" style={{ color: '#DAA520' }}>Waiting Trucks</CardTitle>
-  </CardHeader>
-  <CardBody>
-
-    {waitingTrucksData.length === 0 ? (
-      <p>There's no active waiting trucks</p>
-    ) : (
-      waitingTrucksData.map((truckData, index) => (
-        <div
-          className="truck-table-container"
-          key={index}
-          style={{
-            marginBottom: index < waitingTrucksData.length - 1 ? '2rem' : 0,
-            borderBottom:
-              index < waitingTrucksData.length - 1
-                ? '1px solid #dee2e6'
-                : 'none',
-            paddingBottom: index < waitingTrucksData.length - 1 ? '2rem' : 0,
-          }}
-        >
-          <div className="d-flex justify-content-between align-items-center">
-            <h5><b>{truckData.truck_name}</b>  (Total Weight: {truckData.data.total_weight} kg)</h5>
-            <FontAwesomeIcon
-              icon={faCheck}
-              className="text-success cursor-pointer"
-              onClick={() => approve(truckData)}
-            />
-          </div>
-          <ReactTable
-            data={truckData.data.goods.map((row, key) => {
-              const newRow = {};
-              newRow['actions'] = (
-                <div className='actions-left'>
-                  <Button
-                    onClick={() => handleTruckEdit(row)}
-                    color='warning'
-                    size='sm'
-                    className='btn-icon btn-link edit'
-                  >
-                    <i className='fa fa-edit' />
-                  </Button>{' '}
-                  <Button
-                    onClick={() => handleTruckDelete(row)}
-                    color="danger"
-                    size="sm"
-                    className="btn-icon btn-link remove"
-                  >
-                    <i className="fa fa-times" />
-                  </Button>
-                </div>
-              );
-              Object.keys(row).forEach((column) => {
-                if (
-                  ![
-                    'is_ordered',
-                    'is_terminated',
-                    'is_on_truck',
-                    'is_on_road',
-                    'is_arrived',
-                  ].includes(column)
-                ) {
-                  const formattedKey = column
-                    .split('_')
-                    .map(
-                      (word) =>
-                        word.charAt(0).toUpperCase() + word.slice(1),
+                    );
+                    Object.keys(row).forEach((column) => {
+                      if (
+                        ![
+                          'is_ordered',
+                          'is_terminated',
+                          'is_on_truck',
+                          'is_on_road',
+                          'is_arrived',
+                        ].includes(column)
+                      ) {
+                        const formattedKey = column
+                          .split('_')
+                          .map(
+                            (word) =>
+                              word.charAt(0).toUpperCase() + word.slice(1),
+                          )
+                          .join(' ');
+                        newRow[formattedKey] = row[column];
+                      }
+                    });
+                    return newRow;
+                  })}
+                  columns={[...Object.keys(truckData.data.goods[0] || {})
+                    .filter(
+                      (key) =>
+                        ![
+                          'is_ordered',
+                          'is_terminated',
+                          'is_on_truck',
+                          'is_on_road',
+                          'is_arrived',
+                        ].includes(key),
                     )
-                    .join(' ');
-                  newRow[formattedKey] = row[column];
-                }
-              });
-              return newRow;
-            })}
-            columns={[...Object.keys(truckData.data.goods[0] || {})
-              .filter(
-                (key) =>
-                  ![
-                    'is_ordered',
-                    'is_terminated',
-                    'is_on_truck',
-                    'is_on_road',
-                    'is_arrived',
-                  ].includes(key),
-              )
-              .map((key) => {
-                const formattedKey = key
-                  .split('_')
-                  .map(
-                    (word) =>
-                      word.charAt(0).toUpperCase() + word.slice(1),
-                  )
-                  .join(' ');
-                return { Header: formattedKey, accessor: formattedKey };
-              }), { Header: 'Actions', accessor: 'actions', sortable: false, filterable: false }]}
-            defaultPageSize={10}
-            className="-striped -highlight"
-          />
-        </div>
-      ))
-    )}
-  </CardBody>
-</Card>
+                    .map((key) => {
+                      const formattedKey = key
+                        .split('_')
+                        .map(
+                          (word) =>
+                            word.charAt(0).toUpperCase() + word.slice(1),
+                        )
+                        .join(' ');
+                      return { Header: formattedKey, accessor: formattedKey };
+                    }), { Header: 'Actions', accessor: 'actions', sortable: false, filterable: false }]}
+                  defaultPageSize={10}
+                  className="-striped -highlight"
+                />
+              </div>
+            ))
+          )}
+        </CardBody>
+      </Card>
 
 
-      </div>
+    </div >
       <Row>
         <Col >
-        <Card
-      style={{
-        borderColor: "#32CD32",
-        borderWidth: "3px",
-        borderStyle: "solid",
-        boxShadow: "0 6px 6px rgba(50, 205, 50, 0.2)",
-        maxWidth: "97%", // Add a maxWidth property here
-    marginLeft: "auto",
-    marginRight: "auto",
-      }}
-    >
-      <CardHeader>
-        <CardTitle tag="h4" style={{ color: "#32CD32" }}>
-          Goods on the Road
-        </CardTitle>
-      </CardHeader>
-      <CardBody>
-      {goodsOnRoadData.length === 0 ? (
-      <p>There's no truck on the road</p>
-    ) : (
-      goodsOnRoadData.map((goodsOnRoadTruck, index) => (
-        <div
-          className="truck-table-container"
-          key={index}
-          style={{
-            marginBottom: index < goodsOnRoadData.length - 1 ? "2rem" : 0,
-            borderBottom:
-              index < goodsOnRoadData.length - 1
-                ? "1px solid #dee2e6"
-                : "none",
-            paddingBottom: index < goodsOnRoadData.length - 1 ? "2rem" : 0,
-          }}
-        >
-          <div className="d-flex justify-content-between align-items-center">
-            <h5>{goodsOnRoadTruck.truck_name}</h5>
-            <div>
-              <FontAwesomeIcon
-                icon={faCheck}
-                className="text-success cursor-pointer mr-3"
-                onClick={() => approveTruck(goodsOnRoadTruck.truck_name)}
-              />
-            </div>
-          </div>
-          {goodsOnRoadTruck.data ? (
-          <ReactTable
-            data={goodsOnRoadTruck.data.map((row, key) => {
-              const newRow = {};
-              Object.keys(row).forEach((column) => {
-                if (
-                  ![
-                    "is_ordered",
-                    "is_terminated",
-                    "is_on_truck",
-                    "is_on_road",
-                    "is_arrived",
-                  ].includes(column)
-                ) {
-                  const formattedKey = column
-                    .split("_")
-                    .map(
-                      (word) => word.charAt(0).toUpperCase() + word.slice(1)
-                    )
-                    .join(" ");
-                  newRow[formattedKey] = row[column];
-                }
-              });
-              return newRow;
-            })}
-            columns={[
-              ...Object.keys(goodsOnRoadTruck.data[0] || {})
-                .filter(
-                  (key) =>
-                    ![
-                      "is_ordered",
-                      "is_terminated",
-                      "is_on_truck",
-                      "is_on_road",
-                      "is_arrived",
-                      "decided_order",
-                    ].includes(key)
-                )
-                .map((key) => {
-                  const formattedKey = key
-                    .split("_")
-                    .map(
-                      (word) => word.charAt(0).toUpperCase() + word.slice(1)
-                    )
-                    .join(" ");
-                  return { Header: formattedKey, accessor: formattedKey };
-                }),
-                {
-                  Header: "Decided Order",
-                  id: "decidedOrder",
-                  Cell: ({ row }) =>
-                      editingRow === row.index ? (
-                          <div>
-                              <input
-                                      type="text"
-                                      ref={inputRef}
-                                      value={updatedOrder[row.index]}
-                                      onChange={(e) =>
-                                        setUpdatedOrder((prevState) => ({
-                                          ...prevState,
-                                          [row.index]: e.target.value,
-                                        }))
-                                      }
-                                    />
-
-                              <FontAwesomeIcon
-                                  icon={faSave}
-                                  className="text-success cursor-pointer ml-2"
-                                  onClick={handleSaveClick}
-                              />
-                          </div>
-                      ) : (
-                          row.original["Decided Order"]
-                      ),
-              },
-              
-                {
-                  Header: "",
-                  id: "edit",
-                  Cell: ({ row }) => (
-                    <div>
-                      <FontAwesomeIcon
-                        icon={faEdit}
-                        className="text-warning cursor-pointer"
-                        onClick={() => handleEditClick(row)}
-                      />
+          <Card
+            style={{
+              borderColor: "#32CD32",
+              borderWidth: "3px",
+              borderStyle: "solid",
+              boxShadow: "0 6px 6px rgba(50, 205, 50, 0.2)",
+              maxWidth: "97%", // Add a maxWidth property here
+              marginLeft: "auto",
+              marginRight: "auto",
+            }}
+          >
+            <CardHeader>
+              <CardTitle tag="h4" style={{ color: "#32CD32" }}>
+                Goods on the Road
+              </CardTitle>
+            </CardHeader>
+            <CardBody>
+              {goodsOnRoadData.length === 0 ? (
+                <p>There's no truck on the road</p>
+              ) : (
+                goodsOnRoadData.map((goodsOnRoadTruck, index) => (
+                  <div
+                    className="truck-table-container"
+                    key={index}
+                    style={{
+                      marginBottom: index < goodsOnRoadData.length - 1 ? "2rem" : 0,
+                      borderBottom:
+                        index < goodsOnRoadData.length - 1
+                          ? "1px solid #dee2e6"
+                          : "none",
+                      paddingBottom: index < goodsOnRoadData.length - 1 ? "2rem" : 0,
+                    }}
+                  >
+                    <div className="d-flex justify-content-between align-items-center">
+                      <h5>{goodsOnRoadTruck.truck_name}</h5>
+                      <div>
+                        <FontAwesomeIcon
+                          icon={faCheck}
+                          className="text-success cursor-pointer mr-3"
+                          onClick={() => approveTruck(goodsOnRoadTruck.truck_name)}
+                        />
+                      </div>
                     </div>
-                  ),
-                },
-              ]}
-            defaultPageSize={10}
-            className="-striped -highlight"
-          />
-          ) : (
-            <div>Loading...</div>
-          )}
-        </div>
-      ))
-    )}
-    </CardBody>
-  </Card>
+                    {goodsOnRoadTruck.data && Array.isArray(goodsOnRoadTruck.data) ? (
+                      <ReactTable
+                        data={goodsOnRoadTruck.data.map((row, key) => {
+                          const newRow = {};
+                          Object.keys(row).forEach((column) => {
+                            if (
+                              ![
+                                "is_ordered",
+                                "is_terminated",
+                                "is_on_truck",
+                                "is_on_road",
+                                "is_arrived",
+                              ].includes(column)
+                            ) {
+                              const formattedKey = column
+                                .split("_")
+                                .map(
+                                  (word) => word.charAt(0).toUpperCase() + word.slice(1)
+                                )
+                                .join(" ");
+                              newRow[formattedKey] = row[column];
+                            }
+                          });
+                          return newRow;
+                        })}
+                        columns={[
+                          ...Object.keys(goodsOnRoadTruck.data[0] || {})
+                            .filter(
+                              (key) =>
+                                ![
+                                  "is_ordered",
+                                  "is_terminated",
+                                  "is_on_truck",
+                                  "is_on_road",
+                                  "is_arrived",
+                                  "decided_order",
+                                ].includes(key)
+                            )
+                            .map((key) => {
+                              const formattedKey = key
+                                .split("_")
+                                .map(
+                                  (word) => word.charAt(0).toUpperCase() + word.slice(1)
+                                )
+                                .join(" ");
+                              return { Header: formattedKey, accessor: formattedKey };
+                            }),
+                          {
+                            Header: "Decided Order",
+                            id: "decidedOrder",
+                            Cell: ({ row }) =>
+                              editingRow === row.index ? (
+                                <div>
+                                  <input
+                                    type="text"
+                                    ref={inputRef}
+                                    value={updatedOrder[row.index]}
+                                    onChange={(e) =>
+                                      setUpdatedOrder((prevState) => ({
+                                        ...prevState,
+                                        [row.index]: e.target.value,
+                                      }))
+                                    }
+                                  />
+
+                                  <FontAwesomeIcon
+                                    icon={faSave}
+                                    className="text-success cursor-pointer ml-2"
+                                    onClick={handleSaveClick}
+                                  />
+                                </div>
+                              ) : (
+                                row.original["Decided Order"]
+                              ),
+                          },
+
+                          {
+                            Header: "",
+                            id: "edit",
+                            Cell: ({ row }) => (
+                              <div>
+                                <FontAwesomeIcon
+                                  icon={faEdit}
+                                  className="text-warning cursor-pointer"
+                                  onClick={() => handleEditClick(row)}
+                                />
+                              </div>
+                            ),
+                          },
+                        ]}
+                        defaultPageSize={10}
+                        className="-striped -highlight"
+                      />
+                    ) : (
+                      <div>Loading...</div>
+                    )}
+                  </div>
+                ))
+              )}
+            </CardBody>
+          </Card>
         </Col>
       </Row>
 
