@@ -3162,6 +3162,17 @@ class WaitingTrucksView(APIView):
 
         return JsonResponse(grouped_goods, safe=False)
 
+class ActiveTrucksView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def get(self, request, *args, **kwargs):
+        active_trucks = Trucks.objects.filter(is_waiting=True)
+        truck_names = [truck.truck_name for truck in active_trucks]
+
+        return JsonResponse(truck_names, safe=False)
+
+
 class EditWaitingTrucksView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
