@@ -24,7 +24,7 @@ from stockfish_api.views import ( AddCustomersView, AddSalesView, AddProductsVie
                                  ExchangeRateAPIView, SalerDataView, TotalDataView, TotalDataByMonthlyView, KgSaleBarChartView,  TotalKgSaleByMonthlyView, CustomerAreaPieChartView, 
                                  ExportCustomersView, ExportSalesView, PowerBIExportSalesView, ExportWarehouseView, ExportProductsView, ExportSalerPerfomanceView,
                                  GoodsOnRoadView, AddTruckView, WaitingTrucksView, TrucksOnRoadView, ApproveWaitingTruckView, EditWaitingTrucksView,
-                                 ApproveProductsToOrderView, ApproveArrivedTruckView, NotificationsView, DeleteNotificationView
+                                 ApproveProductsToOrderView, ApproveArrivedTruckView, NotificationsView, DeleteNotificationView, AddOrderListObjectView
                                  )
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -60,6 +60,7 @@ urlpatterns = [
     path('api/collapsed_salers/', CollapsedSalerView.as_view(), name='view_saler_collapsed'),
     path('api/rop/', ROPView.as_view(), name='view_rop'),
     path('api/order_list/', OrderListView.as_view(), name='order_list'),
+    path('api/add_order_list_object/', AddOrderListObjectView.as_view(), name='add_order_list_object'),
     path('api/goods_on_road/', GoodsOnRoadView.as_view(), name='goods_on_road'),
     path('api/waiting_trucks/',WaitingTrucksView.as_view(), name='waiting_trucks'),
     path('api/approve_waiting/',ApproveWaitingTruckView.as_view(), name='approve_waiting'),

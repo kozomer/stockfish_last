@@ -2987,6 +2987,42 @@ def create_sales_signal(sender, instance, created, **kwargs):
                 )
                 order_list.save()
 
+class AddOrderListObjectView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+    
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body)
+        product_code = data.get('product_code')
+        decided_order = data.get('decided_order')
+        
+        if not product_code or not decided_order:
+            return JsonResponse({"error": "Both product_code and decided_order must be provided."}, status=404)
+
+        product = Products.objects.filter(product_code=product_code).first()
+        stock = Warehouse.objects.filter(product_code = product_code).first()
+        
+        if not product:
+            return JsonResponse({"error": "The provided product_code does not match any existing product."}, status=404)
+        
+        OrderList.objects.create(
+            current_date = current_jalali_date(),
+            order_flag_avrg = True,
+            order_flag_exp = True,
+            order_flag_holt = True,
+            order_avrg = 0,
+            order_exp = 0,
+            order_holt = 0,
+            current_stock = stock,
+            decided_order = decided_order,
+            weight = product.weight,
+            average_sale = product.average_sale,
+            product_code = product_code,
+            is_active = True,
+            is_ordered = False
+        )
+        
+        return JsonResponse({"message": "OrderList object created successfully."})
 
 
 
