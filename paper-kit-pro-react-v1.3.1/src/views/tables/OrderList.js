@@ -329,7 +329,7 @@ useEffect(() => {
           <label>Date</label>
           <FormGroup>
             <Input
-              
+              disabled
               type="text"
               defaultValue={date}
               onChange={(e) => setDate(e.target.value)}
@@ -339,6 +339,7 @@ useEffect(() => {
           <label>Product Code</label>
           <FormGroup>
             <Input
+              disabled
               type="text"
               defaultValue={productCode}
               onChange={(e) => setProductCode(e.target.value)}
@@ -348,6 +349,7 @@ useEffect(() => {
           <label>Weight</label>
           <FormGroup>
             <Input
+              disabled
               type="text"
               defaultValue={weight}
               onChange={(e) => setWeight(e.target.value)}
@@ -357,6 +359,7 @@ useEffect(() => {
           <label>Average Sale</label>
           <FormGroup>
             <Input
+              disabled
               type="text"
               defaultValue={avrgSale}
               onChange={(e) => setAvrgSale(e.target.value)}
@@ -366,6 +369,7 @@ useEffect(() => {
           <label>Current Stock</label>
           <FormGroup>
             <Input
+              disabled
               type="text"
               defaultValue={stock}
               onChange={(e) => setStock(e.target.value)}
@@ -375,6 +379,7 @@ useEffect(() => {
           <label>Order by Avrg.</label>
           <FormGroup>
             <Input
+              disabled  
               type="text"
               defaultValue={orderAvrg}
               onChange={(e) => setOrderAvrg(e.target.value)}
@@ -384,6 +389,7 @@ useEffect(() => {
           <label>Order by Exp.</label>
           <FormGroup>
             <Input
+              disabled
               type="text"
               defaultValue={orderExp}
               onChange={(e) => setOrderExp(e.target.value)}
@@ -393,6 +399,7 @@ useEffect(() => {
           <label>Order by Holt</label>
           <FormGroup>
             <Input
+              disabled
               type="text"
               defaultValue={orderHolt}
               onChange={(e) => setOrderHolt(e.target.value)}
