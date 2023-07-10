@@ -2995,12 +2995,12 @@ class AddOrderListObjectView(APIView):
         data = json.loads(request.body)
         product_code = data.get('product_code')
         decided_order = data.get('decided_order')
-        
+        print(data)
         if not product_code or not decided_order:
             return JsonResponse({"error": "Both product_code and decided_order must be provided."}, status=404)
 
-        product = Products.objects.filter(product_code=product_code).first()
-        stock = Warehouse.objects.filter(product_code = product_code).first()
+        product = Products.objects.filter(product_code_ir=product_code).first()
+        warehouse_object = Warehouse.objects.filter(product_code = product_code).first()
         
         if not product:
             return JsonResponse({"error": "The provided product_code does not match any existing product."}, status=404)
@@ -3013,10 +3013,10 @@ class AddOrderListObjectView(APIView):
             order_avrg = 0,
             order_exp = 0,
             order_holt = 0,
-            current_stock = stock,
+            current_stock = warehouse_object.stock,
             decided_order = decided_order,
             weight = product.weight,
-            average_sale = product.average_sale,
+            average_sale = 0,
             product_code = product_code,
             is_active = True,
             is_ordered = False

@@ -9,6 +9,9 @@ const DataTable = () => {
   const [file, setFile] = useState(null);
   const [showUploadDiv, setShowUploadDiv] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
+  const [showAddPopup, setShowAddPopup] = useState(false);
+  const [addDecidedOrder, setAddDecidedOrder] = useState(null);
+  const [addProductCode, setAddProductCode] = useState(null);
   const [date, setDate] = useState(null);
   const [productCode, setProductCode] = useState(null);
   const [productTitle, setProductTitle] = useState(null);
@@ -86,6 +89,60 @@ useEffect(() => {
     setShowPopup(!showPopup);
    
   };
+
+  const handleAdd=()=> {
+    setShowAddPopup(!showAddPopup)
+  }
+  const handleSubmitAdd = async (e) => {
+    const access_token = await localforage.getItem('access_token'); 
+   
+    const updatedAddData = {
+     
+      product_code:addProductCode,
+     
+      decided_order: addDecidedOrder
+     
+      
+
+      
+      
+      
+    };
+   
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/add_order_list_object/`, {
+    method: 'POST',
+    body: JSON.stringify(updatedAddData),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer '+ String(access_token)
+    },
+    
+  })
+  .then((response) => {
+    if (!response.ok) {
+      return response.json().then(data => {
+
+
+        errorUpload(data.error);
+      });
+    }
+
+    else {
+      return response.json().then(data => {
+      
+        successEdit(data.message)
+        setShowAddPopup(!showAddPopup)
+      })
+
+    }
+  })
+
+  
+  
+
+    // Call your Django API to send the updated values here
+  };
+
   const handleSubmit = async (e) => {
     const access_token = await localforage.getItem('access_token'); 
    
@@ -179,9 +236,14 @@ useEffect(() => {
 
   const handleCancel = () => {
     setShowPopup(false);
+    
     setEditData(null)
   };
-  
+  const handleCancelAdd = () => {
+    
+    setShowAddPopup(false);
+    setEditData(null)
+  };
   
   useEffect(() => {
     console.log("useEffect called")
@@ -435,7 +497,61 @@ useEffect(() => {
             </div>
 )}
 
+  {showAddPopup && (
+       <div className="popup">
+      <Card>
+            <CardHeader>
+              <CardTitle tag="h4">Add Order</CardTitle>
+            </CardHeader>
+            <CardBody>
+              <Form onSubmit={handleSubmitAdd}>
+              <div>
 
+        <div className="form-group-col">
+         
+
+          <label>Product Code</label>
+          <FormGroup>
+            <Input
+              
+              type="text"
+              
+              onChange={(e) => setAddProductCode(e.target.value)}
+            />
+          </FormGroup>
+
+          
+
+         
+
+          <label>Decided Order</label>
+          <FormGroup>
+            <Input
+              type="text"
+              
+              onChange={(e) => setAddDecidedOrder(e.target.value)}
+            />
+          </FormGroup>
+          
+          </div>
+         
+        
+          
+        
+        </div>
+              </Form>
+            </CardBody>
+              <CardFooter>
+                <Button className="btn-round" color="success" type="submit" onClick={handleSubmitAdd}>
+                  Submit
+                </Button>
+                <Button className="btn-round" color="danger" type="submit"  onClick={handleCancelAdd}>
+                  Cancel
+                </Button>
+              </CardFooter>
+            </Card>
+            </div>
+)}
 {/* 
   <CardHeader>
     <CardTitle tag='h4'>ORDER LIST</CardTitle>
@@ -473,12 +589,38 @@ useEffect(() => {
 </Card>
 */}
 
+<Card>
+  <CardHeader>
+    <CardTitle tag='h4'>ORDER LIST</CardTitle>
+  </CardHeader>
+  <CardBody>
+  <Button
+                          disabled={showAddPopup}
+                          className="my-button-class"
+                           color="primary"
+                          onClick={() => {
+                            // Enable edit mode
+                            
+                           {handleAdd()}
+                           
+                          
+                          }}
+                          
+                     
+                         
+                          
+                        >
+                          <i className="fa fa-plus-circle mr-1"></i>
+                         Add Order
+                        </Button>{' '}
+                      
+  </CardBody>
+</Card>
+
         <Row>
           <Col md='12'>
             <Card>
-            <CardHeader>
-    <CardTitle tag='h4'>ORDER LIST</CardTitle>
-  </CardHeader>
+          
               <CardBody>
              
                 <ReactTable
