@@ -226,9 +226,9 @@ function Dashboard() {
     }
   }, [notificationData, notificationsAdded]);
 
- 
 
-  
+
+
   useEffect(() => {
     const fetchDailyReportMotnhly = async () => {
       const access_token = await localforage.getItem('access_token');
@@ -410,7 +410,7 @@ function Dashboard() {
 
   const fetchKgSaleBarChartData = async () => {
     const access_token = await localforage.getItem('access_token');
-    
+
     const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/daily_report/kg_sale_bar_chart/`, {
       method: "POST",
       headers: {
@@ -449,6 +449,14 @@ function Dashboard() {
     'Current Sales ($) (Tablo)',
     'Current Sales (KG)',
   ];
+
+
+  const colors = ['#e6f7ff', '#d9f2e6', '#fcedda', '#e8d7f3']; //soft colors
+  const headerColors = ['#b3e5fc', '#a2d5c6', '#f8cb9c', '#b198d4']; //darker shades for headers
+
+  function getColor(index, isHeader = false) {
+    return isHeader ? headerColors[index % headerColors.length] : colors[index % colors.length];
+  }
 
 
   return (
@@ -523,268 +531,381 @@ function Dashboard() {
 
 
         <Row noGutters>
-          <Col lg="4" md="12" sm="12" className="d-flex">
-            <Card className="card-stats m-2 flex-fill">
+          <Col md="12">
+            <Card className="m-0">
+              <CardHeader>
+                <Row>
+                  <Col sm="7">
+                    <div className="numbers pull-left">Daily Reports</div>
+                  </Col>
+                </Row>
+              </CardHeader>
               <CardBody>
+                <Row>
+                  <Col sm="8" className="pr-2" style={{ borderRight: '1px solid #ccc', marginRight: '-15px', paddingRight: '15px' }}>
+                    <Table className="responsive-table" style={{ border: '1px solid #ccc', borderRadius: '20px', overflow: 'hidden' }}>
+                      <thead>
+                        <tr>
+                          <th scope="col" style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(0, true) }}></th>
+                          <th scope="col" style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(0, true) }}>Daily Sales</th>
+                          <th scope="col" style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(0, true) }}>Monthly Sales</th>
+                          <th scope="col" style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(0, true) }}>Yearly Sales</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {salesTotalData.daily_sales &&
+                          salesTotalData.daily_sales.map((_, rowIndex) => (
+                            <tr key={rowIndex}>
+                              <th scope="row" style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(0) }}>{rowHeaders[rowIndex]}</th>
+                              <td style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(0) }}>{salesTotalData.daily_sales[rowIndex]}</td>
+                              <td style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(0) }}>{salesTotalData.monthly_sales[rowIndex]}</td>
+                              <td style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(0) }}>{salesTotalData.yearly_sales[rowIndex]}</td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </Table>
 
+                    <hr className="my-3" />
 
-                <Row noGutters className="justify-content-center">
-                  <Col xs="12" sm="12" md="12" lg="12" className="p-2">
-                    <Card className="m-0">
-                      <CardHeader>
-                        <Row>
-                          <Col xs="6">
-                            <CardTitle tag="h5">Top Five Products</CardTitle>
-                          </Col>
-                          <Col xs="6">
-                            <Label for="selectType">Select Type:</Label>
-                            <Input type="select" name="select" id="selectType" onChange={(e) => setFilterOption(e.target.value)} style={{ fontSize: "0.8rem" }}>
-                              <option value="">Select Type</option>
-                              <option value="monthly">Monthly</option>
-                              <option value="yearly">Yearly</option>
-                            </Input>
-                          </Col>
-                        </Row>
-                      </CardHeader>
-                      <CardBody className="p-2">
-                        <Row className="justify-content-center">
-                          <Col xs="10">
-                            <div style={{ height: '200px', marginTop: "20px", marginBottom: "20px" }}>
-                              <Doughnut
-                                data={topProductsPieData}
-                                options={{
-                                  maintainAspectRatio: false, // Add this line
-                                  plugins: {
-                                    legend: {
-                                      position: "right",
-                                      labels: {
-                                        font: {
-                                          size: 10,
-                                        },
-                                        usePointStyle: true,
-                                      },
-                                    },
-                                    tooltips: {
-                                      enabled: false,
-                                    },
-                                    title: {
-                                      display: true,
-                                      position: "top",
-                                      text: "Top Products",
-                                      color: "#66615c",
-                                      font: {
-                                        weight: 400,
-                                        size: 14,
-                                      },
-                                    },
-                                  },
-                                  cutout: "70%",
-                                  scales: {
-                                    y: {
-                                      ticks: {
-                                        display: false,
-                                      },
-                                      grid: {
-                                        drawBorder: false,
-                                        display: false,
-                                      },
-                                    },
-                                    x: {
-                                      grid: {
-                                        drawBorder: false,
-                                        display: false,
-                                      },
-                                      ticks: {
-                                        display: false,
-                                      },
-                                    },
-                                  },
-                                }}
-                              />
-                            </div>
-                          </Col>
+                    <Table className="responsive-table" style={{ border: '1px solid #ccc', borderRadius: '20px', overflow: 'hidden' }}>
+                      <thead>
+                        <tr>
+                          <th style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(1, true) }}>Experts</th>
+                          <th style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(1, true) }}>Status</th>
+                          <th style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(1, true) }}>Daily Sales</th>
+                          <th style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(1, true) }}>Monthly Sales</th>
+                          <th style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(1, true) }}>Yearly Sales</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {salesData.map((sale, index) => (
+                          <tr key={index}>
+                            <td style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(1) }}>{sale[0]}</td>
+                            <td style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(1) }}>{sale[1] ? 'Active' : 'Inactive'}</td>
+                            <td style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(1) }}>{sale[2]}</td>
+                            <td style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(1) }}>{sale[3]}</td>
+                            <td style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(1) }}>{sale[4]}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
 
-                        </Row>
-                      </CardBody>
-                    </Card>
+                    <hr className="my-3" />
+
+                    <div style={{ overflowX: 'auto' }}>
+                      <Table className="responsive-table" style={{ border: '1px solid #ccc', borderRadius: '20px', overflow: 'hidden' }}>
+                        <thead>
+                          <tr>
+                            <th scope="col" style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(2, true) }}>Year / Month</th>
+                            {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
+                              <th key={month} scope="col" style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(2, true) }}>{month}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {Object.entries(yearlyMonthlySalesData).map(([year, sales]) => (
+                            <tr key={year}>
+                              <th scope="row" style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(2) }}>{year}</th>
+                              {sales.map((sale, index) => (
+                                <td key={index} style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(2) }}>{sale}</td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </Table>
+                    </div>
                   </Col>
-                </Row>
 
-                <Row noGutters className="justify-content-center">
-                  <Col xs="12" sm="12" md="12" lg="12" className="p-2">
-                    <Card className="m-0">
-                      <CardHeader>
-                        <Row>
-                          <Col xs="6">
-                            <CardTitle tag="h5">Top Five Areas</CardTitle>
-                          </Col>
-                          <Col xs="6">
-                            <Label for="selectType">Select Type:</Label>
-                            <Input type="select" name="select" id="selectType" onChange={(e) => setFilterOptionArea(e.target.value)} style={{ fontSize: "0.8rem" }}>
-                              <option value="">Select Type</option>
-                              <option value="monthly">Monthly</option>
-                              <option value="yearly">Yearly</option>
-                            </Input>
-                          </Col>
-                        </Row>
-                      </CardHeader>
-                      <CardBody className="p-2">
-                        <Row className="justify-content-center">
-                          <Col xs="10">
-                            <div style={{ height: '200px', marginTop: "20px", marginBottom: "20px" }}>
-                              <Doughnut
-                                data={topAreasPieData}
-                                options={{
-                                  maintainAspectRatio: false, // Add this line
-                                  plugins: {
-                                    legend: {
-                                      position: "right",
-                                      labels: {
-                                        font: {
-                                          size: 10,
-                                        },
-                                        usePointStyle: true,
-                                      },
-                                    },
-                                    tooltips: {
-                                      enabled: false,
-                                    },
-                                    title: {
-                                      display: true,
-                                      position: "top",
-                                      text: "Top Areas",
-                                      color: "#66615c",
-                                      font: {
-                                        weight: 400,
-                                        size: 14,
-                                      },
-                                    },
-                                  },
-                                  cutout: "70%",
-                                  scales: {
-                                    y: {
-                                      ticks: {
-                                        display: false,
-                                      },
-                                      grid: {
-                                        drawBorder: false,
-                                        display: false,
-                                      },
-                                    },
-                                    x: {
-                                      grid: {
-                                        drawBorder: false,
-                                        display: false,
-                                      },
-                                      ticks: {
-                                        display: false,
-                                      },
-                                    },
-                                  },
-                                }}
-                              />
-                            </div>
-                          </Col>
+                  <hr className="my-3" />
 
-                        </Row>
-                      </CardBody>
-                    </Card>
-                  </Col>
-                </Row>
-
-                <Row noGutters className="justify-content-center">
-                  <Col xs="12" sm="12" md="12" lg="12" className="p-2">
-                    <Card className="m-0">
-                      <CardHeader>
-                        <Row>
-                          <Col xs="6">
-                            <CardTitle tag="h5">Top Five Customers</CardTitle>
-                          </Col>
-                          <Col xs="6">
-                            <Label for="selectType">Select Type:</Label>
-                            <Input type="select" name="select" id="selectType" onChange={(e) => setFilterOptionCust(e.target.value)} style={{ fontSize: "0.8rem" }}>
-                              <option value="">Select Type</option>
-                              <option value="monthly">Monthly</option>
-                              <option value="yearly">Yearly</option>
-                            </Input>
-                          </Col>
-                        </Row>
-                      </CardHeader>
-                      <CardBody className="p-2">
-                        <Row className="justify-content-center">
-                          <Col xs="10">
-                            <div style={{ height: '200px', marginTop: "20px", marginBottom: "20px" }}>
-                              <Doughnut
-                                data={topCustomersPieData}
-                                options={{
-                                  maintainAspectRatio: false, // Add this line
-                                  plugins: {
-                                    legend: {
-                                      position: "right",
-                                      labels: {
-                                        font: {
-                                          size: 10,
-                                        },
-                                        usePointStyle: true,
-                                      },
-                                    },
-                                    tooltips: {
-                                      enabled: false,
-                                    },
-                                    title: {
-                                      display: true,
-                                      position: "top",
-                                      text: "Top Customers",
-                                      color: "#66615c",
-                                      font: {
-                                        weight: 400,
-                                        size: 14,
-                                      },
-                                    },
-                                  },
-                                  cutout: "70%",
-                                  scales: {
-                                    y: {
-                                      ticks: {
-                                        display: false,
-                                      },
-                                      grid: {
-                                        drawBorder: false,
-                                        display: false,
-                                      },
-                                    },
-                                    x: {
-                                      grid: {
-                                        drawBorder: false,
-                                        display: false,
-                                      },
-                                      ticks: {
-                                        display: false,
-                                      },
-                                    },
-                                  },
-                                }}
-                              />
-                            </div>
-                          </Col>
-
-                        </Row>
-                      </CardBody>
-                    </Card>
+                  <Col sm="4">
+                    <div style={{ overflowX: 'auto' }}>
+                      <Table className="responsive-table" style={{ border: '1px solid #ccc', borderRadius: '20px', overflow: 'hidden' }}>
+                        <thead>
+                          <tr>
+                            <th style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(3, true) }}>Month</th>
+                            <th style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(3, true) }}>Toman</th>
+                            <th style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(3, true) }}>USD</th>
+                            <th style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(3, true) }}>KG</th>
+                            <th style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(3, true) }}>Sepidar</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {salesMonthlyData.map((sale, index) => (
+                            <tr key={index}>
+                              <td style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(3) }}>{index + 1}</td>
+                              <td style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(3) }}>{sale[0]}</td>
+                              <td style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(3) }}>{sale[1]}</td>
+                              <td style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(3) }}>{sale[2]}</td>
+                              <td style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(3) }}>{sale[3]}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </Table>
+                    </div>
+                    <hr className="my-3" />
                   </Col>
                 </Row>
               </CardBody>
-              {/*
-        <CardFooter>
-            <hr />
-            <div className="stats">
-                <i className="fa fa-refresh" />
-                Update at {currentDateTime.toLocaleString()}
-            </div>
-        </CardFooter>
-         */}
             </Card>
           </Col>
+          </Row>
+
+
+
+          <Row className="justify-content-center">
+
+            <Col md="4" className="p-2">
+              <Card className="m-0 card-stats flex-fill">
+                <CardBody>
+                  <Card className="m-0">
+                    <CardHeader>
+                      <Row>
+                        <Col xs="6">
+                          <CardTitle tag="h5">Top Five Products</CardTitle>
+                        </Col>
+                        <Col xs="6">
+                          <Label for="selectType">Select Type:</Label>
+                          <Input type="select" name="select" id="selectType" onChange={(e) => setFilterOption(e.target.value)} style={{ fontSize: "0.8rem" }}>
+                            <option value="">Select Type</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="yearly">Yearly</option>
+                          </Input>
+                        </Col>
+                      </Row>
+                    </CardHeader>
+                    <CardBody className="p-2">
+                      <Row className="justify-content-start">
+                        <Col xs="8">
+                          <div style={{ height: '200px', marginTop: "20px", marginBottom: "20px" }}>
+                            <Doughnut
+                              data={topProductsPieData}
+                              options={{
+                                maintainAspectRatio: false,
+                                plugins: {
+                                  legend: {
+                                    position: "right",
+                                    labels: {
+                                      font: {
+                                        size: 10,
+                                      },
+                                      usePointStyle: true,
+                                    },
+                                  },
+                                  tooltips: {
+                                    enabled: false,
+                                  },
+                                  title: {
+                                    display: true,
+                                    position: "top",
+                                    text: "Top Products",
+                                    color: "#66615c",
+                                    font: {
+                                      weight: 400,
+                                      size: 14,
+                                    },
+                                  },
+                                },
+                                cutout: "70%",
+                                scales: {
+                                  y: {
+                                    ticks: {
+                                      display: false,
+                                    },
+                                    grid: {
+                                      drawBorder: false,
+                                      display: false,
+                                    },
+                                  },
+                                  x: {
+                                    grid: {
+                                      drawBorder: false,
+                                      display: false,
+                                    },
+                                    ticks: {
+                                      display: false,
+                                    },
+                                  },
+                                },
+                              }}
+                            />
+                          </div>
+                        </Col>
+                      </Row>
+                    </CardBody>
+                  </Card>
+                </CardBody>
+              </Card>
+            </Col>
+
+            <Col md="4" className="p-2">
+              <Card className="m-0 card-stats flex-fill">
+                <CardBody>
+                  <Card className="m-0">
+                    <CardHeader>
+                      <Row>
+                        <Col xs="6">
+                          <CardTitle tag="h5">Top Five Areas</CardTitle>
+                        </Col>
+                        <Col xs="6">
+                          <Label for="selectType">Select Type:</Label>
+                          <Input type="select" name="select" id="selectType" onChange={(e) => setFilterOptionArea(e.target.value)} style={{ fontSize: "0.8rem" }}>
+                            <option value="">Select Type</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="yearly">Yearly</option>
+                          </Input>
+                        </Col>
+                      </Row>
+                    </CardHeader>
+                    <CardBody className="p-2">
+                      <Row className="justify-content-center">
+                        <Col xs="10">
+                          <div style={{ height: '200px', marginTop: "20px", marginBottom: "20px" }}>
+                            <Doughnut
+                              data={topAreasPieData}
+                              options={{
+                                maintainAspectRatio: false,
+                                plugins: {
+                                  legend: {
+                                    position: "right",
+                                    labels: {
+                                      font: {
+                                        size: 10,
+                                      },
+                                      usePointStyle: true,
+                                    },
+                                  },
+                                  tooltips: {
+                                    enabled: false,
+                                  },
+                                  title: {
+                                    display: true,
+                                    position: "top",
+                                    text: "Top Areas",
+                                    color: "#66615c",
+                                    font: {
+                                      weight: 400,
+                                      size: 14,
+                                    },
+                                  },
+                                },
+                                cutout: "70%",
+                                scales: {
+                                  y: {
+                                    ticks: {
+                                      display: false,
+                                    },
+                                    grid: {
+                                      drawBorder: false,
+                                      display: false,
+                                    },
+                                  },
+                                  x: {
+                                    grid: {
+                                      drawBorder: false,
+                                      display: false,
+                                    },
+                                    ticks: {
+                                      display: false,
+                                    },
+                                  },
+                                },
+                              }}
+                            />
+                          </div>
+                        </Col>
+                      </Row>
+                    </CardBody>
+                  </Card>
+                </CardBody>
+              </Card>
+            </Col>
+
+            <Col md="4" className="p-2">
+              <Card className="m-0 card-stats flex-fill">
+                <CardBody>
+                  <Card className="m-0">
+                    <CardHeader>
+                      <Row>
+                        <Col xs="6">
+                          <CardTitle tag="h5">Top Five Customers</CardTitle>
+                        </Col>
+                        <Col xs="6">
+                          <Label for="selectType">Select Type:</Label>
+                          <Input type="select" name="select" id="selectType" onChange={(e) => setFilterOptionCust(e.target.value)} style={{ fontSize: "0.8rem" }}>
+                            <option value="">Select Type</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="yearly">Yearly</option>
+                          </Input>
+                        </Col>
+                      </Row>
+                    </CardHeader>
+                    <CardBody className="p-2">
+                      <Row className="justify-content-center">
+                        <Col xs="10">
+                          <div style={{ height: '200px', marginTop: "20px", marginBottom: "20px" }}>
+                            <Doughnut
+                              data={topCustomersPieData}
+                              options={{
+                                maintainAspectRatio: false,
+                                plugins: {
+                                  legend: {
+                                    position: "right",
+                                    labels: {
+                                      font: {
+                                        size: 10,
+                                      },
+                                      usePointStyle: true,
+                                    },
+                                  },
+                                  tooltips: {
+                                    enabled: false,
+                                  },
+                                  title: {
+                                    display: true,
+                                    position: "top",
+                                    text: "Top Customers",
+                                    color: "#66615c",
+                                    font: {
+                                      weight: 400,
+                                      size: 14,
+                                    },
+                                  },
+                                },
+                                cutout: "70%",
+                                scales: {
+                                  y: {
+                                    ticks: {
+                                      display: false,
+                                    },
+                                    grid: {
+                                      drawBorder: false,
+                                      display: false,
+                                    },
+                                  },
+                                  x: {
+                                    grid: {
+                                      drawBorder: false,
+                                      display: false,
+                                    },
+                                    ticks: {
+                                      display: false,
+                                    },
+                                  },
+                                },
+                              }}
+                            />
+                          </div>
+                        </Col>
+                      </Row>
+                    </CardBody>
+                  </Card>
+                </CardBody>
+              </Card>
+            </Col>
+
+          </Row>
+
 
 
           {/* 
@@ -824,158 +945,7 @@ function Dashboard() {
 
 
 
-          <Col md="8" >
-            <Card className="m-0  ">
-              <CardHeader>
-                <Row>
-                  <Col sm="7">
-                    <div className="numbers pull-left">Daily Reports</div>
-                  </Col>
-
-                </Row>
-              </CardHeader>
-              <CardBody>
-                <Row>
-                  <Col sm="8" className="pr-2" style={{ borderRight: '1px solid #ddd', marginRight: '-15px', paddingRight: '15px' }}>
-                    <Table className="responsive-table">
-                      <thead>
-                        <tr>
-                          <th scope="col"></th>
-                          <th scope="col">Daily Sales</th>
-                          <th scope="col">Monthly Sales</th>
-                          <th scope="col">Yearly Sales</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {salesTotalData.daily_sales &&
-                          salesTotalData.daily_sales.map((_, rowIndex) => (
-                            <tr key={rowIndex}>
-                              <th scope="row">{rowHeaders[rowIndex]}</th>
-                              <td>{salesTotalData.daily_sales[rowIndex]}</td>
-                              <td>{salesTotalData.monthly_sales[rowIndex]}</td>
-                              <td>{salesTotalData.yearly_sales[rowIndex]}</td>
-                            </tr>
-                          ))}
-                          <tr>
-                          <th scope="row">Average Price</th>
-                          <td>{salesTotalData.daily_avg_price}</td>
-                          <td>{salesTotalData.monthly_avg_price}</td>
-                          <td>{salesTotalData.yearly_avg_price}</td>
-                        </tr>
-                        <tr>
-                          <th scope="row">Unique Customers</th>
-                          <td>{salesTotalData.daily_customers}</td>
-                          <td>{salesTotalData.monthly_customers}</td>
-                          <td>{salesTotalData.yearly_customers}</td>
-                        </tr>
-                        <tr>
-                          <th scope="row">Average Unique Customers($)</th>
-                          <td>{salesTotalData.daily_dollar_sale_per_customer}</td>
-                          <td>{salesTotalData.monthly_dollar_sale_per_customer}</td>
-                          <td>{salesTotalData.yearly_dollar_sale_per_customer}</td>
-                        </tr>
-                        <tr>
-                          <th scope="row">Average Unique Customers(KG)</th>
-                          <td>{salesTotalData.daily_kg_sale_per_customer}</td>
-                          <td>{salesTotalData.monthly_kg_sale_per_customer}</td>
-                          <td>{salesTotalData.yearly_kg_sale_per_customer}</td>
-                        </tr>
-                        
-                        
-                        {/* Add similar rows for your other new fields */}
-                      </tbody>
-                    </Table>
-
-
-                    <hr className="my-3" />
-
-                    <Table className="responsive-table">
-                      <thead>
-                        <tr>
-                          <th>Experts</th>
-                          <th>Status</th>
-                          <th>Daily Sales</th>
-                          <th>Monthly Sales</th>
-                          <th>Yearly Sales</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {salesData.map((sale, index) => (
-                          <tr key={index}>
-                            <td>{sale[0]}</td>
-                            <td>{sale[1] ? 'Active' : 'Inactive'}</td>
-                            <td>{sale[2]}</td>
-                            <td>{sale[3]}</td>
-                            <td>{sale[4]}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </Table>
-                    <hr className="my-3" />
-
-                    <div style={{ overflowX: 'auto' }}>
-                      <Table className="responsive-table">
-                        <thead>
-                          <tr>
-                            <th scope="col">Year / Month</th>
-                            {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
-                              <th key={month} scope="col">{month}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {Object.entries(yearlyMonthlySalesData).map(([year, sales]) => (
-                            <tr key={year}>
-                              <th scope="row">{year}</th>
-                              {sales.map((sale, index) => (
-                                <td key={index}>{sale}</td>
-                              ))}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </Table>
-                    </div>
-                  </Col>
-
-                  <hr className="my-3" />
-
-                  <Col sm="4">
-                    <div style={{ overflowX: 'auto' }}>
-                      <Table className="responsive-table">
-                        <thead>
-                          <tr>
-                            <th>Month</th>
-                            <th>Toman</th>
-                            <th>USD</th>
-                            <th>KG</th>
-                            <th>Sepidar</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {salesMonthlyData.map((sale, index) => (
-                            <tr key={index}>
-                              <td>{index + 1}</td>
-                              <td>{sale[0]}</td>
-                              <td>{sale[1]}</td>
-                              <td>{sale[2]}</td>
-                              <td>{sale[3]}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </Table>
-                    </div>
-                    <hr className="my-3" />
-
-
-                  </Col>
-                </Row>
-              </CardBody>
-
-            </Card>
-          </Col>
-
-
-        </Row>
+       
 
 
         <Container fluid>
