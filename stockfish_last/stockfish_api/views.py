@@ -279,7 +279,7 @@ class AddSalesView(APIView):
 
             count = 0
             for i, row in data.iterrows():
-                print(row)
+
                 no = row["No"]
                 if Sales.objects.filter(no=no).exists():
                     continue
@@ -834,7 +834,7 @@ class EditWarehouseView(APIView):
     def post(self, request, *args, **kwargs):
         try:
             data = json.loads(request.body)
-            print(data)
+
             # Check if old_product_code is provided
             old_product_code = data.get('old_product_code')
             if not old_product_code:
@@ -1180,10 +1180,10 @@ class AddSalerView(APIView):
     def post(self, request, *args, **kwargs):
         try:
             data = json.loads(request.body)
-            print(data)
+
             jalali_date = data.get("job_start_date").split("-")
             saler_type = data.get("saler_type")
-            print(saler_type)
+
             try:
                 jalali_date = jdatetime.date(int(jalali_date[0]), int(jalali_date[1]), int(jalali_date[2]))
             except ValueError:
@@ -1235,7 +1235,7 @@ class EditSalerView(APIView):
     def post(self, request, *args, **kwargs):
         try:
             data = json.loads(request.body)
-            print(data)
+
 
             old_data = data.get('old_data')
             new_data = data.get('new_data')
@@ -1248,7 +1248,7 @@ class EditSalerView(APIView):
             
             # Get the saler object
             saler = Salers.objects.get(id=old_data['id'])
-            print(saler)
+
             
             if saler.is_active_saler == True and saler.is_active_saler == False:
                 # Update other saler fields
@@ -1258,7 +1258,7 @@ class EditSalerView(APIView):
                             new_date =new_data['job_start_date'].split("-")
                             date = jdatetime.date(int(new_date[0]), int(new_date[1]), int(new_date[2]))
                             saler.experience_rating = calculate_experience_rating(date)
-                            print("active: ",saler.experience_rating)
+
                         except ValueError:
                             return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD'"}, status=400)
                         except IndexError as e:
@@ -1285,9 +1285,9 @@ class EditSalerView(APIView):
                             try:
                                 new_date =new_data['job_start_date'].split("-")
                                 date = jdatetime.date(int(new_date[0]), int(new_date[1]), int(new_date[2]))
-                                print("date:",date)
+
                                 saler.experience_rating = calculate_passive_saler_experience_rating(date)
-                                print("passive: ",saler.experience_rating)
+
                             except ValueError:
                                 return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD'"}, status=400)
                             except IndexError as e:
@@ -1330,7 +1330,7 @@ class CollapsedSalerView(APIView):
     
     def get(self, request, *args, **kwargs):
         active_salers = Salers.objects.filter(is_deleted=False, is_active_saler=True)
-        print(active_salers)
+
         active_salers_list = [[saler.id, saler.name, saler.is_active] for saler in active_salers]
         passive_salers = Salers.objects.filter(is_deleted=False, is_passive_saler=True)
         passive_salers_list = [[saler.id, saler.name, saler.is_active] for saler in passive_salers]
@@ -1374,7 +1374,7 @@ class SalerTableView(APIView):
         saler_list = [[s['id'], s['name'], s['job_start_date'].strftime('%Y-%m-%d'), s['manager_performance_rating'],
                        s['experience_rating'], s['monthly_total_sales_rating'], s['receipment_rating'], s['is_active'], s['is_active_saler'] ,s['is_passive_saler']] for s in salers]
         
-        print(saler_list)
+
         return JsonResponse(saler_list, safe=False)
 
 class DeleteSalerView(APIView):
@@ -1385,7 +1385,7 @@ class DeleteSalerView(APIView):
             data = json.loads(request.body)
             id = data.get('id')
             saler = Salers.objects.get(id=id)
-            print("saler: ", saler)
+
             saler.is_deleted = True
             saler.is_active = False
             saler.save()
@@ -1943,7 +1943,7 @@ class TopCustomersView(APIView):
         data = json.loads(request.body)
 
         report_type = data.get('report_type')
-        print(report_type)
+
         if report_type == 'monthly':
             top_customers_list = []
             
@@ -1971,7 +1971,7 @@ class TopCustomersView(APIView):
                 top_customers_pie_chart = [["No data available", 100]]
         
         elif report_type == 'yearly':
-            print("xxx")
+
             top_customers_list = []
             
             # Get the current year using jdatetime library
@@ -1982,7 +1982,7 @@ class TopCustomersView(APIView):
             
             # Get the top 5 customers
             top_5_customer_data = customer_data[:5]
-            print(d["customer_name"] for d in top_5_customer_data )
+
             
             # Calculate the total sales for the current year
             total_sales = CustomerPerformance.objects.filter(year=date).aggregate(total_sales=Sum('sale'))['total_sales']
@@ -1999,8 +1999,8 @@ class TopCustomersView(APIView):
             else:
                 # Handle the case when there is no sales data available
                 top_customers_pie_chart = [["No data available", 100]]
-            print("top_customers: ",top_customers_list)
-        print(top_customers_list)
+
+
         return JsonResponse({"top_customers_list": top_customers_list,"top_customers_pie_chart": top_customers_pie_chart}, safe=False)
 
 # endregion
@@ -2131,7 +2131,7 @@ class TopProductsView(APIView):
             else:
                 # Handle the case when there is no sales data available
                 top_products_pie_chart = [["No data available", 100]]
-        print(top_products_list)
+
         return JsonResponse({"top_products_list": top_products_list,"top_products_pie_chart": top_products_pie_chart}, safe=False)
 
 # endregion
@@ -2281,7 +2281,7 @@ class TotalDataView(APIView):
         yearly_sales_array[1] = format(round(yearly_sales_array_float[1] ), ',d')
         yearly_sales_array[2] = format(round(yearly_sales_array_float[2] ), ',d')
         yearly_sales_array[3] = format(round(yearly_sales_array_float[3] ), ',d')
-        print(daily_sales_array)
+
         daily_avg_price = daily_sales_array_float[2] / daily_sales_array_float[3] if daily_sales_array_float[3] != 0 else 0
         monthly_avg_price = monthly_sales_array_float[2] / monthly_sales_array_float[3] if monthly_sales_array_float[3] != 0 else 0
         yearly_avg_price = yearly_sales_array_float[2] / yearly_sales_array_float[3] if yearly_sales_array_float[3] != 0 else 0
@@ -2790,7 +2790,7 @@ class ROPView(APIView):
     authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
-        print(data)
+
         product_code = data.get('product_code')
         lead_time = float(data.get('lead_time'))
         service_level = float(data.get('service_level'))
@@ -2808,7 +2808,7 @@ class ROPView(APIView):
             warehouse = Warehouse.objects.get(product_code = product_code)
             stock = warehouse.stock
         except Warehouse.DoesNotExist:
-            print("sadasdaasd")
+
             return JsonResponse({"error" : f"There is no product in warehouse with product code: {product_code} "}, status=400)
         
         dates_for_sales = [jdatetime.date(item.year, item.month, 1).strftime('%Y-%m-%d') for item in product_values]
@@ -2827,9 +2827,7 @@ class ROPView(APIView):
         avrg_future_forecast_dates = generate_future_forecast_dates(len(avrg_future_sales))
         exp_future_forecast_dates = generate_future_forecast_dates(len(exp_future_sales))
         holt_future_forecast_dates = generate_future_forecast_dates(len(holt_future_sales))
-        print("avrg_future_forecast_dates: ", avrg_future_forecast_dates)
-        print("holt_future_forecast_dates: ", holt_future_forecast_dates)
-        print("holt_order: ", holt_order)
+
         item = ROP.objects.get(product_code_ir = product_code)
         rop_list = rop_list = [
                 item.group,
@@ -2995,7 +2993,6 @@ class AddOrderListObjectView(APIView):
         data = json.loads(request.body)
         product_code = data.get('product_code')
         decided_order = data.get('decided_order')
-        print(data)
         if not product_code or not decided_order:
             return JsonResponse({"error": "Both product_code and decided_order must be provided."}, status=404)
 
@@ -3224,10 +3221,9 @@ class EditWaitingTrucksView(APIView):
                 return JsonResponse({'error': "Decided order cannot be smaller than zero."}, status=400)
 
             goods_on_road = GoodsOnRoad.objects.get(product_code=data['product_code'], truck_name=data['truck_name'], is_on_truck=True)
-            print(goods_on_road.decided_order)
+
             goods_on_road.decided_order = data['decided_order']
-            print(data['decided_order'])
-            print(goods_on_road.decided_order)
+
             goods_on_road.save()
 
             return JsonResponse({'message': "GoodsOnRoad object updated successfully."}, status=200)
@@ -3265,6 +3261,11 @@ class ApproveWaitingTruckView(APIView):
                 good.is_on_truck = False
                 good.is_on_road = True
                 good.save()
+                
+                warehouse_product = Warehouse.objects.get(product_code=good.product_code)
+                if warehouse_product:
+                    warehouse_product.stock += good.decided_order
+                    warehouse_product.save()
 
             return JsonResponse({'message': f"Truck with name: {truck_name} is successfully ordered."}, status=200)
         except Exception as e:
@@ -3352,10 +3353,7 @@ class ApproveArrivedTruckView(APIView):
                 good.is_arrived = True
                 good.save()
 
-                warehouse_product = Warehouse.objects.get(product_code=good.product_code)
-                if warehouse_product:
-                    warehouse_product.stock += good.decided_order
-                    warehouse_product.save()
+                
 
             return JsonResponse({'message': "Truck, related GoodsOnRoad objects, and Warehouse stock updated successfully."}, status=200)
         except Exception as e:
