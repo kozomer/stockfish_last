@@ -2796,7 +2796,8 @@ class ROPView(APIView):
         service_level = float(data.get('service_level'))
         forecast_period = int(data.get('forecast_period'))
         product_values = ProductPerformance.objects.filter(product_code=product_code)
-       
+        product_values_raw = ProductPerformance.objects.filter(product_code=product_code)
+
         try:
             last_sales = MonthlyProductSales.objects.filter(product_code=product_code).values("date").latest("date")
             last_sale_date = last_sales["date"].strftime('%Y-%m-%d')
@@ -2811,10 +2812,24 @@ class ROPView(APIView):
 
             return JsonResponse({"error" : f"There is no product in warehouse with product code: {product_code} "}, status=400)
         
-        dates_for_sales = [jdatetime.date(item.year, item.month, 1).strftime('%Y-%m-%d') for item in product_values]
-        sales = [item.sale_amount for item in product_values]
-        product_values = [[1, item.month, item.year, item.product_code, item.sale_amount] for item in product_values]
         
+        product_values = [(jdatetime.date(item.year, item.month, 1), item.sale_amount) for item in product_values]
+
+# Sort the tuples by jdatetime
+        product_values.sort()
+        print(product_values)
+
+        # If you want to separate the sorted dates and sales amount into two lists
+        dates_for_sales = [date.strftime('%Y-%m-%d') for date, _ in product_values]
+        sales = [item for _, item in product_values]
+        # dates_for_sales = [jdatetime.date(item.year, item.month, 1).strftime('%Y-%m-%d') for item in product_values]
+        # sales = [item.sale_amount for item in product_values]
+        # dates_for_sales = dates_for_sales[::-1]
+        # sales = sales[::-1]
+        print(dates_for_sales)
+        print(sales)
+        product_values = [[1, item.month, item.year, item.product_code, item.sale_amount] for item in product_values_raw]
+
         holt_all_sales, holt_prev_sales, holt_future_sales, holt_future_stocks, holt_order_flag, holt_safety_stock, holt_rop, holt_order = get_model("holt", True, jalali_date_str, product_code, product_values, stock, lead_time, service_level, 12, forecast_period )
         exp_all_sales, exp_prev_sales, exp_future_sales, exp_future_stocks, exp_order_flag, exp_safety_stock, exp_rop, exp_order = get_model("exp", True, jalali_date_str, product_code, product_values, stock, lead_time, service_level, 12, forecast_period )
         avrg_all_sales, avrg_prev_sales, avrg_future_sales, avrg_future_stocks, avrg_order_flag, avrg_safety_stock, avrg_rop, avrg_order = get_model("average", True, jalali_date_str, product_code, product_values, stock, lead_time, service_level, 12, forecast_period )

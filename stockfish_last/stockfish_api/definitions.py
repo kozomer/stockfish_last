@@ -119,7 +119,6 @@ def generate_year_month_sequence(start_year, start_month, end_year, end_month):
     months = range(1, 13)
     return [(year, month) for year, month in product(years, months) if (int(year), int(month)) >= (int(start_year), int(start_month)) and (int(year), int(month)) <= (int(end_year), int(end_month))]
 def convert_daily_to_monthly(daily_sales):
-    print(daily_sales)
     daily_sales.sort(key=lambda x: (x[2], x[1], x[0]))  # Sort daily sales by date
 
     _, start_month, start_year, _, _ = daily_sales[0]
@@ -218,9 +217,12 @@ def get_model(model, is_dynamic, current_date, product_code, product_sales, curr
     bools = filter_product_sales(product_sales, product_code, dim=3)
     product_sales = remove_product_sales_by_boolean(product_sales, bools)
     monthly_sales = convert_daily_to_monthly(product_sales)
+    print("monthly sales: ",monthly_sales)
     if is_dynamic:
         monthly_sales = dynamic_correction(monthly_sales, current_date)
     prev_sales = get_sale_array(monthly_sales, dim=2)
+    print("monthly sales1 : ",monthly_sales)
+    print("prev sales: ", prev_sales)
     if model == 'average':
         future_sales = forecast_by_average(prev_sales,prev_forecast_period, future_forecast_period)
     elif model == 'holt':
@@ -247,7 +249,7 @@ def get_model(model, is_dynamic, current_date, product_code, product_sales, curr
 
 def generate_future_forecast_dates(num_months):
     current_date = current_jalali_date()
-    print("current_date: ", current_date)
+
     future_dates_with_current = [current_date]
     future_dates = []
 
@@ -262,7 +264,7 @@ def generate_future_forecast_dates(num_months):
         future_dates_with_current.append(jdatetime.date(year, month, 1))
         future_dates.append(jdatetime.date(year, month, 1))
 
-    print("future_dates: ", [date.strftime('%Y-%m-%d') for date in future_dates])
+    
     return [date.strftime('%Y-%m-%d') for date in future_dates]
 
 # product_code = 15202103
