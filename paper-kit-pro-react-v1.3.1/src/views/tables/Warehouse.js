@@ -47,7 +47,7 @@ const DataTable = () => {
 
   /*
   useEffect(() => {
-    console.log(dataTable);
+    //console.log(dataTable);
   }, [dataTable]);
 */
 
@@ -58,7 +58,7 @@ const handleAddFileClick = () => {
 
   const handleFileInputChange = (e) => {
     setFile(e.target.files[0]);
-    console.log(file)
+    //console.log(file)
   };
 
   const handleUploadClick = async() => {
@@ -77,7 +77,7 @@ const handleAddFileClick = () => {
     .then((response) => {
       if (!response.ok) {
         return response.json().then(data => {
-          console.log(data.error)
+          //console.log(data.error)
           setIsLoading(false);
           errorUpload(data.error);
         });
@@ -94,7 +94,7 @@ const handleAddFileClick = () => {
           .then((response) => response.json())
           .then((data) =>{
              setDataTable(data.warehouse_list)
-             console.log(data.message)});
+             });
         });
       }
     })
@@ -110,7 +110,7 @@ const handleAddFileClick = () => {
   };
   
   const handleClick = (row) => {
-     console.log(row[2])
+     //console.log(row[2])
     setEditData(row);
     setOldData(row);
 
@@ -145,7 +145,7 @@ const handleAddFileClick = () => {
       
       
     };
-    console.log(updatedData)
+    //console.log(updatedData)
     fetch(`${process.env.REACT_APP_PUBLIC_URL}/edit_warehouse/`, {
     method: 'POST',
     body: JSON.stringify(updatedData),
@@ -158,7 +158,7 @@ const handleAddFileClick = () => {
   .then((response) => {
     if (!response.ok) {
       return response.json().then(data => {
-        console.log(data.error)
+        //console.log(data.error)
         
         errorUpload(data.error);
       });
@@ -177,7 +177,7 @@ const handleAddFileClick = () => {
     // Call your Django API to send the updated values here
   };
   const successEdit = (s) => {
-    console.log("edit success")
+    //console.log("edit success")
     setAlert(
       <ReactBSAlert
         success
@@ -219,7 +219,7 @@ const handleAddFileClick = () => {
   };
   
   useEffect(() => {
-    console.log("useEffect called")
+    //console.log("useEffect called")
     if(editData){
       
       setProductCode(editData[0]);
@@ -252,7 +252,7 @@ const handleAddFileClick = () => {
 
 
   const warningWithConfirmAndCancelMessage = () => {
-    console.log("sadsads"),
+    //console.log("sadsads"),
     setAlert(
       
       <ReactBSAlert
@@ -554,7 +554,7 @@ const handleAddFileClick = () => {
 
                               };
                               setDeleteData(data);
-                              console.log(deleteConfirm)
+                              //console.log(deleteConfirm)
                              
                             
                             }

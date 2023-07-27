@@ -124,7 +124,7 @@ const [bonus, setBonus] = useState(null);
     .then((response) => {
       if (!response.ok) {
         return response.json().then(data => {
-          console.log(data.error)
+          //console.log(data.error)
           setIsLoading(false);
           errorUpload(data.error);
         });
@@ -141,7 +141,7 @@ const [bonus, setBonus] = useState(null);
           .then((response) => response.json())
           .then((data) =>{
              setDataTable(data)
-             console.log(data.message)});
+             });
           clearTimeout(timeoutId); // Clear any existing timeout
           setTimeoutId(setTimeout(() => setShowUploadDiv(false), 500));
         });
@@ -329,12 +329,12 @@ const [bonus, setBonus] = useState(null);
       setBonus(row.bonus);
       setShowPopup(!showPopup);
       setIsUpdated(true)
-      console.log(row)
+      //console.log(row)
     };
 
     const handleSubmit = async (e) => {
-      console.log("e")
-      console.log(oldData)
+      //console.log("e")
+      //console.log(oldData)
       const access_token =  await localforage.getItem('access_token');
       const updatedData = {
         new_no: no,
@@ -436,14 +436,14 @@ const [bonus, setBonus] = useState(null);
     .then((response) => {
       if (!response.ok) {
         return response.json().then(data => {
-          console.log("sdadas")
+          //console.log("sdadas")
           setIsLoading(false);
           errorUpload(data.error);
         });
       }
       else{
         return response.json().then(data => {
-          console.log("asdaasdas")
+          //console.log("asdaasdas")
          setEditData(updatedData);
           successEdit()
         });
@@ -1170,24 +1170,24 @@ const [bonus, setBonus] = useState(null);
                               /*
                               if (deleteConfirm) {
                                 const updatedDataTable = dataTable.find((o) => o.id == row.id);
-                                //console.log(updatedDataTable[0]);
+                                ////console.log(updatedDataTable[0]);
                                 const data = {
                                   no: updatedDataTable[0],
                                   good_code: updatedDataTable[10],
                                   original_output_value: updatedDataTable[14],
                                 };
                                 setDeleteData(data);
-                                //console.log(data);
+                                ////console.log(data);
                                 fetch(`${process.env.REACT_APP_PUBLIC_URL}/delete_sales/`, {
                                   method: "POST",
                                   body: new URLSearchParams(data),
                                 }).then(() => {
-                                  //  console.log("row id:", row.id);
-                                  //console.log("dataTable:", dataTable);
+                                  //  //console.log("row id:", row.id);
+                                  ////console.log("dataTable:", dataTable);
                                   const filteredDataTable = dataTable.filter(
                                     (o) => Number(o.id) !== Number(row.id)
                                   );
-                                  //  console.log(filteredDataTable);
+                                  //  //console.log(filteredDataTable);
                                   setDataTable(filteredDataTable);
                                   setDataChanged(!dataChanged);
                                 });

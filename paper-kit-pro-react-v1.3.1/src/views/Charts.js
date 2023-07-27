@@ -51,13 +51,13 @@ function Charts() {
   
   useEffect(() => {
     async function fetchData() {
-      console.log('useEffect called');
+      //console.log('useEffect called');
       const response = await fetch('https://vividstockfish.com/api/charts/', {
         method: 'POST',
          // replace with your data
       });
       const responseData = await response.json();
-      console.log('fetched data:', responseData["output_value_list"]);
+      //console.log('fetched data:', responseData["output_value_list"]);
       setDataTable(responseData)
       
       
@@ -71,7 +71,7 @@ function Charts() {
       .then(response => response.json())
       .then(data => {
         setItems(data);
-        console.log('item list:', data);
+        //console.log('item list:', data);
       })
       
       
@@ -82,7 +82,7 @@ function Charts() {
   
   const handleSelect = (selectedOption) => {
     setSelectedItem(selectedOption);
-    console.log(selectedItem.value)
+    //console.log(selectedItem.value)
     const selectData= { product_code: selectedOption.value};
     // post the selected option to Django
     fetch('https://vividstockfish.com/api/item_list_filter/', {
@@ -93,7 +93,7 @@ function Charts() {
    .then(response => response.json())
     .then(data => {
       setResult(data);})
-      console.log(result["output_value_list"])
+      //console.log(result["output_value_list"])
   } 
   
   const options = items.map((item) => ({
@@ -157,7 +157,7 @@ if (result && result.date_list && result.output_value_list && result.product_nam
   };
 }
 
-  console.log(charts)
+  //console.log(charts)
   return (
     <>
     

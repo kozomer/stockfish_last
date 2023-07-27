@@ -94,7 +94,7 @@ const DataTable = () => {
       }),
     });
     const data = await response.json();
-    console.log(data)
+    //console.log(data)
     setDataTable(data);
     setDataChanged(false);
     setRenderEdit(false);

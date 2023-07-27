@@ -55,7 +55,7 @@ const DataTable = () => {
         },
       });
       const data = await response.json();
-      console.log(data)
+      //console.log(data)
       setDataTable(data);
       setDataChanged(false);
       setRenderEdit(false)
@@ -65,7 +65,7 @@ const DataTable = () => {
 
   /*
   useEffect(() => {
-    console.log(dataTable);
+    //console.log(dataTable);
   }, [dataTable]);
 */
 
@@ -95,7 +95,7 @@ const DataTable = () => {
     .then((response) => {
       if (!response.ok) {
         return response.json().then(data => {
-          console.log(data.error)
+          //console.log(data.error)
           setIsLoading(false);
           errorUpload(data.error);
         });
@@ -173,7 +173,7 @@ const DataTable = () => {
     
   };
   useEffect(() => {
-    console.log(deleteConfirm)
+    //console.log(deleteConfirm)
   },[deleteConfirm]);
 
   const successDelete = () => {
@@ -289,7 +289,7 @@ const DataTable = () => {
   setPrice(row.price);
   setSuppliers(row.suppliers)
       setShowPopup(!showPopup);
-      console.log(row)
+      //console.log(row)
     };
 
 
@@ -325,7 +325,7 @@ const DataTable = () => {
         old_price:oldData[10],
         old_suppliers:oldData[11],
       };
-      console.log(updatedData)
+      //console.log(updatedData)
       fetch(`${process.env.REACT_APP_PUBLIC_URL}/edit_products/`, {
       method: 'POST',
       body: JSON.stringify(updatedData),
@@ -338,7 +338,7 @@ const DataTable = () => {
     .then((response) => {
       if (!response.ok) {
         return response.json().then(data => {
-          console.log(data.error)
+          //console.log(data.error)
           
           errorUpload(data.error);
         });
@@ -361,7 +361,7 @@ const DataTable = () => {
     };
 
     useEffect(() => {
-      console.log("useEffect called")
+      //console.log("useEffect called")
       if(editData){
         
           setGroup(editData[0]);
@@ -661,28 +661,28 @@ const DataTable = () => {
 
                               };
                               setDeleteData(data);
-                              console.log(deleteConfirm)
+                              //console.log(deleteConfirm)
                               /*
                               if (deleteConfirm) {
                                 const updatedDataTable = dataTable.find((o) => o.id == row.id);
-                                //console.log(updatedDataTable[0]);
+                                ////console.log(updatedDataTable[0]);
                                 const data = {
                                   no: updatedDataTable[0],
                                   good_code: updatedDataTable[10],
                                   original_output_value: updatedDataTable[14],
                                 };
                                 setDeleteData(data);
-                                //console.log(data);
+                                ////console.log(data);
                                 fetch(`${process.env.REACT_APP_PUBLIC_URL}/delete_sales/`, {
                                   method: "POST",
                                   body: new URLSearchParams(data),
                                 }).then(() => {
-                                  //  console.log("row id:", row.id);
-                                  //console.log("dataTable:", dataTable);
+                                  //  //console.log("row id:", row.id);
+                                  ////console.log("dataTable:", dataTable);
                                   const filteredDataTable = dataTable.filter(
                                     (o) => Number(o.id) !== Number(row.id)
                                   );
-                                  //  console.log(filteredDataTable);
+                                  //  //console.log(filteredDataTable);
                                   setDataTable(filteredDataTable);
                                   setDataChanged(!dataChanged);
                                 });

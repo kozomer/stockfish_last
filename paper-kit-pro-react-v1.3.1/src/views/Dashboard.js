@@ -190,7 +190,7 @@ function Dashboard() {
     notifications.push(options);
     localforage.setItem('notifications', JSON.stringify([...notifications]));
     // notificationAlert.current.notificationAlert(options);
-    console.log(notifications)
+    //console.log(notifications)
   }, []);
 
   const fetchNotificationData = async () => {
@@ -219,7 +219,7 @@ function Dashboard() {
     if (!notificationsAdded && notificationData.length > 0) {
       notificationData.forEach((notification) => {
         const [id, date, productCode, orderAvrg, orderExp, orderHolt] = notification;
-        console.log(notificationData);
+        //console.log(notificationData);
         notify("tr", productCode);
       });
       setNotificationsAdded(true);
@@ -243,7 +243,7 @@ function Dashboard() {
       const data = await response.json();
 
       setSalesMonthlyData(data);
-      console.log(data)
+      //console.log(data)
     };
     fetchDailyReportMotnhly();
   }, []);
@@ -260,7 +260,7 @@ function Dashboard() {
         body: JSON.stringify({ report_type: filterOption }),
       });
       const data = await response.json();
-      console.log(data)
+      //console.log(data)
       setTopProducts(data.top_products_list);
       setTopProductsPieData({
         labels: data.top_products_pie_chart.map((item) => item[0]),
@@ -321,7 +321,7 @@ function Dashboard() {
         body: JSON.stringify({ report_type: filterOptionCust }),
       });
       const data = await response.json();
-      console.log(data)
+      //console.log(data)
       setTopCustomers(data.top_customers_list);
       setTopCustomersPieData({
         labels: data.top_customers_pie_chart.map((item) => item[0]),
@@ -351,7 +351,7 @@ function Dashboard() {
 
       });
       const data = await response.json();
-      console.log(data["jalali_date"])
+      //console.log(data["jalali_date"])
       setCurrency(data);
 
     };
@@ -371,7 +371,7 @@ function Dashboard() {
 
       });
       const data = await response.json();
-      console.log(data)
+      //console.log(data)
       setSalesData(data.sales_data || []);
       setDate(data.jalali_date || []);
 
@@ -393,7 +393,7 @@ function Dashboard() {
       const data = await response.json();
 
       setSalesTotalData(data);
-      console.log(salesTotalData)
+      //console.log(salesTotalData)
     };
     fetchDailyReportTotal();
   }, []);
@@ -437,7 +437,7 @@ function Dashboard() {
         },
       });
       const data = await response.json();
-      console.log(data)
+      //console.log(data)
       setYearlyMonthlySalesData(data);
     };
     fetchYearlyMonthlySalesData();

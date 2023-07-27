@@ -198,7 +198,7 @@ useEffect(() => {
     // Call your Django API to send the updated values here
   };
   const successEdit = (s) => {
-    console.log("edit success")
+    //console.log("edit success")
     setAlert(
       <ReactBSAlert
         success
@@ -246,7 +246,7 @@ useEffect(() => {
   };
   
   useEffect(() => {
-    console.log("useEffect called")
+    //console.log("useEffect called")
     if(editData){
       setID(editData[0])
       setDate(editData[1]);
@@ -284,7 +284,7 @@ useEffect(() => {
 
 
   const warningWithConfirmAndCancelMessage = () => {
-    console.log("sadsads"),
+    //console.log("sadsads"),
     setAlert(
       
       <ReactBSAlert
@@ -313,7 +313,7 @@ useEffect(() => {
       useEffect(() => {
         async function deleteFunc() {
         if (deleteConfirm) {
-         console.log("delete")
+         //console.log("delete")
          const access_token =  await localforage.getItem('access_token'); 
           fetch(`${process.env.REACT_APP_PUBLIC_URL}/delete_warehouse/`, {
             method: "POST",
@@ -669,7 +669,7 @@ useEffect(() => {
 
                               };
                               setDeleteData(data);
-                              console.log(deleteConfirm)
+                              //console.log(deleteConfirm)
                              
                             
                             }

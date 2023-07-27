@@ -86,7 +86,7 @@ const DataTable = () => {
 
 
   const handleEditClick = (row) => {
-    console.log(row.values["Product Code"]);
+    ////console.log(row.values["Product Code"]);
     setEditingRow(row.index);
     setProductCode(row.values["Product Code"]);
     setUpdatedOrder((prevState) => ({
@@ -98,7 +98,7 @@ const DataTable = () => {
 
   const handleSaveClick = async () => {
     // Save the updated order value
-    console.log(productCode)
+    ////console.log(productCode)
     const updatedData = {
       product_code: productCode,
       new_decided_order: updatedOrder[editingRow],
@@ -161,7 +161,7 @@ const DataTable = () => {
       .then((response) => {
         if (!response.ok) {
           return response.json().then(data => {
-            console.log(data.error)
+            ////console.log(data.error)
 
             errorUpload(data.error);
           });
@@ -189,7 +189,7 @@ const DataTable = () => {
       },
     });
     const data = await response.json();
-    console.log(data)
+    ////console.log(data)
     setActiveTrucks(data);
   };
 
@@ -221,14 +221,14 @@ const DataTable = () => {
 
       const responseData = await response.json();
 
-      console.log(responseData)
+      ////console.log(responseData)
 
       const formattedData = Object.keys(responseData).map((key) => ({
         truck_name: key,
         data: responseData[key],
       }));
       setWaitingTrucksData(formattedData);
-      console.log(formattedData)
+      ////console.log(formattedData)
     }
     if (shouldFetchData) {
       fetchWaitingTrucksData();
@@ -259,7 +259,7 @@ const DataTable = () => {
 
 
     };
-    console.log(updatedData)
+    ////console.log(updatedData)
     fetch(`${process.env.REACT_APP_PUBLIC_URL}/approve_products/`, {
       method: 'POST',
       body: JSON.stringify(updatedData),
@@ -354,7 +354,7 @@ const DataTable = () => {
 
       if (response.ok) {
         const responseData = await response.json();
-        console.log("Approved waiting truck:", responseData);
+        //console.log("Approved waiting truck:", responseData);
 
         // Remove the truck from the waitingTrucksData state
         setWaitingTrucksData((prevData) => {
@@ -514,7 +514,7 @@ const DataTable = () => {
 
 
   useEffect(() => {
-    console.log("useEffect called")
+    //console.log("useEffect called")
     if (editData) {
 
 
@@ -1022,7 +1022,7 @@ const DataTable = () => {
 
                             };
                             setDeleteData(data);
-                            console.log(deleteConfirm)
+                            //console.log(deleteConfirm)
 
 
                           }

@@ -41,7 +41,7 @@ const DataTable = () => {
 
   async function fetchSalersData() {
     const access_token = await localforage.getItem('access_token');
-    console.log(access_token);
+    //console.log(access_token);
     fetch(`${process.env.REACT_APP_PUBLIC_URL}/collapsed_salers/`, {
       headers: {
         'Content-Type': 'application/json',
@@ -97,7 +97,7 @@ const DataTable = () => {
 
   /*
   useEffect(() => {
-    console.log(dataTable);
+    //console.log(dataTable);
   }, [dataTable]);
 */
 
@@ -145,7 +145,7 @@ const DataTable = () => {
     
   };
   useEffect(() => {
-    console.log(deleteConfirm)
+    //console.log(deleteConfirm)
   },[deleteConfirm]);
 
   const successDelete = () => {

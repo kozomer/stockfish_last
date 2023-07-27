@@ -22,7 +22,7 @@ function AuthNavbar(props) {
   
   // Determine whether to show the navbar items based on the current route
   const showNavbarItems = location.pathname !== "/auth/login";
-  console.log(showNavbarItems)
+  //console.log(showNavbarItems)
 
   // Toggle the navbar collapse
   const toggleCollapse = () => {

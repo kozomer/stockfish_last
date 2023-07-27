@@ -181,7 +181,7 @@ function Sidebar(props) {
         
         if (response.ok) {
             // Remove the token from async storage
-            console.log("successful")
+            //console.log("successful")
 
             await localforage.removeItem('access_token');
             await localforage.removeItem('refresh_token');
@@ -193,7 +193,7 @@ function Sidebar(props) {
            // navigation.navigate("Login")
         }
         if (!response.ok){
-          console.log('Bearer '+ String(access_token))
+          //console.log('Bearer '+ String(access_token))
         }
     } catch (error) {
         console.error(error);
@@ -205,9 +205,9 @@ function Sidebar(props) {
   useEffect(() => {
     async function fetchData() {
       const firstName = await localforage.getItem('first_name');
-      console.log(firstName)
+      //console.log(firstName)
       const lastName = await localforage.getItem("last_name");
-      console.log(lastName)
+      //console.log(lastName)
       setName(firstName);
       setLastName(lastName)
     }

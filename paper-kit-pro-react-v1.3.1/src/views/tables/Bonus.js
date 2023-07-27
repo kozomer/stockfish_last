@@ -67,7 +67,7 @@ function UserProfile() {
     const saler_id = {
       id: member
     };
-    console.log(saler_id)
+
 
     const access_token = await localforage.getItem('access_token');
     fetch(`${process.env.REACT_APP_PUBLIC_URL}/salers_card/`, {
@@ -82,10 +82,10 @@ function UserProfile() {
 
       .then((data) => {
 
-        console.log(data);
+
 
         setSalersWholeData(data)
-        console.log(salersWholeData)
+
         setIsSelected(true)
       })
 
@@ -95,7 +95,7 @@ function UserProfile() {
   useEffect(() => {
     if (salersWholeData) {
       // Execute the code you want to run when salersWholeData is changed.
-      console.log('salersWholeData has changed:', salersWholeData);
+
     }
   }, [salersWholeData]);
 
@@ -106,7 +106,7 @@ function UserProfile() {
       job_start_date: newSalerStatus,
       saler_type: newSalerType,
     };
-    console.log(newSaler)
+
     fetch(`${process.env.REACT_APP_PUBLIC_URL}/add_salers/`, {
       method: "POST",
       body: JSON.stringify(newSaler),
@@ -118,7 +118,7 @@ function UserProfile() {
       .then((response) => {
         if (!response.ok) {
           return response.json().then(data => {
-            console.log(data.error)
+
             errorUpload(data.error);
 
           });
@@ -130,7 +130,7 @@ function UserProfile() {
         }
       })
       .catch((error) => {
-        console.log(error);
+
       });
   };
 
@@ -139,7 +139,7 @@ function UserProfile() {
   async function fetchSalersData() {
 
     const access_token = await localforage.getItem('access_token');
-    console.log(access_token)
+
     fetch(`${process.env.REACT_APP_PUBLIC_URL}/collapsed_salers/`, {
       headers: {
         'Content-Type': 'application/json',
@@ -148,7 +148,7 @@ function UserProfile() {
     })
       .then(response => response.json())
       .then(data => {
-        console.log(data)
+
         setSalers({
           active_salers_list: data.active_salers_list,
           passive_salers_list: data.passive_salers_list,
@@ -173,7 +173,7 @@ function UserProfile() {
         },
       });
       const data = await response.json();
-      console.log(data)
+
       setSalerTableData(data);
     } catch (error) {
       console.error("Error fetching saler table data:", error);
@@ -191,7 +191,7 @@ function UserProfile() {
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
-    console.log(name, value);
+
   
     // Check if the field requires a float value
     const floatFields = [
@@ -222,14 +222,14 @@ function UserProfile() {
         [name]: value,
       }));
     }
-    console.log('Updated formData:', formData);
+
   };
   
   
 
   const handleSave = (staffId) => {
     // Create an object with the new data
-    console.log(isActive)
+
     if (isActive === "") {
       setIsActive((prevIsActive) => {
         // If the previous value is empty, set it to salersWholeData["is_active"]
@@ -288,8 +288,7 @@ function UserProfile() {
     }
 
     
-    console.log('New data:', newData);
-    console.log('Old data:', salersWholeData);
+
 
   };
 
@@ -324,7 +323,7 @@ function UserProfile() {
   };
   const handleDeleteSaler = async (id) => {
     // Delete the saler with the given id
-    console.log(id)
+    //console.log(id)
     const delete_id = {
       id: id
     }
@@ -373,12 +372,12 @@ function UserProfile() {
     // Create a copy of the original data to use as default values
     setOriginalData(salersWholeData);
     setActivity(salersWholeData["is_active"])
-    console.log(activity)
+    //console.log(activity)
     setFormData(salersWholeData);
   }, [salersWholeData]);
 
   const successAdd = () => {
-    console.log("success")
+    //console.log("success")
 
     setAlert(
       <ReactBSAlert
@@ -401,7 +400,7 @@ function UserProfile() {
 
 
   const successDelete = () => {
-    console.log("success")
+    //console.log("success")
 
     setAlert(
       <ReactBSAlert

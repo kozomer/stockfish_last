@@ -226,7 +226,7 @@ function Charts() {
 
   useEffect(() => {
     if (productCode) {
-      console.log("aaaaa")
+      //console.log("aaaaa")
       const parsedProductCode = parseInt(productCode, 10);
       setSelectedItem({ value: parsedProductCode });
       setLeadTime(2);
@@ -245,7 +245,7 @@ function Charts() {
 
   useEffect(() => {
     if (selectedItem && leadTime && serviceLevel && forecast) {
-      console.log("sd")
+      //console.log("sd")
       setSaveDisabled(false);
     } else {
       setSaveDisabled(true);
@@ -255,7 +255,7 @@ function Charts() {
   const handleSave = async () => {
     // handle the save logic here
     
-    console.log("aaaaa")
+    //console.log("aaaaa")
     const access_token = await localforage.getItem('access_token');
     
     const selectData = { product_code: selectedItem.value, lead_time: leadTime, service_level:serviceLevel, forecast_period: forecast};
@@ -273,7 +273,7 @@ function Charts() {
       if (!response.ok) {
         return response.json().then(data => {
 
-          console.log(data)
+          //console.log(data)
           errorUpload(data.error);
           setTableData(null);
           setResult(null);
@@ -318,7 +318,7 @@ function Charts() {
 
   }
   useEffect(() => {
-    console.log(tableData);
+    //console.log(tableData);
   }, [tableData,productCode]);
 
 
@@ -335,7 +335,7 @@ function Charts() {
     const historicalSales = combinedSales.slice(0, result.avrg_sales.length);
     const futureSales = combinedSales.slice(result.avrg_sales.length);
     const futureDates = result.avrg_future_forecast_dates;
-    console.log(futureDates)
+    //console.log(futureDates)
   
     charts_ave = {
       data: {
@@ -406,7 +406,7 @@ function Charts() {
   
   let charts_holt = {};
   if ( result && result.holt_dates_for_sales && result.holt_sales && result.holt_future_forecast_dates && result.holt_future_sales) {
-    console.log("sdad")
+    //console.log("sdad")
     const combinedDates = [...result.holt_dates_for_sales, ...result.holt_future_forecast_dates];
     const combinedSales = [...result.holt_sales, ...result.holt_future_sales];
     const historicalSales = combinedSales.slice(0, result.holt_sales.length);
@@ -483,7 +483,7 @@ function Charts() {
   
   let charts_exp = {};
   if ( result && result.exp_dates_for_sales && result.exp_sales && result.exp_future_forecast_dates && result.exp_future_sales) {
-    console.log("sdad")
+    //console.log("sdad")
     const combinedDates = [...result.exp_dates_for_sales, ...result.exp_future_forecast_dates];
     const combinedSales = [...result.exp_sales, ...result.exp_future_sales];
     const historicalSales = combinedSales.slice(0, result.exp_sales.length);

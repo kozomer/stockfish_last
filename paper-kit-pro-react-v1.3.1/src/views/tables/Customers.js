@@ -44,7 +44,7 @@ const DataTable = () => {
   useEffect(() => {
     async function fetchData() {
       const access_token = await localforage.getItem('access_token'); 
-      console.log(access_token)
+      //console.log(access_token)
       const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/customers/`,{
        
         headers: {
@@ -64,7 +64,7 @@ const DataTable = () => {
 
   /*
   useEffect(() => {
-    console.log(dataTable);
+    //console.log(dataTable);
   }, [dataTable]);
 */
 
@@ -93,7 +93,7 @@ const DataTable = () => {
       .then((response) => {
         if (!response.ok) {
           return response.json().then(data => {
-            console.log(data.error)
+            //console.log(data.error)
             setIsLoading(false);
             errorUpload(data.error);
           });
@@ -124,7 +124,7 @@ const DataTable = () => {
   };
   
   const warningWithConfirmAndCancelMessage = () => {
-    console.log("sadsads"),
+    //console.log("sadsads"),
     setAlert(
       
       <ReactBSAlert
@@ -151,7 +151,7 @@ const DataTable = () => {
     
   };
   useEffect(() => {
-    console.log(deleteConfirm)
+    //console.log(deleteConfirm)
   },[deleteConfirm]);
 
   const successDelete = () => {
@@ -170,7 +170,7 @@ const DataTable = () => {
     );
   };
   const successEdit = (s) => {
-    console.log("edit success")
+    //console.log("edit success")
     setAlert(
       <ReactBSAlert
         success
@@ -244,7 +244,7 @@ const DataTable = () => {
     useEffect(() => {
       async function deleteFunc() {
       if (deleteConfirm) {
-       console.log("delete")
+       //console.log("delete")
        const access_token =  await localforage.getItem('access_token'); 
         fetch(`${process.env.REACT_APP_PUBLIC_URL}/delete_customers/`, {
           method: "POST",
@@ -278,13 +278,13 @@ const DataTable = () => {
       setArea(row.area);
 
       setShowPopup(!showPopup);
-      console.log(row)
+      //console.log(row)
     };
 
 
     const handleSubmit = async (e) => {
       const access_token = await localforage.getItem('access_token'); 
-      console.log(oldData)
+      //console.log(oldData)
       const updatedData = {
         new_customer_code:customerCode,
         new_description:description,
@@ -304,7 +304,7 @@ const DataTable = () => {
         old_area:oldData[6],
         
       };
-      console.log(updatedData)
+      //console.log(updatedData)
       fetch(`${process.env.REACT_APP_PUBLIC_URL}/edit_customers/`, {
       method: 'POST',
       body: JSON.stringify(updatedData),
@@ -343,7 +343,7 @@ const DataTable = () => {
     };
 
     useEffect(() => {
-      console.log("useEffect called")
+      //console.log("useEffect called")
       if(editData){
         
         setCustomerCode(editData[0]);

@@ -454,7 +454,7 @@ class AddSalesView(APIView):
         except OperationalError as e:
             return JsonResponse({'error': f"Database error: {str(e)}"}, status=500)
         except Exception as e:
-            traceback.print_exc()
+            
             return JsonResponse({'error': str(e)}, status=500)
 
 
@@ -607,7 +607,7 @@ class EditSaleView(APIView):
             return JsonResponse({'error': str(e)}, status=400)
 
         except Exception as e:
-            traceback.print_exc()
+            
             return JsonResponse({'error': str(e)}, status=500)
 
 
@@ -1225,7 +1225,7 @@ class AddSalerView(APIView):
         except ValueError as e:
             return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD' "}, status=400)
         except Exception as e:
-            traceback.print_exc()
+            
             return JsonResponse({'error': str(e)}, status=500)
 
 class EditSalerView(APIView):
@@ -1243,7 +1243,7 @@ class EditSalerView(APIView):
             # Check if name is provided
             name = new_data['name']
             if not name:
-                traceback.print_exc()
+                
                 return JsonResponse({'error': "Missing required parameter: 'name'"}, status=400)
             
             # Get the saler object
@@ -1264,14 +1264,14 @@ class EditSalerView(APIView):
                         except IndexError as e:
                             return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD'"}, status=400)
                         except Exception as e:
-                            traceback.print_exc()
+                            
                             return JsonResponse({'error': str(e)}, status=400)
                     value = new_data[f'{field}']
 
                     if value is not None and value != '':
                         setattr(saler, field, value)
                     else:
-                        traceback.print_exc() 
+                         
                         return JsonResponse({'error': "One or more data field is empty!"}, status=400)
 
 
@@ -1299,27 +1299,27 @@ class EditSalerView(APIView):
                         if value is not None and value != '':
                             setattr(saler, field, value)
                         else:
-                            traceback.print_exc() 
+                             
                             return JsonResponse({'error': "One or more data field is empty!"}, status=400)
 
 
                     saler.save()
                     return JsonResponse({'message': "Your changes have been successfully saved"}, status=200)
                 except Exception as e:
-                    traceback.print_exc()
+                    
                     return JsonResponse({'error': str(e)}, status=500)
 
 
         except Salers.DoesNotExist:
-            traceback.print_exc()
+            
             return JsonResponse({'error': "Saler not found"}, status=400)
 
         except ValueError as e:
-            traceback.print_exc()
+            
             return JsonResponse({'error': str(e)}, status=400)
 
         except Exception as e:
-            traceback.print_exc()
+            
             return JsonResponse({'error': str(e)}, status=500)
 
 
@@ -2817,7 +2817,7 @@ class ROPView(APIView):
 
 # Sort the tuples by jdatetime
         product_values.sort()
-        print(product_values)
+
 
         # If you want to separate the sorted dates and sales amount into two lists
         dates_for_sales = [date.strftime('%Y-%m-%d') for date, _ in product_values]
@@ -2826,8 +2826,7 @@ class ROPView(APIView):
         # sales = [item.sale_amount for item in product_values]
         # dates_for_sales = dates_for_sales[::-1]
         # sales = sales[::-1]
-        print(dates_for_sales)
-        print(sales)
+
         product_values = [[1, item.month, item.year, item.product_code, item.sale_amount] for item in product_values_raw]
 
         holt_all_sales, holt_prev_sales, holt_future_sales, holt_future_stocks, holt_order_flag, holt_safety_stock, holt_rop, holt_order = get_model("holt", True, jalali_date_str, product_code, product_values, stock, lead_time, service_level, 12, forecast_period )
