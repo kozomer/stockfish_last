@@ -79,8 +79,8 @@ function AdminNavbar(props) {
 
   useEffect(() => {
     
-      console.log(notifications)
-      console.log(notifications.length)
+      //console.log(notifications)
+      //console.log(notifications.length)
       setUnreadCount(notifications.length);
  
 
@@ -92,7 +92,7 @@ function AdminNavbar(props) {
     localforage.getItem('notifications').then((data) => {
       // If there are no notifications in localforage, set an empty array as the default value
       const savedNotifications = data ? JSON.parse(data) : [];
-      console.log(savedNotifications)
+      //console.log(savedNotifications)
       setNotifications(savedNotifications);
       
     });

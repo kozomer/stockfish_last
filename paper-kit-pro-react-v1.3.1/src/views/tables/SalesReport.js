@@ -83,7 +83,7 @@ const DataTable = () => {
 
     // Send the data to the Django endpoint
     const access_token = await localforage.getItem('access_token'); 
-    const response = await fetch("https://vividstockfish.com/api/sales_report/", {
+    const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/sales_report/`, {
       method: "POST",
       headers: { "Content-Type": "application/json", 
       'Authorization': 'Bearer '+ String(access_token)},
@@ -94,7 +94,7 @@ const DataTable = () => {
       }),
     });
     const data = await response.json();
-    console.log(data)
+    //console.log(data)
     setDataTable(data);
     setDataChanged(false);
     setRenderEdit(false);

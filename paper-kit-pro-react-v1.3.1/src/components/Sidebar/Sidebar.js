@@ -145,7 +145,8 @@ function Sidebar(props) {
     if (navigator.platform.indexOf("Win") > -1) {
       ps = new PerfectScrollbar(sidebar.current, {
         suppressScrollX: true,
-        suppressScrollY: false
+        suppressScrollY: false,
+        
       });
     }
     return function cleanup() {
@@ -166,7 +167,7 @@ function Sidebar(props) {
       
         const access_token = await localforage.getItem('access_token');
         const refresh_token = await localforage.getItem('refresh_token');
-        const response = await fetch('https://vividstockfish.com/api/logout/', {
+        const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/logout/`, {
             
             method: 'POST',
             headers: {
@@ -180,7 +181,7 @@ function Sidebar(props) {
         
         if (response.ok) {
             // Remove the token from async storage
-            console.log("successful")
+            //console.log("successful")
 
             await localforage.removeItem('access_token');
             await localforage.removeItem('refresh_token');
@@ -192,7 +193,7 @@ function Sidebar(props) {
            // navigation.navigate("Login")
         }
         if (!response.ok){
-          console.log('Bearer '+ String(access_token))
+          //console.log('Bearer '+ String(access_token))
         }
     } catch (error) {
         console.error(error);
@@ -204,9 +205,9 @@ function Sidebar(props) {
   useEffect(() => {
     async function fetchData() {
       const firstName = await localforage.getItem('first_name');
-      console.log(firstName)
+      //console.log(firstName)
       const lastName = await localforage.getItem("last_name");
-      console.log(lastName)
+      //console.log(lastName)
       setName(firstName);
       setLastName(lastName)
     }
@@ -248,7 +249,7 @@ function Sidebar(props) {
               style={{
                 display: "block",
                 margin: "auto",
-                marginTop: "120px",
+                marginTop: "50px",
                 width: "120px",
                 height: "40px",
                 borderRadius: "20px",

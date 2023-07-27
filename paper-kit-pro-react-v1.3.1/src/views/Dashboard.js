@@ -20,7 +20,7 @@ import { Line, Bar, Doughnut } from "react-chartjs-2";
 // react plugin for creating vector maps
 import { VectorMap } from "react-jvectormap";
 import { Pie } from "react-chartjs-2";
-
+import '../assets/css/Dashboard.css';
 // reactstrap components
 import {
   Badge,
@@ -36,6 +36,9 @@ import {
   Table,
   Row,
   Col,
+  Container,
+  Form,
+
   UncontrolledTooltip
 } from "reactstrap";
 
@@ -84,11 +87,66 @@ function Dashboard() {
   const [currentDateTime] = useState(new Date());
   const [date, setDate] = useState([]);
   const [salesData, setSalesData] = useState([]);
-  
+
   const [salesTotalData, setSalesTotalData] = useState([]);
   const [salesMonthlyData, setSalesMonthlyData] = useState([]);
   const [notificationData, setNotificationData] = useState([]);
   const [notificationsAdded, setNotificationsAdded] = useState(false);
+  const [kgSaleBarChartData, setKgSaleBarChartData] = useState({
+    daily_kg_sales: [],
+    average_kg_sale: [],
+    daily_target: []
+  });
+
+  const [target, setTarget] = useState(3500); // Set a default target
+
+  const [yearlyMonthlySalesData, setYearlyMonthlySalesData] = useState({});
+  // Define data for the Bar chart
+  const data = {
+    labels: [...Array(31).keys()].map(num => num + 1),
+    datasets: [
+      {
+        label: 'Kg Sale',
+        data: kgSaleBarChartData.daily_kg_sales,
+        backgroundColor: 'rgba(0,123,255,0.5)',
+      },
+      {
+        label: 'Average',
+        data: kgSaleBarChartData.average_kg_sale,
+        type: 'line',
+        borderColor: 'red',
+        backgroundColor: 'red',
+        borderWidth: 2,
+        fill: false,
+        lineTension: 0, // Make line straight
+        pointRadius: 0, // Remove points
+      },
+      {
+        label: 'Target',
+        data: kgSaleBarChartData.daily_target,
+        type: 'line',
+        borderColor: 'green',
+        backgroundColor: 'green',
+        borderWidth: 2,
+        fill: false,
+        lineTension: 0, // Make line straight
+        pointRadius: 0, // Remove points
+      }
+    ]
+  };
+
+  const options = {
+    responsive: true,
+    legend: {
+      labels: {
+        // This more specific font property overrides the global property
+        fontColor: 'black',
+        fontSize: 18,
+        fontStyle: 'bold'
+      }
+    }
+  };
+
 
   //Notification
   const notify = useCallback((place, productCode) => {
@@ -131,14 +189,14 @@ function Dashboard() {
     };
     notifications.push(options);
     localforage.setItem('notifications', JSON.stringify([...notifications]));
-   // notificationAlert.current.notificationAlert(options);
-    console.log(notifications)
+    // notificationAlert.current.notificationAlert(options);
+    //console.log(notifications)
   }, []);
-  
+
   const fetchNotificationData = async () => {
     const access_token = await localforage.getItem('access_token');
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/notifications/', {
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/notifications/`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -156,22 +214,44 @@ function Dashboard() {
   useEffect(() => {
     fetchNotificationData();
   }, []);
-  
+
   useEffect(() => {
     if (!notificationsAdded && notificationData.length > 0) {
       notificationData.forEach((notification) => {
         const [id, date, productCode, orderAvrg, orderExp, orderHolt] = notification;
-        console.log(notificationData);
+        //console.log(notificationData);
         notify("tr", productCode);
       });
       setNotificationsAdded(true);
     }
   }, [notificationData, notificationsAdded]);
-  
+
+
+
+
+  useEffect(() => {
+    const fetchDailyReportMotnhly = async () => {
+      const access_token = await localforage.getItem('access_token');
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/daily_report/total_data_by_monthly/`, {
+
+        headers: {
+
+          'Authorization': 'Bearer ' + String(access_token)
+        },
+
+      });
+      const data = await response.json();
+
+      setSalesMonthlyData(data);
+      //console.log(data)
+    };
+    fetchDailyReportMotnhly();
+  }, []);
+
   useEffect(() => {
     const fetchData = async () => {
       const access_token = await localforage.getItem('access_token');
-      const response = await fetch("https://vividstockfish.com/api/top_products/", {
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/top_products/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -180,7 +260,7 @@ function Dashboard() {
         body: JSON.stringify({ report_type: filterOption }),
       });
       const data = await response.json();
-      console.log(data)
+      //console.log(data)
       setTopProducts(data.top_products_list);
       setTopProductsPieData({
         labels: data.top_products_pie_chart.map((item) => item[0]),
@@ -192,7 +272,7 @@ function Dashboard() {
           },
         ],
       });
-      
+
 
     };
     fetchData();
@@ -200,9 +280,39 @@ function Dashboard() {
 
 
   useEffect(() => {
+    const fetchDataArea = async () => {
+      const access_token = await localforage.getItem('access_token');
+
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/customer_area/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': 'Bearer ' + String(access_token)
+        },
+        body: JSON.stringify({ report_type: filterOptionArea }),
+      });
+      const data = await response.json();
+
+      setTopAreas(data.table_data);
+      setTopAreasPieData({
+        labels: data.chart_data_percent.map((item) => item[0]),
+        datasets: [
+          {
+            label: "Top Customers",
+            data: data.chart_data_percent.map((item) => item[1]),
+            backgroundColor: ["#53b100", "#61e8e1", "#f25757", "#f2a05d", "#f2e863", "#5e55ff"],
+          },
+        ],
+      });
+    };
+
+    fetchDataArea();
+  }, [filterOptionArea])
+
+  useEffect(() => {
     const fetchDataCustomers = async () => {
       const access_token = await localforage.getItem('access_token');
-      const response = await fetch("https://vividstockfish.com/api/top_customers/", {
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/top_customers/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -211,6 +321,7 @@ function Dashboard() {
         body: JSON.stringify({ report_type: filterOptionCust }),
       });
       const data = await response.json();
+      //console.log(data)
       setTopCustomers(data.top_customers_list);
       setTopCustomersPieData({
         labels: data.top_customers_pie_chart.map((item) => item[0]),
@@ -227,10 +338,11 @@ function Dashboard() {
   }, [filterOptionCust])
 
 
+
   useEffect(() => {
     const fetchExchange = async () => {
       const access_token = await localforage.getItem('access_token');
-      const response = await fetch("https://vividstockfish.com/api/exchange_rate/", {
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/exchange_rate/`, {
 
         headers: {
 
@@ -239,7 +351,7 @@ function Dashboard() {
 
       });
       const data = await response.json();
-      console.log(data["jalali_date"])
+      //console.log(data["jalali_date"])
       setCurrency(data);
 
     };
@@ -250,7 +362,7 @@ function Dashboard() {
   useEffect(() => {
     const fetchDailyReportSaler = async () => {
       const access_token = await localforage.getItem('access_token');
-      const response = await fetch("https://vividstockfish.com/api/daily_report/saler_data/", {
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/daily_report/saler_data/`, {
 
         headers: {
 
@@ -259,18 +371,18 @@ function Dashboard() {
 
       });
       const data = await response.json();
-      console.log(data)
+      //console.log(data)
       setSalesData(data.sales_data || []);
       setDate(data.jalali_date || []);
-      
+
     };
     fetchDailyReportSaler();
   }, []);
-  
+
   useEffect(() => {
     const fetchDailyReportTotal = async () => {
       const access_token = await localforage.getItem('access_token');
-      const response = await fetch("https://vividstockfish.com/api/daily_report/total_data/", {
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/daily_report/total_data/`, {
 
         headers: {
 
@@ -279,107 +391,526 @@ function Dashboard() {
 
       });
       const data = await response.json();
-      
+
       setSalesTotalData(data);
-      console.log(salesTotalData)
+      //console.log(salesTotalData)
     };
     fetchDailyReportTotal();
   }, []);
 
+  const handleTargetChange = (event) => {
+    setTarget(event.target.value);
+  };
+
+  const handleFormSubmit = (event) => {
+    event.preventDefault(); // Prevent form from reloading the page
+    fetchKgSaleBarChartData(); // Fetch new chart data with updated target
+  };
+
+
+  const fetchKgSaleBarChartData = async () => {
+    const access_token = await localforage.getItem('access_token');
+
+    const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/daily_report/kg_sale_bar_chart/`, {
+      method: "POST",
+      headers: {
+        'Authorization': 'Bearer ' + String(access_token)
+      },
+      body: JSON.stringify({ target: target }),
+
+    });
+    const data = await response.json();
+    setKgSaleBarChartData(data);
+  };
+
   useEffect(() => {
-    const fetchDailyReportMotnhly = async () => {
+    fetchKgSaleBarChartData(); // Fetch chart data when component mounts
+  }, []); // 
+
+
+  useEffect(() => {
+    const fetchYearlyMonthlySalesData = async () => {
       const access_token = await localforage.getItem('access_token');
-      const response = await fetch("https://vividstockfish.com/api/daily_report/total_data_by_monthly/", {
-
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/daily_report/total_kg_sale_by_monthly/`, {
         headers: {
-
           'Authorization': 'Bearer ' + String(access_token)
         },
-
       });
       const data = await response.json();
-      
-      setSalesMonthlyData(data);
-      console.log(data)
+      //console.log(data)
+      setYearlyMonthlySalesData(data);
     };
-    fetchDailyReportMotnhly();
+    fetchYearlyMonthlySalesData();
   }, []);
 
-  useEffect(() => {
-    const fetchDataArea = async () => {
-      const access_token = await localforage.getItem('access_token');
-      
-      const response = await fetch("https://vividstockfish.com/api/customer_area/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          'Authorization': 'Bearer ' + String(access_token)
-        },
-        body: JSON.stringify({ report_type: filterOptionArea }),
-      });
-      const data = await response.json();
-      
-      setTopAreas(data.table_data);
-      setTopAreasPieData({
-        labels: data.chart_data_percent.map((item) => item[0]),
-        datasets: [
-          {
-            label: "Top Customers",
-            data: data.chart_data_percent.map((item) => item[1]),
-            backgroundColor: ["#53b100", "#61e8e1", "#f25757", "#f2a05d", "#f2e863", "#5e55ff"],
-          },
-        ],
-      });
-    };
-   
-    fetchDataArea();
-  }, [filterOptionArea])
-
-  
   const rowHeaders = [
     'Current Sales (Toman)',
     'Current Sales ($) (Sepidar)',
     'Current Sales ($) (Tablo)',
     'Current Sales (KG)',
   ];
-  
-    
+
+
+  const colors = ['#e6f7ff', '#d9f2e6', '#fcedda', '#e8d7f3']; //soft colors
+  const headerColors = ['#b3e5fc', '#a2d5c6', '#f8cb9c', '#b198d4']; //darker shades for headers
+
+  function getColor(index, isHeader = false) {
+    return isHeader ? headerColors[index % headerColors.length] : colors[index % colors.length];
+  }
+
+
   return (
     <>
       <NotificationAlert ref={notificationAlert} />
-      <div className="content">
-        <Row>
-          <Col lg="3" md="6" sm="6">
-            <Card className="card-stats">
+      <div className="content p-0">
+        {/* 
+      <Row className="justify-content-center">
+    <Col xs="12">
+        <Card className="m-0">
+            <CardHeader className="p-2">
+                <Row>
+                    <Col xs="12">
+                        <CardTitle tag="h4">Dashboard Overview</CardTitle>
+                    </Col>
+                </Row>
+            </CardHeader>
+            <CardBody className="p-2">
+                <Row noGutters>
+                    <Col md="6">
+                        <Card className="m-0">
+                            <CardBody className="p-2">
+                                <Row noGutters>
+                                    <Col md="4" xs="5">
+                                        <div className="icon-big text-center icon-warning">
+                                            <i className="nc-icon nc-globe text-warning" />
+                                        </div>
+                                    </Col>
+                                    <Col md="8" xs="7">
+                                        <div className="numbers">
+                                            <p className="card-category">Currency</p>
+                                            <CardTitle tag="p">{currency} IRR</CardTitle>
+                                        </div>
+                                    </Col>
+                                </Row>
+                            </CardBody>
+                        </Card>
+                    </Col>
+
+                    <Col md="6">
+                        <Card className="m-0">
+                            <CardBody className="p-2">
+                                <Row noGutters>
+                                    <Col md="4" xs="5">
+                                        <div className="icon-big text-center icon-warning">
+                                            <i className="nc-icon nc-calendar-60" />
+                                        </div>
+                                    </Col>
+                                    <Col md="4" xs="7">
+                                        <div className="numbers">
+                                            <p className="card-category">Current Date(Gregorian)</p>
+                                            <CardTitle tag="p">{new Date().toLocaleDateString()}</CardTitle>
+                                        </div>
+                                    </Col>
+
+                                    <Col md="4" xs="7">
+                                        <div className="numbers">
+                                            <p className="card-category">Current Date(Jalali)</p>
+                                            <CardTitle tag="p">{date}</CardTitle>
+                                        </div>
+                                    </Col>
+                                </Row>
+                            </CardBody>
+                        </Card>
+                    </Col>
+                </Row>
+            </CardBody>
+        </Card>
+    </Col>
+</Row>
+*/}
+
+
+        <Row noGutters>
+          <Col md="12">
+            <Card className="m-0">
+              <CardHeader>
+                <Row>
+                  <Col sm="7">
+                    <div className="numbers pull-left">Daily Reports</div>
+                  </Col>
+                </Row>
+              </CardHeader>
               <CardBody>
                 <Row>
-                  <Col md="4" xs="5">
-                    <div className="icon-big text-center icon-warning">
-                      <i className="nc-icon nc-globe text-warning" />
+                  <Col sm="8" className="pr-2" style={{ borderRight: '1px solid #ccc', marginRight: '-15px', paddingRight: '15px' }}>
+                    <Table className="responsive-table" style={{ border: '1px solid #ccc', borderRadius: '20px', overflow: 'hidden' }}>
+                      <thead>
+                        <tr>
+                          <th scope="col" style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(0, true) }}></th>
+                          <th scope="col" style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(0, true) }}>Daily Sales</th>
+                          <th scope="col" style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(0, true) }}>Monthly Sales</th>
+                          <th scope="col" style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(0, true) }}>Yearly Sales</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {salesTotalData.daily_sales &&
+                          salesTotalData.daily_sales.map((_, rowIndex) => (
+                            <tr key={rowIndex}>
+                              <th scope="row" style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(0) }}>{rowHeaders[rowIndex]}</th>
+                              <td style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(0) }}>{salesTotalData.daily_sales[rowIndex]}</td>
+                              <td style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(0) }}>{salesTotalData.monthly_sales[rowIndex]}</td>
+                              <td style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(0) }}>{salesTotalData.yearly_sales[rowIndex]}</td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </Table>
+
+                    <hr className="my-3" />
+
+                    <Table className="responsive-table" style={{ border: '1px solid #ccc', borderRadius: '20px', overflow: 'hidden' }}>
+                      <thead>
+                        <tr>
+                          <th style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(1, true) }}>Experts</th>
+                          <th style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(1, true) }}>Status</th>
+                          <th style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(1, true) }}>Daily Sales</th>
+                          <th style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(1, true) }}>Monthly Sales</th>
+                          <th style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(1, true) }}>Yearly Sales</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {salesData.map((sale, index) => (
+                          <tr key={index}>
+                            <td style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(1) }}>{sale[0]}</td>
+                            <td style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(1) }}>{sale[1] ? 'Active' : 'Inactive'}</td>
+                            <td style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(1) }}>{sale[2]}</td>
+                            <td style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(1) }}>{sale[3]}</td>
+                            <td style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(1) }}>{sale[4]}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+
+                    <hr className="my-3" />
+
+                    <div style={{ overflowX: 'auto' }}>
+                      <Table className="responsive-table" style={{ border: '1px solid #ccc', borderRadius: '20px', overflow: 'hidden' }}>
+                        <thead>
+                          <tr>
+                            <th scope="col" style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(2, true) }}>Year / Month</th>
+                            {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
+                              <th key={month} scope="col" style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(2, true) }}>{month}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {Object.entries(yearlyMonthlySalesData).map(([year, sales]) => (
+                            <tr key={year}>
+                              <th scope="row" style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(2) }}>{year}</th>
+                              {sales.map((sale, index) => (
+                                <td key={index} style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(2) }}>{sale}</td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </Table>
                     </div>
                   </Col>
-                  <Col md="8" xs="7">
-                    <div className="numbers">
-                      <p className="card-category">Currency</p>
-                      <CardTitle tag="p">{currency} IRR</CardTitle>
-                      <p />
+
+                  <hr className="my-3" />
+
+                  <Col sm="4">
+                    <div style={{ overflowX: 'auto' }}>
+                      <Table className="responsive-table" style={{ border: '1px solid #ccc', borderRadius: '20px', overflow: 'hidden' }}>
+                        <thead>
+                          <tr>
+                            <th style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(3, true) }}>Month</th>
+                            <th style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(3, true) }}>Toman</th>
+                            <th style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(3, true) }}>USD</th>
+                            <th style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(3, true) }}>KG</th>
+                            <th style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(3, true) }}>Sepidar</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {salesMonthlyData.map((sale, index) => (
+                            <tr key={index}>
+                              <td style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(3) }}>{index + 1}</td>
+                              <td style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(3) }}>{sale[0]}</td>
+                              <td style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(3) }}>{sale[1]}</td>
+                              <td style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(3) }}>{sale[2]}</td>
+                              <td style={{ textAlign: 'left', border: '1px solid #ccc', backgroundColor: getColor(3) }}>{sale[3]}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </Table>
                     </div>
+                    <hr className="my-3" />
                   </Col>
                 </Row>
               </CardBody>
-              <CardFooter>
-                <hr />
-                <div className="stats">
-                  <i className="fa fa-refresh" />
-                  Update at {currentDateTime.toLocaleString()}
-                </div>
-              </CardFooter>
             </Card>
           </Col>
+          </Row>
 
 
-          <Col lg="3" md="6" sm="6">
-            <Card className="card-stats">
+
+          <Row className="justify-content-center">
+
+            <Col md="4" className="p-2">
+              <Card className="m-0 card-stats flex-fill">
+                <CardBody>
+                  <Card className="m-0">
+                    <CardHeader>
+                      <Row>
+                        <Col xs="6">
+                          <CardTitle tag="h5">Top Five Products</CardTitle>
+                        </Col>
+                        <Col xs="6">
+                          <Label for="selectType">Select Type:</Label>
+                          <Input type="select" name="select" id="selectType" onChange={(e) => setFilterOption(e.target.value)} style={{ fontSize: "0.8rem" }}>
+                            <option value="">Select Type</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="yearly">Yearly</option>
+                          </Input>
+                        </Col>
+                      </Row>
+                    </CardHeader>
+                    <CardBody className="p-2">
+                      <Row className="justify-content-start">
+                        <Col xs="8">
+                          <div style={{ height: '200px', marginTop: "20px", marginBottom: "20px" }}>
+                            <Doughnut
+                              data={topProductsPieData}
+                              options={{
+                                maintainAspectRatio: false,
+                                plugins: {
+                                  legend: {
+                                    position: "right",
+                                    labels: {
+                                      font: {
+                                        size: 10,
+                                      },
+                                      usePointStyle: true,
+                                    },
+                                  },
+                                  tooltips: {
+                                    enabled: false,
+                                  },
+                                  title: {
+                                    display: true,
+                                    position: "top",
+                                    text: "Top Products",
+                                    color: "#66615c",
+                                    font: {
+                                      weight: 400,
+                                      size: 14,
+                                    },
+                                  },
+                                },
+                                cutout: "70%",
+                                scales: {
+                                  y: {
+                                    ticks: {
+                                      display: false,
+                                    },
+                                    grid: {
+                                      drawBorder: false,
+                                      display: false,
+                                    },
+                                  },
+                                  x: {
+                                    grid: {
+                                      drawBorder: false,
+                                      display: false,
+                                    },
+                                    ticks: {
+                                      display: false,
+                                    },
+                                  },
+                                },
+                              }}
+                            />
+                          </div>
+                        </Col>
+                      </Row>
+                    </CardBody>
+                  </Card>
+                </CardBody>
+              </Card>
+            </Col>
+
+            <Col md="4" className="p-2">
+              <Card className="m-0 card-stats flex-fill">
+                <CardBody>
+                  <Card className="m-0">
+                    <CardHeader>
+                      <Row>
+                        <Col xs="6">
+                          <CardTitle tag="h5">Top Five Areas</CardTitle>
+                        </Col>
+                        <Col xs="6">
+                          <Label for="selectType">Select Type:</Label>
+                          <Input type="select" name="select" id="selectType" onChange={(e) => setFilterOptionArea(e.target.value)} style={{ fontSize: "0.8rem" }}>
+                            <option value="">Select Type</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="yearly">Yearly</option>
+                          </Input>
+                        </Col>
+                      </Row>
+                    </CardHeader>
+                    <CardBody className="p-2">
+                      <Row className="justify-content-center">
+                        <Col xs="10">
+                          <div style={{ height: '200px', marginTop: "20px", marginBottom: "20px" }}>
+                            <Doughnut
+                              data={topAreasPieData}
+                              options={{
+                                maintainAspectRatio: false,
+                                plugins: {
+                                  legend: {
+                                    position: "right",
+                                    labels: {
+                                      font: {
+                                        size: 10,
+                                      },
+                                      usePointStyle: true,
+                                    },
+                                  },
+                                  tooltips: {
+                                    enabled: false,
+                                  },
+                                  title: {
+                                    display: true,
+                                    position: "top",
+                                    text: "Top Areas",
+                                    color: "#66615c",
+                                    font: {
+                                      weight: 400,
+                                      size: 14,
+                                    },
+                                  },
+                                },
+                                cutout: "70%",
+                                scales: {
+                                  y: {
+                                    ticks: {
+                                      display: false,
+                                    },
+                                    grid: {
+                                      drawBorder: false,
+                                      display: false,
+                                    },
+                                  },
+                                  x: {
+                                    grid: {
+                                      drawBorder: false,
+                                      display: false,
+                                    },
+                                    ticks: {
+                                      display: false,
+                                    },
+                                  },
+                                },
+                              }}
+                            />
+                          </div>
+                        </Col>
+                      </Row>
+                    </CardBody>
+                  </Card>
+                </CardBody>
+              </Card>
+            </Col>
+
+            <Col md="4" className="p-2">
+              <Card className="m-0 card-stats flex-fill">
+                <CardBody>
+                  <Card className="m-0">
+                    <CardHeader>
+                      <Row>
+                        <Col xs="6">
+                          <CardTitle tag="h5">Top Five Customers</CardTitle>
+                        </Col>
+                        <Col xs="6">
+                          <Label for="selectType">Select Type:</Label>
+                          <Input type="select" name="select" id="selectType" onChange={(e) => setFilterOptionCust(e.target.value)} style={{ fontSize: "0.8rem" }}>
+                            <option value="">Select Type</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="yearly">Yearly</option>
+                          </Input>
+                        </Col>
+                      </Row>
+                    </CardHeader>
+                    <CardBody className="p-2">
+                      <Row className="justify-content-center">
+                        <Col xs="10">
+                          <div style={{ height: '200px', marginTop: "20px", marginBottom: "20px" }}>
+                            <Doughnut
+                              data={topCustomersPieData}
+                              options={{
+                                maintainAspectRatio: false,
+                                plugins: {
+                                  legend: {
+                                    position: "right",
+                                    labels: {
+                                      font: {
+                                        size: 10,
+                                      },
+                                      usePointStyle: true,
+                                    },
+                                  },
+                                  tooltips: {
+                                    enabled: false,
+                                  },
+                                  title: {
+                                    display: true,
+                                    position: "top",
+                                    text: "Top Customers",
+                                    color: "#66615c",
+                                    font: {
+                                      weight: 400,
+                                      size: 14,
+                                    },
+                                  },
+                                },
+                                cutout: "70%",
+                                scales: {
+                                  y: {
+                                    ticks: {
+                                      display: false,
+                                    },
+                                    grid: {
+                                      drawBorder: false,
+                                      display: false,
+                                    },
+                                  },
+                                  x: {
+                                    grid: {
+                                      drawBorder: false,
+                                      display: false,
+                                    },
+                                    ticks: {
+                                      display: false,
+                                    },
+                                  },
+                                },
+                              }}
+                            />
+                          </div>
+                        </Col>
+                      </Row>
+                    </CardBody>
+                  </Card>
+                </CardBody>
+              </Card>
+            </Col>
+
+          </Row>
+
+
+
+          {/* 
+          <Col lg="3" md="6" sm="6" className="d-flex">
+            <Card className="card-stats m-2 flex-fill">
               <CardBody>
                 <Row>
                   <Col md="4" xs="5">
@@ -409,514 +940,55 @@ function Dashboard() {
 
             </Card>
           </Col>
-
-          <Col lg="3" md="6" sm="6">
-            <Card className="card-stats">
-              <CardBody>
-                <Row>
-                  <Col md="4" xs="5">
-                    <div className="icon-big text-center icon-warning">
-                      <i className="nc-icon nc-vector text-danger" />
-                    </div>
-                  </Col>
-                  <Col md="8" xs="7">
-                    <div className="numbers">
-                      <p className="card-category">Errors</p>
-                      <CardTitle tag="p">23</CardTitle>
-                      <p />
-                    </div>
-                  </Col>
-                </Row>
-              </CardBody>
-              <CardFooter>
-                <hr />
-                <div className="stats">
-                  <i className="fa fa-clock-o" />
-                  In the last hour
-                </div>
-              </CardFooter>
-            </Card>
-          </Col>
-          <Col lg="3" md="6" sm="6">
-            <Card className="card-stats">
-              <CardBody>
-                <Row>
-                  <Col md="4" xs="5">
-                    <div className="icon-big text-center icon-warning">
-                      <i className="nc-icon nc-favourite-28 text-primary" />
-                    </div>
-                  </Col>
-                  <Col md="8" xs="7">
-                    <div className="numbers">
-                      <p className="card-category">Followers</p>
-                      <CardTitle tag="p">+45K</CardTitle>
-                      <p />
-                    </div>
-                  </Col>
-                </Row>
-              </CardBody>
-              <CardFooter>
-                <hr />
-                <div className="stats">
-                  <i className="fa fa-refresh" />
-                  Update now
-                </div>
-              </CardFooter>
-            </Card>
-          </Col>
-        </Row>
-
-        <Row>
-          <Col md="12">
-            <Card>
-              <CardHeader>
-                <Row>
-                  <Col sm="7">
-                    <div className="numbers pull-left">Daily Reports</div>
-                  </Col>
-                  
-                </Row>
-              </CardHeader>
-              <CardBody>
-                <Row>
-                <Table>
-         <thead>
-        <tr>
-          <th scope="col"></th>
-          <th scope="col">Daily Sales</th>
-          <th scope="col">Monthly Sales</th>
-          <th scope="col">Yearly Sales</th>
-        </tr>
-      </thead>
-      <tbody>
-        {salesTotalData.daily_sales &&
-          salesTotalData.daily_sales.map((_, rowIndex) => (
-            <tr key={rowIndex}>
-              <th scope="row">{rowHeaders[rowIndex]}</th>
-              <td>{salesTotalData.daily_sales[rowIndex]}</td>
-              <td>{salesTotalData.monthly_sales[rowIndex]}</td>
-              <td>{salesTotalData.yearly_sales[rowIndex]}</td>
-            </tr>
-          ))}
-      </tbody>
-      </Table>
-      </Row>
-      <hr style={{ marginTop: '30px', marginBottom: '30px', borderWidth: '3px' }} />
-
-      <Row>
-      <Table responsive>
-        <thead>
-          <tr>
-            <th>Experts</th>
-            <th>Status</th>
-            <th>Daily Sales</th>
-            <th>Monthly Sales</th>
-            <th>Yearly Sales</th>
-          </tr>
-        </thead>
-        <tbody>
-          {salesData.map((sale, index) => (
-            <tr key={index}>
-              <td>{sale[0]}</td>
-              <td>{sale[1] ? 'Active' : 'Inactive'}</td>
-              <td>{sale[2]}</td>
-              <td>{sale[3]}</td>
-              <td>{sale[4]}</td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
-      
-
-      </Row>
-      <hr style={{ marginTop: '30px', marginBottom: '30px', borderWidth: '3px' }} />
-
-      <Row>
-              <Table>
-              <thead>
-        <tr>
-          <th>Month</th>
-          <th>Toman</th>
-          <th>USD</th>
-          <th>KG</th>
-          <th>Sepidar</th>
-        </tr>
-      </thead>
-      <tbody>
-        {salesMonthlyData.map((sale, index) => (
-          <tr key={index}>
-            <td>{index + 1}</td>
-            <td>{sale[0]}</td>
-            <td>{sale[1]}</td>
-            <td>{sale[2]}</td>
-            <td>{sale[3]}</td>
-          </tr>
-        ))}
-      </tbody>
-      </Table>
-      </Row>
-              </CardBody>
-              
-            </Card>
-          </Col>
-          
-
-        
-        </Row>
-
-        <Row>
-          <Col md="6">
-            <Card>
-              <Row>
-                <Col xs="5">
-                  <CardHeader>
-                    <CardTitle tag="h4">Top Five Products</CardTitle>
-
-                  </CardHeader>
-                </Col>
-                <Col xs="3"></Col>
-                <Col xs="3" style={{marginTop:"10px"}}>
-                  <Label for="selectType">Select Type:</Label>
-                  <Input type="select" name="select" id="selectType" onChange={(e) => setFilterOption(e.target.value)}>
-                    <option value="">Select Type</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="yearly">Yearly</option>
-
-                  </Input>
-                </Col>
-              </Row>
-              <CardBody>
-                <Row>
-
-                  <Col md="12">
-
-                    <Table responsive>
-                      <thead>
-                        <tr>
-                          <th>#</th>
-                          <th>Product Name</th>
-                          <th className="text-right">Total Sales</th>
-
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {topProducts.map((product, index) => (
-                          <tr key={product[0]}>
-                            <td>{index + 1}</td>
-                            <td>{product[0]}</td>
-                            <td className="text-right">{product[1]}</td>
-
-                          </tr>
-                        ))}
-                      </tbody>
-                    </Table>
-
-                    <Col md="8">
-                      <Doughnut
-                        style={{ marginTop: "50px" }}
-                        data={topProductsPieData}
-                        options={{
-                          plugins: {
-                            legend: {
-                              position: "right",
-                              labels: {
-                                font: {
-                                  size: 12,
-                                },
-                                usePointStyle: true,
-                              },
-                            },
-                            tooltips: {
-                              enabled: false,
-                            },
-                            title: {
-                              display: true,
-                              position: "top",
-                              text: "Top Products",
-                              color: "#66615c",
-                              font: {
-                                weight: 400,
-                                size: 20,
-                              },
-
-                            },
-                          },
-
-                          cutout: "70%",
-                          scales: {
-                            y: {
-                              ticks: {
-                                display: false,
-                              },
-                              grid: {
-                                drawBorder: false,
-                                display: false,
-                              },
-                            },
-                            x: {
-                              grid: {
-                                drawBorder: false,
-                                display: false,
-                              },
-                              ticks: {
-                                display: false,
-                              },
-                            },
-                          },
-                        }}
-
-
-                      />
-
-                    </Col>
-
-                  </Col>
+*/}
 
 
 
-                </Row>
 
-              </CardBody>
-            </Card>
-          </Col>
-        
-          <Col md="6">
-            <Card>
-              <Row>
-                <Col xs="5">
-                  <CardHeader>
-                    <CardTitle tag="h4">Top Five Customers</CardTitle>
-
-                  </CardHeader>
-                </Col>
-                <Col xs="3"></Col>
-                <Col xs="3" style={{marginTop:"10px"}}>
-                  <Label for="selectType">Select Type:</Label>
-                  <Input type="select" name="select" id="selectType" onChange={(e) => setFilterOptionCust(e.target.value)}>
-                    <option value="">Select Type</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="yearly">Yearly</option>
-
-                  </Input>
-                </Col>
-              </Row>
-              <CardBody>
-                <Row>
-
-                  <Col md="12">
-                    <Table responsive>
-                      <thead>
-                        <tr>
-                          <th>#</th>
-                          <th>Customer Name</th>
-                          <th className="text-right">Total Sales</th>
-
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {topCustomers.map((customer, index) => (
-                          <tr key={customer[0]}>
-                            <td>{index + 1}</td>
-                            <td>{customer[0]}</td>
-                            <td className="text-right">{customer[1]}</td>
-
-                          </tr>
-                        ))}
-                      </tbody>
-                    </Table>
-                    <Col md="8">
-                      <Doughnut
-                        style={{ marginTop: "50px" }}
-                        data={topCustomersPieData}
-                        options={{
-                          plugins: {
-                            legend: {
-                              position: "right",
-                              labels: {
-                                font: {
-                                  size: 12,
-                                },
-                                usePointStyle: true,
-                              },
-                            },
-                            tooltips: {
-                              enabled: false,
-                            },
-                            title: {
-                              display: true,
-                              position: "top",
-                              text: "Top Customers",
-                              color: "#66615c",
-                              font: {
-                                weight: 400,
-                                size: 20,
-                              },
-
-                            },
-                          },
-
-                          cutout: "70%",
-                          scales: {
-                            y: {
-                              ticks: {
-                                display: false,
-                              },
-                              grid: {
-                                drawBorder: false,
-                                display: false,
-                              },
-                            },
-                            x: {
-                              grid: {
-                                drawBorder: false,
-                                display: false,
-                              },
-                              ticks: {
-                                display: false,
-                              },
-                            },
-                          },
-                        }}
+       
 
 
-                      />
+        <Container fluid>
+          <Row>
+            <Col md="12">
+              <Card className="my-card">
+                <CardBody>
+                  <Form onSubmit={handleFormSubmit}>
+                    <FormGroup row>
+                      <Label for="targetInput" sm={1}>Target:</Label>
+                      <Col sm={1}>
+                        <Input type="number" name="target" id="targetInput" value={target} onChange={handleTargetChange} />
+                      </Col>
+                      <Col sm={2}>
+                        <Button type="submit" size="sm">Update Target</Button>
+                      </Col>
+                    </FormGroup>
+                  </Form>
 
-                    </Col>
-
-                  </Col>
+                  <div className="chart-wrapper">
+                    <Bar data={data} options={{ responsive: true, maintainAspectRatio: false }} />
+                  </div>
+                </CardBody>
+              </Card>
 
 
 
-                </Row>
-
-              </CardBody>
-
-
-            </Card>
-          </Col>
-        </Row>
-
-
-        <Row>
-          <Col md="6" > 
-            <Card>
-              <Row>
-                <Col xs="5">
-                  <CardHeader>
-                    <CardTitle tag="h4">Top Five Areas</CardTitle>
-
-                  </CardHeader>
-                </Col>
-                <Col xs="3"></Col>
-                <Col xs="3" style={{marginTop:"10px"}}>
-                  <Label for="selectType">Select Type:</Label>
-                  <Input type="select" name="select" id="selectType" onChange={(e) => setFilterOptionArea(e.target.value)}>
-                    <option value="">Select Type</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="yearly">Yearly</option>
-
-                  </Input>
-                </Col>
-              </Row>
-              <CardBody>
-                <Row>
-
-                  <Col md="12">
-
-                    <Table responsive>
-                      <thead>
-                        <tr>
-                          <th>#</th>
-                          <th>Area Name</th>
-                          <th className="text-right">Total Sales</th>
-
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {topAreas.map((area, index) => (
-                          <tr key={area[0]}>
-                            <td>{index + 1}</td>
-                            <td>{area[0]}</td>
-                            <td className="text-right">{area[1]}</td>
-
-                          </tr>
-                        ))}
-                      </tbody>
-                    </Table>
-
-                    <Col md="8">
-                      <Doughnut
-                        style={{ marginTop: "50px" }}
-                        data={topAreasPieData}
-                        options={{
-                          plugins: {
-                            legend: {
-                              position: "right",
-                              labels: {
-                                font: {
-                                  size: 12,
-                                },
-                                usePointStyle: true,
-                              },
-                            },
-                            tooltips: {
-                              enabled: false,
-                            },
-                            title: {
-                              display: true,
-                              position: "top",
-                              text: "Top Areas",
-                              color: "#66615c",
-                              font: {
-                                weight: 400,
-                                size: 20,
-                              },
-
-                            },
-                          },
-
-                          cutout: "70%",
-                          scales: {
-                            y: {
-                              ticks: {
-                                display: false,
-                              },
-                              grid: {
-                                drawBorder: false,
-                                display: false,
-                              },
-                            },
-                            x: {
-                              grid: {
-                                drawBorder: false,
-                                display: false,
-                              },
-                              ticks: {
-                                display: false,
-                              },
-                            },
-                          },
-                        }}
-
-
-                      />
-
-                    </Col>
-
-                  </Col>
+            </Col>
+          </Row>
+          {/* Other Rows and Cols */}
+        </Container>
 
 
 
-                </Row>
 
-              </CardBody>
-            </Card>
-          </Col>
-        
-          
-        </Row>
 
-{/* 
+
+
+
+
+
+
+        {/* 
         <Row>
           <Col md="6">
             <Card className="card-tasks">
@@ -1304,6 +1376,10 @@ function Dashboard() {
           </Col>
         </Row>
         */}
+
+
+
+        {/* 
         <Row>
           <Col md="4">
             <Button
@@ -1317,7 +1393,7 @@ function Dashboard() {
             </Button>
           </Col>
         </Row>
-        
+        */}
       </div>
     </>
   );

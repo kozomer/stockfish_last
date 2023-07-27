@@ -1,6 +1,7 @@
 from django.db import models
 from django_jalali.db import models as jmodels
 from dirtyfields import DirtyFieldsMixin
+from .definitions import jalali_to_greg, greg_to_jalali, current_jalali_date
 
 class Customers(models.Model):
     customer_code = models.IntegerField(unique= True)
@@ -14,33 +15,31 @@ class Customers(models.Model):
         return self.customer_code
 
 class Sales(DirtyFieldsMixin, models.Model):
-    no = models.PositiveIntegerField(unique=True, db_index= True)
+    no = models.PositiveIntegerField(unique=True, db_index=True)
     bill_number = models.PositiveIntegerField(null=True, blank=True)
     date = jmodels.jDateField()
-    psr = models.CharField(max_length=1)
+    gregorian_date = models.DateField()
+    psr = models.CharField(max_length=1) 
     customer_code = models.PositiveIntegerField(null=True, blank=True)
     name = models.CharField(max_length=50)
     city = models.CharField(max_length=50)
     area = models.CharField(max_length=50)
-    color_making_saler = models.CharField(max_length=50)
-    group = models.CharField(max_length=50)
+    color_making_saler = models.CharField(max_length=50, null=True) 
+    #group = models.CharField(max_length=50) Removed as not used in view
     product_code = models.PositiveIntegerField(null=True, blank=True)
     product_name = models.CharField(max_length=100)
     unit = models.CharField(max_length=30)
     unit2 = models.CharField(max_length=30)
-    kg = models.FloatField(null=True, blank=True)
     original_value = models.FloatField(null=True, blank=True)
-    original_output_value = models.FloatField(null=True, blank=True)
+    kg = models.FloatField(null=True, blank=True) #Added as per view
     secondary_output_value = models.FloatField(null=True, blank=True)
-    price = models.FloatField(null=True, blank=True)
-    original_price = models.FloatField(null=True, blank=True)
+    price_dollar = models.FloatField(null=True, blank=True) #Updated as per view
+    original_price_dollar = models.FloatField(null=True, blank=True) #Updated as per view
     discount_percentage = models.FloatField(null=True, blank=True)
     amount_sale = models.FloatField(null=True, blank=True)
     discount = models.FloatField(null=True, blank=True)
     additional_sales = models.FloatField(null=True, blank=True)
     net_sales = models.FloatField(null=True, blank=True)
-    discount_percentage_2 = models.FloatField(null=True, blank=True)
-    real_discount_percentage = models.FloatField(null=True, blank=True)
     payment_cash = models.FloatField(null=True, blank=True)
     payment_check = models.FloatField(null=True, blank=True)
     balance = models.FloatField(null=True, blank=True)
@@ -53,21 +52,69 @@ class Sales(DirtyFieldsMixin, models.Model):
     senior_saler = models.FloatField(null=True, blank=True)
     tot_monthly_sales = models.FloatField(null=True, blank=True)
     receipment = models.FloatField(null=True, blank=True)
-    ct = models.FloatField(null=True, blank=True)
-    payment_type = models.CharField(max_length=50)
-    customer_size = models.FloatField(null=True, blank=True)
+    ct = models.FloatField(null=True, blank=True) # added as per view
+    payment_type = models.CharField(max_length=50, null=True, blank=True) #Updated as per view
+    customer_size = models.FloatField(null=True, blank=True) #Updated as per view
     saler_factor = models.FloatField(null=True, blank=True)
     prim_percentage = models.FloatField(null=True, blank=True)
     bonus_factor = models.FloatField(null=True, blank=True)
     bonus = models.FloatField(null=True, blank=True)
+
     def __str__(self):
         return self.no
+    
+    def save(self, *args, **kwargs):
+        # Get related models
+        customer = Customers.objects.get(customer_code=self.customer_code)
+        product = Products.objects.get(product_code_ir=self.product_code)
+        saler = Salers.objects.get(name=self.saler)
+
+        self.gregorian_date = jalali_to_greg(self.date.day,self.date.month,self.date.year)
+
+        # Calculation of "KG"
+        self.kg = float(self.original_value) if self.unit.lower() == "kg" else float(self.original_value) * float(product.unit_secondary)
+
+        # Calculation of Balance
+        self.balance = float(self.net_sales) - (float(self.payment_cash) + float(self.payment_check))
+
+        # Calculation of Dollar Sepidar
+        self.dollar_sepidar = float(self.net_sales) / float(self.currency_sepidar)
+        self.dollar = float(self.net_sales) / float(self.currency)
+
+        # Calculation of Manager Rating
+        if current_jalali_date().month == self.date.month and current_jalali_date().year == self.date.year:
+            self.manager_rating = float(saler.manager_performance_rating)
+
+        # Calculation of monthly sale rating
+        try:
+            monthly_sale_rating_object = SalerMonthlySaleRating.objects.get(name=saler.name, year=self.date.year, month=self.date.month)
+            self.tot_monthly_sales = float(monthly_sale_rating_object.sale_rating)
+        except Exception as e:
+            self.tot_monthly_sales = 1
+
+        # Calculation of receipe rating
+        try:
+            receipe_rating_object = SalerReceipeRating.objects.get(name=saler.name, year=self.date.year, month=self.date.month)
+            self.receipment = float(receipe_rating_object.sale_rating)
+        except Exception as e:
+             self.receipment = 1
+        # Calculation of Saler Factor
+        self.saler_factor = float(self.tot_monthly_sales) * float(self.manager_rating) * float(self.receipment) * float(saler.experience_rating) * float(self.payment_type if self.payment_type else 1)* float(self.ct if self.ct else 1)
+        
+        # Calculation of bonus
+        self.bonus_factor = float(self.saler_factor) * float(self.prim_percentage)
+        self.bonus = float(self.bonus_factor) * float(self.net_sales)
+
+        super().save(*args, **kwargs)
+
 
 class Warehouse(models.Model):
     product_code = models.IntegerField(unique=True)
+    product_code_tr = models.IntegerField(null=True)
     title = models.CharField(max_length=200)
     unit = models.CharField(max_length=50)
     stock = models.FloatField(null=True, blank=True)
+    kg = models.FloatField(null=True, blank=True) 
 
 class Products(models.Model):
     group = models.CharField(max_length=255)
@@ -80,8 +127,9 @@ class Products(models.Model):
     unit = models.CharField(max_length=255)
     unit_secondary = models.CharField(max_length=255)
     weight = models.FloatField(null= True)
-    currency = models.CharField(max_length=255)
+    #currency = models.CharField(max_length=255) # TODO: Yeni çıkartıldı ilgili viewslardan da çıkartılacak.
     price = models.FloatField(null= True)
+    suppliers = models.CharField(max_length=400)
 
 class ROP(models.Model):
     group = models.CharField(max_length=100)
@@ -175,13 +223,14 @@ class SalerMonthlySaleRating(models.Model):
     objects = jmodels.jManager()
     year = models.IntegerField(null=True)
     month = models.IntegerField(null=True)
-    day = models.IntegerField(null=True)
     name = models.CharField(max_length=100)
     sale_rating = models.FloatField(default=1, null=True)
 
 class SalerReceipeRating(models.Model):
     objects = jmodels.jManager()
-    date = jmodels.jDateField()
+    year = models.IntegerField(null=True)
+    month = models.IntegerField(null=True)
+    name = models.CharField(max_length=100)  
     sale_rating = models.FloatField(default=1, null=True)
 
 class MonthlyProductSales(models.Model):
@@ -244,6 +293,7 @@ class GoodsOnRoad(models.Model):
     is_on_truck = models.BooleanField(default= False)
     is_on_road = models.BooleanField(default= False)
     is_arrived = models.BooleanField(default= False)
+    suppliers = models.CharField(max_length=500)
 
 class Trucks(models.Model):
     objects = jmodels.jManager()

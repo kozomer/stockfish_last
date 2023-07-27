@@ -5,13 +5,16 @@ import localforage from 'localforage';
 import ReactBSAlert from "react-bootstrap-sweetalert";
 const DataTable = () => {
   const [dataTable, setDataTable] = useState([]);
+  const [totalWeight, setTotalWeight] = useState(null);
   const [file, setFile] = useState(null);
   const [showUploadDiv, setShowUploadDiv] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [productCode, setProductCode] = useState(null);
+  const [productCodeTR, setProductCodeTR] = useState(null);
   const [productTitle, setProductTitle] = useState(null);
   const [unit, setUnit] = useState(null);
   const [stock, setStock] = useState(null);
+  const [kg, setKg] = useState(null);
   const [alert, setAlert] = useState(null);
   const [renderEdit, setRenderEdit] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -27,20 +30,24 @@ const DataTable = () => {
     async function fetchData() {
       const access_token = await localforage.getItem('access_token'); 
       
-      const response = await fetch('https://vividstockfish.com/api/warehouse/',{
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/warehouse/`,{
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer '+ String(access_token)
         }});
       const data = await response.json();
-      setDataTable(data);
+      
+      setDataTable(data.warehouse_list);
+      setTotalWeight(data.total_weight);
+      setDataChanged(false);
+      setRenderEdit(false)
     }
     fetchData();
   }, [dataChanged,renderEdit]);
 
   /*
   useEffect(() => {
-    console.log(dataTable);
+    //console.log(dataTable);
   }, [dataTable]);
 */
 
@@ -51,7 +58,7 @@ const handleAddFileClick = () => {
 
   const handleFileInputChange = (e) => {
     setFile(e.target.files[0]);
-    console.log(file)
+    //console.log(file)
   };
 
   const handleUploadClick = async() => {
@@ -59,7 +66,7 @@ const handleAddFileClick = () => {
     const formData = new FormData();
     formData.append('file', file);
     const access_token = await localforage.getItem('access_token'); 
-    fetch('https://vividstockfish.com/api/add_warehouse/', {
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/add_warehouse/`, {
       method: 'POST',
       body: formData,
       
@@ -70,7 +77,7 @@ const handleAddFileClick = () => {
     .then((response) => {
       if (!response.ok) {
         return response.json().then(data => {
-          console.log(data.error)
+          //console.log(data.error)
           setIsLoading(false);
           errorUpload(data.error);
         });
@@ -79,15 +86,15 @@ const handleAddFileClick = () => {
         return response.json().then(data => {
           setIsLoading(false);
           successUpload(data.message);
-          fetch('https://vividstockfish.com/api/warehouse/',{
+          fetch(`${process.env.REACT_APP_PUBLIC_URL}/warehouse/`,{
             headers: {
               'Authorization': 'Bearer '+ String(access_token)
             }
           })
           .then((response) => response.json())
           .then((data) =>{
-             setDataTable(data)
-             console.log(data.message)});
+             setDataTable(data.warehouse_list)
+             });
         });
       }
     })
@@ -103,38 +110,43 @@ const handleAddFileClick = () => {
   };
   
   const handleClick = (row) => {
-     
+     //console.log(row[2])
     setEditData(row);
     setOldData(row);
 
-    setProductCode(row.product_code);
-    setProductTitle(row.title);
-    setUnit(row.unit);
-    setStock(row.stock);
-   
+    setProductCode(row[0]);
+    setProductCodeTR(row[1])
+    setProductTitle(row[2]);
+    setUnit(row[3]);
+    setStock(row[4]);
+    setKg(row[5]);
+
     setShowPopup(!showPopup);
-    console.log(row)
+    
   };
   const handleSubmit = async (e) => {
     const access_token = await localforage.getItem('access_token'); 
     
     const updatedData = {
       new_product_code:productCode,
+      new_product_code_tr:productCodeTR,
       new_title:productTitle,
       new_unit:unit,
       new_stock:stock,
-     
+      new_kg:kg,
       
 
       old_product_code:oldData[0],
-      old_title:oldData[1],
-      old_unit:oldData[2],
-      old_stock:oldData[3],
+      old_product_code_tr:oldData[1],
+      old_title:oldData[2],
+      old_unit:oldData[3],
+      old_stock:oldData[4],
+      old_kg: oldData[5]
       
       
     };
-    console.log(updatedData)
-    fetch('https://vividstockfish.com/api/edit_warehouse/', {
+    //console.log(updatedData)
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/edit_warehouse/`, {
     method: 'POST',
     body: JSON.stringify(updatedData),
     headers: {
@@ -146,7 +158,7 @@ const handleAddFileClick = () => {
   .then((response) => {
     if (!response.ok) {
       return response.json().then(data => {
-        console.log(data.error)
+        //console.log(data.error)
         
         errorUpload(data.error);
       });
@@ -165,7 +177,7 @@ const handleAddFileClick = () => {
     // Call your Django API to send the updated values here
   };
   const successEdit = (s) => {
-    console.log("edit success")
+    //console.log("edit success")
     setAlert(
       <ReactBSAlert
         success
@@ -207,14 +219,15 @@ const handleAddFileClick = () => {
   };
   
   useEffect(() => {
-    console.log("useEffect called")
+    //console.log("useEffect called")
     if(editData){
       
       setProductCode(editData[0]);
-      setProductTitle(editData[1]);
-      setUnit(editData[2]);
-      setStock(editData[3]);
-       
+      setProductCodeTR(editData[1])
+      setProductTitle(editData[2]);
+      setUnit(editData[3]);
+      setStock(editData[4]);
+      setKg(editData[5]);
         setIsUpdated(true)
     }
   }, [editData])
@@ -239,7 +252,7 @@ const handleAddFileClick = () => {
 
 
   const warningWithConfirmAndCancelMessage = () => {
-    console.log("sadsads"),
+    //console.log("sadsads"),
     setAlert(
       
       <ReactBSAlert
@@ -270,7 +283,7 @@ const handleAddFileClick = () => {
         if (deleteConfirm) {
          
          const access_token =  await localforage.getItem('access_token'); 
-          fetch(`https://vividstockfish.com/api/delete_warehouse/`, {
+          fetch(`${process.env.REACT_APP_PUBLIC_URL}/delete_warehouse/`, {
             method: "POST",
             body: new URLSearchParams(deleteData),
             headers: {
@@ -331,7 +344,7 @@ const handleAddFileClick = () => {
     const access_token = await localforage.getItem('access_token');
   
     // Make an AJAX request to the backend to download the CSV file
-    const response = await fetch('https://vividstockfish.com/api/export_warehouse/', {
+    const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/export_warehouse/`, {
       headers: {
         'Authorization': 'Bearer '+ String(access_token)
       },
@@ -383,6 +396,15 @@ const handleAddFileClick = () => {
               onChange={(e) => setProductCode(e.target.value)}
             />
           </FormGroup>
+          <label>Product Code TR</label>
+          <FormGroup>
+            <Input
+              
+              type="text"
+              defaultValue={productCodeTR}
+              onChange={(e) => setProductCodeTR(e.target.value)}
+            />
+          </FormGroup>
 
           <label>Product Title</label>
           <FormGroup>
@@ -411,6 +433,14 @@ const handleAddFileClick = () => {
             />
           </FormGroup>
 
+          <label>KG</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={kg}
+              onChange={(e) => setKg(e.target.value)}
+            />
+          </FormGroup>
           
           </div>
          
@@ -434,7 +464,7 @@ const handleAddFileClick = () => {
 
 <Card>
   <CardHeader>
-    <CardTitle tag='h4'>WAREHOUSE</CardTitle>
+    <CardTitle tag='h4'><b>WAREHOUSE</b> (Total Weight: {totalWeight} kg)</CardTitle>
   </CardHeader>
   <CardBody>
     <div className="upload-container">
@@ -486,10 +516,11 @@ const handleAddFileClick = () => {
                   data={dataTable.map((row, key) => ({
                     id: key,
                     product_code: row[0],
-                    title: row[1],
-                    unit: row[2],
-                    stock: row[3],
-                    
+                    product_code_tr: row[1],
+                    title: row[2],
+                    unit: row[3],
+                    stock: row[4],
+                    kg : row[5],
                     actions: (
                       <div className='actions-left'>
                          <Button
@@ -523,7 +554,7 @@ const handleAddFileClick = () => {
 
                               };
                               setDeleteData(data);
-                              console.log(deleteConfirm)
+                              //console.log(deleteConfirm)
                              
                             
                             }
@@ -540,9 +571,11 @@ const handleAddFileClick = () => {
                   }))}
                   columns={[
                     { Header: 'Product Code', accessor: 'product_code' },
+                    { Header: 'Product CodeTR', accessor: 'product_code_tr' },
                     { Header: 'Product Title', accessor: 'title' },
                     { Header: 'Unit', accessor: 'unit' },
                     { Header: 'Stock', accessor: 'stock' },
+                    { Header: 'KG', accessor: 'kg' },
                     { Header: 'Actions', accessor: 'actions' ,sortable: false,
                     filterable: false },
                   ]}

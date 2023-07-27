@@ -21,10 +21,10 @@ from stockfish_api.views import ( AddCustomersView, AddSalesView, AddProductsVie
                                  EditProductView, EditCustomerView, EditSaleView, EditWarehouseView,  EditSalerView, EditOrderListView,  EditGoodsOnRoadView,
                                  LoginView, LogoutView,
                                  TopCustomersView, TopProductsView,
-                                 ExchangeRateAPIView, SalerDataView, TotalDataView, TotalDataByMonthlyView, CustomerAreaPieChartView, 
-                                 ExportCustomersView, ExportSalesView, ExportWarehouseView, ExportProductsView,
-                                 GoodsOnRoadView, AddTruckView, WaitingTrucksView, TrucksOnRoadView, ApproveWaitingTruckView,
-                                 ApproveProductsToOrderView, ApproveArrivedTruckView, NotificationsView, DeleteNotificationView
+                                 ExchangeRateAPIView, SalerDataView, TotalDataView, TotalDataByMonthlyView, KgSaleBarChartView,  TotalKgSaleByMonthlyView, CustomerAreaPieChartView, 
+                                 ExportCustomersView, ExportSalesView, PowerBIExportSalesView, ExportWarehouseView, ExportProductsView, ExportSalerPerfomanceView,
+                                 GoodsOnRoadView, AddTruckView, WaitingTrucksView, TrucksOnRoadView, ApproveWaitingTruckView, EditWaitingTrucksView, ActiveTrucksView,
+                                 ApproveProductsToOrderView, ApproveArrivedTruckView, NotificationsView, DeleteNotificationView, AddOrderListObjectView
                                  )
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -60,6 +60,7 @@ urlpatterns = [
     path('api/collapsed_salers/', CollapsedSalerView.as_view(), name='view_saler_collapsed'),
     path('api/rop/', ROPView.as_view(), name='view_rop'),
     path('api/order_list/', OrderListView.as_view(), name='order_list'),
+    path('api/add_order_list_object/', AddOrderListObjectView.as_view(), name='add_order_list_object'),
     path('api/goods_on_road/', GoodsOnRoadView.as_view(), name='goods_on_road'),
     path('api/waiting_trucks/',WaitingTrucksView.as_view(), name='waiting_trucks'),
     path('api/approve_waiting/',ApproveWaitingTruckView.as_view(), name='approve_waiting'),
@@ -69,6 +70,7 @@ urlpatterns = [
     path('api/notifications/', NotificationsView.as_view(), name='notifications'),
     path('api/saler_performance/', SalerPerformanceView.as_view(), name='saler_performance'),
 
+     path('api/active_trucks/',  ActiveTrucksView.as_view(), name='active_trucks'),
 
     path('api/delete_sales/',  DeleteSaleView.as_view(), name='delete_sales'),
     path('api/delete_customers/',  DeleteCustomerView.as_view(), name='delete_customers'),
@@ -88,6 +90,7 @@ urlpatterns = [
     path('api/edit_salers/', EditSalerView.as_view(), name='edit_saler'),
     path('api/edit_order_list/', EditOrderListView.as_view(), name='edit_order_list'),
     path('api/edit_goods_on_road/',  EditGoodsOnRoadView.as_view(), name='edit_goods_on_road'),
+    path('api/edit_waiting_trucks/',  EditWaitingTrucksView.as_view(), name='edit_waiting_trucks'),
 
     path('api/top_customers/', TopCustomersView.as_view(), name= 'top_customers'),
     path('api/top_products/', TopProductsView.as_view(), name= 'top_products'),
@@ -97,12 +100,16 @@ urlpatterns = [
     path('api/daily_report/saler_data/', SalerDataView.as_view(), name='saler_data'),
     path('api/daily_report/total_data/', TotalDataView.as_view(), name='total_data'),
     path('api/daily_report/total_data_by_monthly/', TotalDataByMonthlyView.as_view(), name='total_data_by_monthly'),
+    path('api/daily_report/total_kg_sale_by_monthly/', TotalKgSaleByMonthlyView.as_view(), name='total_kg_sale_by_monthly'),
+    path('api/daily_report/kg_sale_bar_chart/', KgSaleBarChartView.as_view(), name='kg_sale_bar_chart'),
     
 
     path('api/export_customers/', ExportCustomersView.as_view(), name= 'export_customers'),
     path('api/export_sales/', ExportSalesView.as_view(), name= 'export_sales'),
+    path('api/export_sales_power_bi/', PowerBIExportSalesView.as_view(), name= 'export_sales_power_bi'),
     path('api/export_warehouse/', ExportWarehouseView.as_view(), name= 'export_warehouse'),
     path('api/export_products/', ExportProductsView.as_view(), name= 'export_products'),
+     path('api/export_staff/',ExportSalerPerfomanceView.as_view(), name= 'export_staff'),
 
 
 

@@ -9,6 +9,9 @@ const DataTable = () => {
   const [file, setFile] = useState(null);
   const [showUploadDiv, setShowUploadDiv] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
+  const [showAddPopup, setShowAddPopup] = useState(false);
+  const [addDecidedOrder, setAddDecidedOrder] = useState(null);
+  const [addProductCode, setAddProductCode] = useState(null);
   const [date, setDate] = useState(null);
   const [productCode, setProductCode] = useState(null);
   const [productTitle, setProductTitle] = useState(null);
@@ -40,14 +43,15 @@ const DataTable = () => {
     async function fetchData() {
       const access_token = await localforage.getItem('access_token'); 
       
-      const response = await fetch('https://vividstockfish.com/api/order_list/',{
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/order_list/`,{
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer '+ String(access_token)
         }});
       const data = await response.json();
       setDataTable(data);
-      console.log(data)
+      setDataChanged(false);
+      setRenderEdit(false)
     }
     fetchData();
   }, [dataChanged,renderEdit]);
@@ -85,6 +89,60 @@ useEffect(() => {
     setShowPopup(!showPopup);
    
   };
+
+  const handleAdd=()=> {
+    setShowAddPopup(!showAddPopup)
+  }
+  const handleSubmitAdd = async (e) => {
+    const access_token = await localforage.getItem('access_token'); 
+   
+    const updatedAddData = {
+     
+      product_code:addProductCode,
+     
+      decided_order: addDecidedOrder
+     
+      
+
+      
+      
+      
+    };
+   
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/add_order_list_object/`, {
+    method: 'POST',
+    body: JSON.stringify(updatedAddData),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer '+ String(access_token)
+    },
+    
+  })
+  .then((response) => {
+    if (!response.ok) {
+      return response.json().then(data => {
+
+
+        errorUpload(data.error);
+      });
+    }
+
+    else {
+      return response.json().then(data => {
+      
+        successEdit(data.message)
+        setShowAddPopup(!showAddPopup)
+      })
+
+    }
+  })
+
+  
+  
+
+    // Call your Django API to send the updated values here
+  };
+
   const handleSubmit = async (e) => {
     const access_token = await localforage.getItem('access_token'); 
    
@@ -107,7 +165,7 @@ useEffect(() => {
       
     };
    
-    fetch('https://vividstockfish.com/api/edit_order_list/', {
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/edit_order_list/`, {
     method: 'POST',
     body: JSON.stringify(updatedData),
     headers: {
@@ -140,7 +198,7 @@ useEffect(() => {
     // Call your Django API to send the updated values here
   };
   const successEdit = (s) => {
-    console.log("edit success")
+    //console.log("edit success")
     setAlert(
       <ReactBSAlert
         success
@@ -178,12 +236,17 @@ useEffect(() => {
 
   const handleCancel = () => {
     setShowPopup(false);
+    
+    setEditData(null)
+  };
+  const handleCancelAdd = () => {
+    
+    setShowAddPopup(false);
     setEditData(null)
   };
   
-  
   useEffect(() => {
-    console.log("useEffect called")
+    //console.log("useEffect called")
     if(editData){
       setID(editData[0])
       setDate(editData[1]);
@@ -221,7 +284,7 @@ useEffect(() => {
 
 
   const warningWithConfirmAndCancelMessage = () => {
-    console.log("sadsads"),
+    //console.log("sadsads"),
     setAlert(
       
       <ReactBSAlert
@@ -250,9 +313,9 @@ useEffect(() => {
       useEffect(() => {
         async function deleteFunc() {
         if (deleteConfirm) {
-         console.log("delete")
+         //console.log("delete")
          const access_token =  await localforage.getItem('access_token'); 
-          fetch(`https://vividstockfish.com/delete_warehouse/`, {
+          fetch(`${process.env.REACT_APP_PUBLIC_URL}/delete_warehouse/`, {
             method: "POST",
             body: new URLSearchParams(deleteData),
             headers: {
@@ -328,7 +391,7 @@ useEffect(() => {
           <label>Date</label>
           <FormGroup>
             <Input
-              
+              disabled
               type="text"
               defaultValue={date}
               onChange={(e) => setDate(e.target.value)}
@@ -338,6 +401,7 @@ useEffect(() => {
           <label>Product Code</label>
           <FormGroup>
             <Input
+              disabled
               type="text"
               defaultValue={productCode}
               onChange={(e) => setProductCode(e.target.value)}
@@ -347,6 +411,7 @@ useEffect(() => {
           <label>Weight</label>
           <FormGroup>
             <Input
+              disabled
               type="text"
               defaultValue={weight}
               onChange={(e) => setWeight(e.target.value)}
@@ -356,6 +421,7 @@ useEffect(() => {
           <label>Average Sale</label>
           <FormGroup>
             <Input
+              disabled
               type="text"
               defaultValue={avrgSale}
               onChange={(e) => setAvrgSale(e.target.value)}
@@ -365,6 +431,7 @@ useEffect(() => {
           <label>Current Stock</label>
           <FormGroup>
             <Input
+              disabled
               type="text"
               defaultValue={stock}
               onChange={(e) => setStock(e.target.value)}
@@ -374,6 +441,7 @@ useEffect(() => {
           <label>Order by Avrg.</label>
           <FormGroup>
             <Input
+              disabled  
               type="text"
               defaultValue={orderAvrg}
               onChange={(e) => setOrderAvrg(e.target.value)}
@@ -383,6 +451,7 @@ useEffect(() => {
           <label>Order by Exp.</label>
           <FormGroup>
             <Input
+              disabled
               type="text"
               defaultValue={orderExp}
               onChange={(e) => setOrderExp(e.target.value)}
@@ -392,6 +461,7 @@ useEffect(() => {
           <label>Order by Holt</label>
           <FormGroup>
             <Input
+              disabled
               type="text"
               defaultValue={orderHolt}
               onChange={(e) => setOrderHolt(e.target.value)}
@@ -427,7 +497,61 @@ useEffect(() => {
             </div>
 )}
 
+  {showAddPopup && (
+       <div className="popup">
+      <Card>
+            <CardHeader>
+              <CardTitle tag="h4">Add Order</CardTitle>
+            </CardHeader>
+            <CardBody>
+              <Form onSubmit={handleSubmitAdd}>
+              <div>
 
+        <div className="form-group-col">
+         
+
+          <label>Product Code</label>
+          <FormGroup>
+            <Input
+              
+              type="text"
+              
+              onChange={(e) => setAddProductCode(e.target.value)}
+            />
+          </FormGroup>
+
+          
+
+         
+
+          <label>Decided Order</label>
+          <FormGroup>
+            <Input
+              type="text"
+              
+              onChange={(e) => setAddDecidedOrder(e.target.value)}
+            />
+          </FormGroup>
+          
+          </div>
+         
+        
+          
+        
+        </div>
+              </Form>
+            </CardBody>
+              <CardFooter>
+                <Button className="btn-round" color="success" type="submit" onClick={handleSubmitAdd}>
+                  Submit
+                </Button>
+                <Button className="btn-round" color="danger" type="submit"  onClick={handleCancelAdd}>
+                  Cancel
+                </Button>
+              </CardFooter>
+            </Card>
+            </div>
+)}
 {/* 
   <CardHeader>
     <CardTitle tag='h4'>ORDER LIST</CardTitle>
@@ -465,12 +589,38 @@ useEffect(() => {
 </Card>
 */}
 
+<Card>
+  <CardHeader>
+    <CardTitle tag='h4'>ORDER LIST</CardTitle>
+  </CardHeader>
+  <CardBody>
+  <Button
+                          disabled={showAddPopup}
+                          className="my-button-class"
+                           color="primary"
+                          onClick={() => {
+                            // Enable edit mode
+                            
+                           {handleAdd()}
+                           
+                          
+                          }}
+                          
+                     
+                         
+                          
+                        >
+                          <i className="fa fa-plus-circle mr-1"></i>
+                         Add Order
+                        </Button>{' '}
+                      
+  </CardBody>
+</Card>
+
         <Row>
           <Col md='12'>
             <Card>
-            <CardHeader>
-    <CardTitle tag='h4'>ORDER LIST</CardTitle>
-  </CardHeader>
+          
               <CardBody>
              
                 <ReactTable
@@ -519,7 +669,7 @@ useEffect(() => {
 
                               };
                               setDeleteData(data);
-                              console.log(deleteConfirm)
+                              //console.log(deleteConfirm)
                              
                             
                             }

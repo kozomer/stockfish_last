@@ -30,8 +30,9 @@ const DataTable = () => {
   const [unit, setUnit] = useState(null);
   const [secondaryUnit, setSecondaryUnit] = useState(null);
   const [weight, setWeight] = useState(null);
-  const [currency, setCurrency] = useState(null);
+  
   const [price, setPrice] = useState(null);
+  const [suppliers, setSuppliers] = useState(null);
 
   const [oldData, setOldData] = useState(null);
 
@@ -47,13 +48,14 @@ const DataTable = () => {
     async function fetchData() {
       const access_token = await localforage.getItem('access_token');
       
-      const response = await fetch('https://vividstockfish.com/api/products/',{
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/products/`,{
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer '+ String(access_token)
         },
       });
       const data = await response.json();
+      //console.log(data)
       setDataTable(data);
       setDataChanged(false);
       setRenderEdit(false)
@@ -63,7 +65,7 @@ const DataTable = () => {
 
   /*
   useEffect(() => {
-    console.log(dataTable);
+    //console.log(dataTable);
   }, [dataTable]);
 */
 
@@ -81,7 +83,7 @@ const DataTable = () => {
     const formData = new FormData();
     formData.append('file', file);
     const access_token = await localforage.getItem('access_token');
-    fetch('https://vividstockfish.com/api/add_products/', {
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/add_products/`, {
       method: 'POST',
       body: formData,
       
@@ -93,7 +95,7 @@ const DataTable = () => {
     .then((response) => {
       if (!response.ok) {
         return response.json().then(data => {
-          console.log(data.error)
+          //console.log(data.error)
           setIsLoading(false);
           errorUpload(data.error);
         });
@@ -104,15 +106,18 @@ const DataTable = () => {
       setIsLoading(false);
       successUpload(data.message);
       
-      fetch('https://vividstockfish.com/api/products/',{
+      
+      fetch(`${process.env.REACT_APP_PUBLIC_URL}/products/`,{
         headers: {
           'Authorization': 'Bearer '+ String(access_token)
         }
       })
         .then((response) => response.json())
         
-        .then((data) => setDataTable(data));
-        console.log(dataTable)
+        .then((data) =>
+          
+         setDataTable(data));
+       
        
     })
     
@@ -168,7 +173,7 @@ const DataTable = () => {
     
   };
   useEffect(() => {
-    console.log(deleteConfirm)
+    //console.log(deleteConfirm)
   },[deleteConfirm]);
 
   const successDelete = () => {
@@ -248,7 +253,7 @@ const DataTable = () => {
       if (deleteConfirm) {
        
         const access_token =  await localforage.getItem('access_token'); 
-        fetch(`https://vividstockfish.com/api/delete_products/`, {
+        fetch(`${process.env.REACT_APP_PUBLIC_URL}/delete_products/`, {
           method: "POST",
           body: new URLSearchParams(deleteData),
           headers: {
@@ -280,10 +285,11 @@ const DataTable = () => {
   setUnit(row.unit);
   setSecondaryUnit(row.unit_secondary);
   setWeight(row.weight);
-  setCurrency(row.currency);
+  
   setPrice(row.price);
+  setSuppliers(row.suppliers)
       setShowPopup(!showPopup);
-      console.log(row)
+      //console.log(row)
     };
 
 
@@ -301,8 +307,9 @@ const DataTable = () => {
         new_unit:unit,
         new_unit_secondary:secondaryUnit,
         new_weight:weight,
-        new_currency:currency,
+        
         new_price:price,
+        new_suppliers:suppliers,
 
         old_group:oldData[0],
         old_subgroup:oldData[1],
@@ -314,11 +321,12 @@ const DataTable = () => {
         old_unit:oldData[7],
         old_unit_secondary:oldData[8],
         old_weight:oldData[9],
-        old_currency:oldData[10],
-        old_price:oldData[11],
+        
+        old_price:oldData[10],
+        old_suppliers:oldData[11],
       };
-      console.log(updatedData)
-      fetch('https://vividstockfish.com/api/edit_products/', {
+      //console.log(updatedData)
+      fetch(`${process.env.REACT_APP_PUBLIC_URL}/edit_products/`, {
       method: 'POST',
       body: JSON.stringify(updatedData),
       headers: {
@@ -330,7 +338,7 @@ const DataTable = () => {
     .then((response) => {
       if (!response.ok) {
         return response.json().then(data => {
-          console.log(data.error)
+          //console.log(data.error)
           
           errorUpload(data.error);
         });
@@ -353,7 +361,7 @@ const DataTable = () => {
     };
 
     useEffect(() => {
-      console.log("useEffect called")
+      //console.log("useEffect called")
       if(editData){
         
           setGroup(editData[0]);
@@ -366,8 +374,9 @@ const DataTable = () => {
           setUnit(editData[7]);
           setSecondaryUnit(editData[8]);
           setWeight(editData[9]);
-          setCurrency(editData[10]);
-          setPrice(editData[11]);
+          
+          setPrice(editData[10]);
+          setSuppliers(editData[11]),
           setIsUpdated(true)
       }
     }, [editData])
@@ -378,7 +387,7 @@ const DataTable = () => {
       const access_token = await localforage.getItem('access_token');
     
       // Make an AJAX request to the backend to download the CSV file
-      const response = await fetch('https://vividstockfish.com/api/export_products/', {
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/export_products/`, {
         headers: {
           'Authorization': 'Bearer '+ String(access_token)
         },
@@ -469,12 +478,12 @@ const DataTable = () => {
             />
           </FormGroup>
 
-          <label>Currency</label>
+          <label>Price</label>
           <FormGroup>
             <Input
               type="text"
-              defaultValue={currency}
-              onChange={(e) => setCurrency(e.target.value)}
+              defaultValue={price}
+              onChange={(e) => setPrice(e.target.value)}
             />
           </FormGroup>
         </div>
@@ -525,12 +534,13 @@ const DataTable = () => {
             />
           </FormGroup>
 
-          <label>Price</label>
+         
+          <label>Suppliers</label>
           <FormGroup>
             <Input
               type="text"
-              defaultValue={price}
-              onChange={(e) => setPrice(e.target.value)}
+              defaultValue={suppliers}
+              onChange={(e) => setSuppliers(e.target.value)}
             />
           </FormGroup>
         </div>
@@ -613,8 +623,9 @@ const DataTable = () => {
                     unit: row[7],
                     unit_secondary: row[8],
                     weight: row[9],
-                    currency: row[10],
-                    price:row[11],
+                    
+                    price:row[10],
+                    suppliers: row[11],
 
                     actions: (
                       <div className='actions-left'>
@@ -650,28 +661,28 @@ const DataTable = () => {
 
                               };
                               setDeleteData(data);
-                              console.log(deleteConfirm)
+                              //console.log(deleteConfirm)
                               /*
                               if (deleteConfirm) {
                                 const updatedDataTable = dataTable.find((o) => o.id == row.id);
-                                //console.log(updatedDataTable[0]);
+                                ////console.log(updatedDataTable[0]);
                                 const data = {
                                   no: updatedDataTable[0],
                                   good_code: updatedDataTable[10],
                                   original_output_value: updatedDataTable[14],
                                 };
                                 setDeleteData(data);
-                                //console.log(data);
-                                fetch(`https://vividstockfish.com/api/delete_sales/`, {
+                                ////console.log(data);
+                                fetch(`${process.env.REACT_APP_PUBLIC_URL}/delete_sales/`, {
                                   method: "POST",
                                   body: new URLSearchParams(data),
                                 }).then(() => {
-                                  //  console.log("row id:", row.id);
-                                  //console.log("dataTable:", dataTable);
+                                  //  //console.log("row id:", row.id);
+                                  ////console.log("dataTable:", dataTable);
                                   const filteredDataTable = dataTable.filter(
                                     (o) => Number(o.id) !== Number(row.id)
                                   );
-                                  //  console.log(filteredDataTable);
+                                  //  //console.log(filteredDataTable);
                                   setDataTable(filteredDataTable);
                                   setDataChanged(!dataChanged);
                                 });
@@ -739,13 +750,14 @@ const DataTable = () => {
                       accessor: 'weight'
                     },
                     
-                    {
-                      Header: 'Currency',
-                      accessor: 'currency'
-                    },
+                  
                     {
                       Header: 'Price',
                       accessor: 'price'
+                    },
+                    {
+                      Header: 'Suppliers',
+                      accessor: 'suppliers'
                     },
                     {
                       Header: 'Actions',

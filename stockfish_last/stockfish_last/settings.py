@@ -14,8 +14,9 @@ from pathlib import Path
 from  datetime import timedelta
 import os
 from decouple import config
+import secrets
+import string
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -31,8 +32,8 @@ SECRET_KEY = SECRET_KEY = config('SECRET_KEY')
 DEBUG = False
 
 ALLOWED_HOSTS = [#"192.168.1.192",
-                 #"127.0.0.1",
-                 #"localhost",
+                 "127.0.0.1",
+                 "localhost",
                  #"179.61.219.154",
                  "vividstockfish.com",
                  "www.vividstockfish.com"]
@@ -41,8 +42,9 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "https://www.vividstockfish.com",
     "https://vividstockfish.com",
-    #"http://localhost:3000",
-    #"http://127.0.0.1:8000",
+    "http://localhost:3000",
+    #
+    "http://127.0.0.1:8000",
 ]
 
 # Application definition
@@ -63,7 +65,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'rest_framework_jwt',
 ]
-CSRF_TRUSTED_ORIGINS = [#'http://localhost:3000',  
+CSRF_TRUSTED_ORIGINS = ['http://localhost:3000',  
                         "https://www.vividstockfish.com",
                         "https://vividstockfish.com"]
 

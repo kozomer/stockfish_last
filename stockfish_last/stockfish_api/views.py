@@ -1,18 +1,19 @@
 from django.shortcuts import render
 import pandas as pd
 from .models import (Customers, Products, Sales, Warehouse, ROP, Salers, SalerPerformance, SaleSummary, SalerMonthlySaleRating, 
-                    MonthlyProductSales,CustomerPerformance, ProductPerformance, OrderList, GoodsOnRoad, Trucks, NotificationsOrderList)
+                    MonthlyProductSales,CustomerPerformance, ProductPerformance, OrderList, GoodsOnRoad, Trucks, NotificationsOrderList, SalerReceipeRating)
 from django.views import View
 from rest_framework.views import APIView
 from django.http import JsonResponse, HttpResponse
 import json
 from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
-from .definitions import jalali_to_greg, greg_to_jalali, calculate_experience_rating, calculate_sale_rating, calculate_passive_saler_experience_rating, current_jalali_date, get_exchange_rate, get_model, generate_future_forecast_dates, the_man_from_future
+from .definitions import (jalali_to_greg, greg_to_jalali, calculate_experience_rating, calculate_sale_rating, calculate_passive_saler_experience_rating,
+                            current_jalali_date, get_exchange_rate, get_model, generate_future_forecast_dates, the_man_from_future,calculate_receipe_rating)
 from datetime import datetime
 import datetime
 import jdatetime
-from django.db.models import Sum, Avg
+from django.db.models import Sum, Avg, F
 from django.db.models.functions import Coalesce
 from django.views.decorators.csrf import csrf_exempt
 import statistics
@@ -38,7 +39,7 @@ from rest_framework.decorators import  permission_classes, authentication_classe
 from django.db.utils import OperationalError
 from rest_framework.exceptions import ValidationError
 import filetype
-
+from datetime import datetime
 
 
 
@@ -278,13 +279,14 @@ class AddSalesView(APIView):
 
             count = 0
             for i, row in data.iterrows():
+
                 no = row["No"]
                 if Sales.objects.filter(no=no).exists():
                     continue
                 count += 1
 
                 # Check required fields
-                for field in ['Good Code', 'Customer Code', 'Original Output Value', 'Net Sales', 'Saler', 'PSR']:
+                for field in ['Good Code', 'Customer Code', 'The Original Value', 'Net Sales', 'Saler',]:
                     if not row[field]:
                         return JsonResponse({'error': f"{field} cannot be empty"}, status=400)
 
@@ -299,7 +301,9 @@ class AddSalesView(APIView):
 
                 # Check valid date format
                 try:
-                    date = jdatetime.date(int(row["Year"]), int(row["Month"]), int(row["Day"]))
+                    date_raw = row["Date"].split("-")
+                    date = jdatetime.date(int(date_raw[0]), int(date_raw[1]), int(date_raw[2]))
+                    gregorian_date = jalali_to_greg(date.day,date.month,date.year)
                 except ValueError:
                     return JsonResponse({'error': "Date should be in the format of YYYY-MM-DD"}, status=400)
                 except IndexError as e:
@@ -338,92 +342,141 @@ class AddSalesView(APIView):
                     
                     return JsonResponse({'error': "No saler found"}, status=400)
                 
+                # Calculation of "KG"
+                if row["Unit"].lower() == "kg":
+                    kg = row["The Original Value"]
+                else:
+                    kg = row["The Original Value"] * product.unit_secondary
+                
+                # Calculation of Balance
+                net_sales = float(row['Net Sales'])
+                payment_cash = 0
+                payment_check = 0
+                balance = net_sales-(payment_cash+payment_check)
+
+                #Calculation of Dollar Sepidar
+                currency_sepidar=float(row["Currency-Sepidar"])
+                currency=float(row["Currency"])
+                dollar_sepidar = net_sales/currency_sepidar
+                dollar = net_sales/currency
+
+                #Calculation of monthly sale rating
+                try:
+                    monthly_sale_rating_object = SalerMonthlySaleRating.objects.get(name = saler.name, year = date.year, month = date.month)
+                    monthly_sale_rating = monthly_sale_rating_object.sale_rating
+                except Exception as e:
+                    monthly_sale_rating = 1
+                #Calculation of Manager Rating
+                if current_jalali_date().month == date.month and current_jalali_date().year == date.year:
+                    manager_rating =saler.manager_performance_rating
+                else:
+                    manager_rating = 1
+                
+                try:
+                    receipe_rating_object = SalerReceipeRating.objects.get(name = saler.name, year = date.year, month = date.month)
+                    receipe_rating = receipe_rating_object.sale_rating
+                except Exception as e:
+                    receipe_rating = 1
+                # Saler Factor
+                saler_factor = monthly_sale_rating * manager_rating * receipe_rating * saler.experience_rating * (row["Payment Type"] if row["Payment Type"] else 1)* (row["CT"] if row["CT"] else 1)
+                prim_percantage = row["Prim Percantage"]
+                bonus_factor = saler_factor * prim_percantage
+                bonus = bonus_factor * net_sales
+
+                discount_percentage = ((float(row["Net Sales"])/float(row["Amount Sale"]))-1)*100
+
+
+                
                 # Save the Sale object
                 sale = Sales(
                     no=no,
                     bill_number=row["Bill Number"],
                     date=date,
-                    psr=row["PSR"],
+                    gregorian_date = gregorian_date,
+                    psr= row["PSR"],
                     customer_code=row["Customer Code"],
                     name= customer.description,
                     city= customer.city,
                     area= customer.area,
-                    color_making_saler=row["Color Making Saler"],
-                    group= product.group,
+                    color_making_saler= None, #row["Color Making Saler"],
+                    #group= product.group,
                     product_code=row["Good Code"],
                     product_name=product.description_ir,
                     unit=product.unit,
                     unit2=product.unit_secondary,
                     original_value=row["The Original Value"],
-                    kg = row['KG'],
-                    original_output_value=row["Original Output Value"],
+                    kg = kg,
+                    #original_output_value=row["Original Output Value"],
                     secondary_output_value=row["Secondary Output Value"],
-                    price=row["Price"],
-                    original_price=row["Original Price"],
-                    discount_percentage=row["Discount Percantage (%)"],
+                    price_dollar = row["Price/Dollar"],
+                    #price=row["Price"],
+                    original_price_dollar=row["Original Price"], 
+                    #original_price=row["Original Price"], #!!!!!!!!!!!
+                    discount_percentage=discount_percentage,
                     amount_sale=row["Amount Sale"],
                     discount=row["Discount"],
                     additional_sales=row["Additional Sales"],
                     net_sales=row["Net Sales"],
-                    discount_percentage_2=row["Discount Percantage 2(%)"],
-                    real_discount_percentage=row["Real Discount Percantage (%)"],
-                    payment_cash=row["Payment Cash"],
-                    payment_check=row["Payment Check"],
-                    balance=row["Balance"],
-                    saler=row["Saler"],
-                    currency_sepidar=row["Currency-Sepidar"],
-                    dollar_sepidar=row["Dollar-Sepidar"],
-                    currency=row["Currency"],
-                    dollar=row["Dollar"],
-                    manager_rating=row["Manager Rating"],
-                    senior_saler=row["Senior Saler"],
-                    tot_monthly_sales=row["Tot Monthly Sales"],
-                    receipment=row["Receipment"],
-                    ct=row["CT"],
-                    payment_type=row["Payment Type"],
-                    customer_size=row["Customer Size"],
-                    saler_factor=row["Saler Factor"],
-                    prim_percentage=row["Prim Percantage"],
-                    bonus_factor=row["Bonus Factor"],
-                    bonus=row["Bonus"]
+                    #discount_percentage_2=row["Discount Percantage 2(%)"],
+                    #real_discount_percentage=row["Real Discount Percantage (%)"],
+                    payment_cash= payment_cash, #row["Payment Cash"],
+                    payment_check= payment_check, #row["Payment Check"],
+                    balance = balance,
+                    saler= saler.name,
+                    currency_sepidar= currency_sepidar, 
+                    dollar_sepidar= dollar_sepidar,
+                    currency= currency, 
+                    dollar= dollar,
+                    manager_rating= manager_rating,
+                    senior_saler= saler.experience_rating,
+                    tot_monthly_sales= monthly_sale_rating,
+                    receipment= receipe_rating,
+                    ct= row["CT"],
+                    payment_type= row["Payment Type"], 
+                    customer_size= row["Customer Size"], 
+                    saler_factor = saler_factor,
+                    prim_percentage=row["Prim Percantage"], #! sepidardan alınmalı
+                    bonus_factor=bonus_factor,
+                    bonus=bonus
                 )
                 sale.save()
 
                 # Update stock in warehouse
                 try:
                     warehouse_item = Warehouse.objects.get(product_code=sale.product_code)
-                    warehouse_item.stock -= sale.original_output_value
+                    warehouse_item.stock -= sale.original_value
                     warehouse_item.save()
                 except Warehouse.DoesNotExist:
                     return JsonResponse({'error': f"No product found with code '{row['Good Code']}' in warehouse"}, status=400)
 
-                count += 1
             return JsonResponse({'message': f"{count} sales data added successfully"}, status=200)
 
         except OperationalError as e:
             return JsonResponse({'error': f"Database error: {str(e)}"}, status=500)
         except Exception as e:
-            traceback.print_exc()
+            
             return JsonResponse({'error': str(e)}, status=500)
 
 
 class ViewSalesView(APIView):
     permission_classes = [IsAuthenticated,]
     authentication_classes = [JWTAuthentication,]
+    
     def get(self, request, *args, **kwargs):
         sales = Sales.objects.values().all()
         sale_list = [[sale['no'], sale['bill_number'], sale['date'].strftime('%Y-%m-%d'), sale['psr'], sale['customer_code'],
-                        sale['name'], sale['city'], sale['area'], sale['color_making_saler'], sale['group'], sale['product_code'], 
-                        sale['product_name'], sale['unit'], sale['unit2'], sale['kg'], sale['original_value'], sale['original_output_value'], 
-                        sale['secondary_output_value'], sale['price'], sale['original_price'], sale['discount_percentage'], sale['amount_sale'],
-                        sale['discount'], sale['additional_sales'], sale['net_sales'], sale['discount_percentage_2'], sale['real_discount_percentage'],
-                        sale['payment_cash'], sale['payment_check'], sale['balance'], sale['saler'], sale['currency_sepidar'], sale['dollar_sepidar'], 
-                        sale['currency'], sale['dollar'], sale['manager_rating'], sale['senior_saler'], sale['tot_monthly_sales'], sale['receipment'], 
-                        sale['ct'], sale['payment_type'], sale['customer_size'], sale['saler_factor'], sale['prim_percentage'], sale['bonus_factor'], 
-                        sale['bonus']]
+                        sale['name'], sale['city'], sale['area'], sale['color_making_saler'], sale['product_code'], 
+                        sale['product_name'], sale['unit'], sale['unit2'], sale['kg'], sale['original_value'], 
+                        sale['secondary_output_value'], sale['price_dollar'], sale['original_price_dollar'], sale['discount_percentage'], 
+                        sale['amount_sale'], sale['discount'], sale['additional_sales'], sale['net_sales'], sale['payment_cash'], 
+                        sale['payment_check'], sale['balance'], sale['saler'], sale['currency_sepidar'], sale['dollar_sepidar'], 
+                        sale['currency'], sale['dollar'], sale['manager_rating'], sale['senior_saler'], sale['tot_monthly_sales'], 
+                        sale['receipment'], sale['ct'], sale['payment_type'], sale['customer_size'], sale['saler_factor'], sale['prim_percentage'], 
+                        sale['bonus_factor'], sale['bonus']]
                      for sale in sales]
         return JsonResponse(sale_list, safe=False)
 
+#! Düzenleme burada kaldı.
 class DeleteSaleView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
@@ -431,11 +484,11 @@ class DeleteSaleView(APIView):
         try:
             no = request.POST.get('no', None)
             product_code = request.POST.get('product_code', None)
-            original_output_value = request.POST.get('original_output_value', None)
+            original_value = request.POST.get('original_value', None)
             Sales.objects.filter(no=no).delete()
             try:
                 warehouse_item = Warehouse.objects.get(product_code=product_code)
-                warehouse_item.stock += float(original_output_value)
+                warehouse_item.stock += float(original_value)
                 warehouse_item.save()
             except Warehouse.DoesNotExist:
                 return JsonResponse({'error': f"No product found with code '{product_code}' in warehouse"}, status=400)
@@ -452,7 +505,7 @@ class EditSaleView(APIView):
             data = json.loads(request.body)
 
             # Check for required fields
-            for field in ['new_product_code', 'new_customer_code', 'new_original_output_value', 'new_net_sales', 'new_saler', 'new_psr', 'new_date']:
+            for field in ['new_product_code', 'new_customer_code', 'new_original_value', 'new_net_sales', 'new_saler', 'new_psr', 'new_date']:
                 if not data.get(field):
                     return JsonResponse({'error': f"{field} cannot be empty"}, status=400)
 
@@ -474,6 +527,7 @@ class EditSaleView(APIView):
                 return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD'"}, status=400)
             except Exception as e:
                 return JsonResponse({'error': str(e)}, status=400)
+            
             # Check for valid psr value
             if data.get('new_psr') not in ['P', 'S', 'R']:
                 return JsonResponse({'error': "Invalid P-S-R value. Allowed values are 'P', 'S', and 'R'."}, status=400)
@@ -483,6 +537,7 @@ class EditSaleView(APIView):
                 return JsonResponse({'error': f"No product found with code '{data.get('new_product_code')}' in Warehouse. Please check product code. If there is a new product please add firstly to Warehouse."}, status=400)
             if not Products.objects.filter(product_code_ir=data.get('new_product_code')).exists():
                 return JsonResponse({'error': f"No product found with code '{data.get('new_product_code')}'. Please check product code. If there is a new product please add firstly to Products."}, status=400)
+            
             # Check for existing customer
             if not Customers.objects.filter(customer_code=data.get('new_customer_code')).exists():
                 return JsonResponse({'error': f"No customer found with code '{data.get('new_customer_code')}'. Please check customer code. If there is a new customer please add firstly to Customers."}, status=400)
@@ -504,27 +559,23 @@ class EditSaleView(APIView):
             sale.psr = data.get('new_psr')
             sale.customer_code = data.get('new_customer_code')
             sale.name = data.get('new_name')
-            sale.area = data.get('new_area')
             sale.city = data.get('new_city')
+            sale.area = data.get('new_area')
             sale.color_making_saler = data.get('new_color_making_saler')
-            sale.group = data.get('new_group')
             sale.product_code = data.get('new_product_code')
             sale.product_name = data.get('new_product_name')
             sale.unit = data.get('new_unit')
             sale.unit2 = data.get('new_unit2')
             sale.kg = data.get('new_kg')
             sale.original_value = data.get('new_original_value')
-            sale.original_output_value = data.get('new_original_output_value')
             sale.secondary_output_value = data.get('new_secondary_output_value')
-            sale.price = data.get('new_price')
-            sale.original_price = data.get('new_original_price')
+            sale.price_dollar = data.get('new_price_dollar')
+            sale.original_price_dollar = data.get('new_original_price_dollar')
             sale.discount_percentage = data.get('new_discount_percentage')
             sale.amount_sale = data.get('new_amount_sale')
             sale.discount = data.get('new_discount')
             sale.additional_sales = data.get('new_additional_sales')
             sale.net_sales = data.get('new_net_sales')
-            sale.discount_percentage_2 = data.get('new_discount_percentage_2')
-            sale.real_discount_percentage = data.get('new_real_discount_percentage')
             sale.payment_cash = data.get('new_payment_cash')
             sale.payment_check = data.get('new_payment_check')
             sale.balance = data.get('new_balance')
@@ -556,8 +607,9 @@ class EditSaleView(APIView):
             return JsonResponse({'error': str(e)}, status=400)
 
         except Exception as e:
-            traceback.print_exc()
+            
             return JsonResponse({'error': str(e)}, status=500)
+
 
 class ExportSalesView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -570,18 +622,15 @@ class ExportSalesView(APIView):
                 worksheet.column_dimensions[column_cells[0].column_letter].width = length + 2
 
         sales = Sales.objects.all().values()
-        # Create a new workbook and add a worksheet
         jalali_date= current_jalali_date().strftime('%Y-%m-%d')
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = f"Sales {jalali_date}"
-        # Write the header row
-        header = ['No', 'Bill Number', 'Date', 'PSR', 'Customer Code', 'Name', 'City', 'Area', 'Color Making Saler', 'Group',
-                  'Product Code', 'Product Name', 'Unit', 'Unit2', 'Kg', 'Original Value', 'Original Output Value', 'Secondary Output Value',
-                  'Price', 'Original Price', 'Discount Percentage', 'Amount Sale', 'Discount', 'Additional Sales', 'Net Sales',
-                  'Discount Percentage 2', 'Real Discount Percentage', 'Payment Cash', 'Payment Check', 'Balance', 'Saler', 'Currency Sepidar',
-                  'Dollar Sepidar', 'Currency', 'Dollar', 'Manager Rating', 'Senior Saler', 'Total Monthly Sales', 'Receipment', 'CT',
-                  'Payment Type', 'Customer Size', 'Saler Factor', 'Prim Percentage', 'Bonus Factor', 'Bonus']
+        header = ['No', 'Bill Number', 'Date', 'PSR', 'Customer Code', 'Name', 'City', 'Area', 'Color Making Saler', 'Product Code',
+                  'Product Name', 'Unit', 'Unit2', 'Kg', 'Original Value', 'Secondary Output Value', 'Price Dollar', 'Original Price Dollar',
+                  'Discount Percentage', 'Amount Sale', 'Discount', 'Additional Sales', 'Net Sales', 'Payment Cash', 'Payment Check',
+                  'Balance', 'Saler', 'Currency Sepidar', 'Dollar Sepidar', 'Currency', 'Dollar', 'Manager Rating', 'Senior Saler',
+                  'Total Monthly Sales', 'Receipment', 'CT', 'Payment Type', 'Customer Size', 'Saler Factor', 'Prim Percentage', 'Bonus Factor', 'Bonus']
         for col_num, column_title in enumerate(header, 1):
             cell = ws.cell(row=1, column=col_num)
             cell.value = column_title
@@ -591,21 +640,18 @@ class ExportSalesView(APIView):
                                                  bottom=openpyxl.styles.Side(style='medium'),
                                                  left=openpyxl.styles.Side(style='medium'),
                                                  right=openpyxl.styles.Side(style='medium'))
-        ## Write the data rows
         for row_num, sale in enumerate(sales, 2):
             row = [sale['no'], sale['bill_number'], sale['date'].strftime('%Y-%m-%d'), sale['psr'], sale['customer_code'],
-                   sale['name'], sale['city'], sale['area'], sale['color_making_saler'], sale['group'], sale['product_code'], 
-                   sale['product_name'], sale['unit'], sale['unit2'], sale['kg'], sale['original_value'], sale['original_output_value'], 
-                   sale['secondary_output_value'], sale['price'], sale['original_price'], sale['discount_percentage'], sale['amount_sale'],
-                   sale['discount'], sale['additional_sales'], sale['net_sales'], sale['discount_percentage_2'], sale['real_discount_percentage'],
-                   sale['payment_cash'], sale['payment_check'], sale['balance'], sale['saler'], sale['currency_sepidar'], sale['dollar_sepidar'], 
-                   sale['currency'], sale['dollar'], sale['manager_rating'], sale['senior_saler'], sale['tot_monthly_sales'], sale['receipment'], 
-                   sale['ct'], sale['payment_type'], sale['customer_size'], sale['saler_factor'], sale['prim_percentage'], sale['bonus_factor'], 
-                   sale['bonus']]
+                   sale['name'], sale['city'], sale['area'], sale['color_making_saler'], sale['product_code'], sale['product_name'],
+                   sale['unit'], sale['unit2'], sale['kg'], sale['original_value'], sale['secondary_output_value'],
+                   sale['price_dollar'], sale['original_price_dollar'], sale['discount_percentage'], sale['amount_sale'],
+                   sale['discount'], sale['additional_sales'], sale['net_sales'], sale['payment_cash'], sale['payment_check'],
+                   sale['balance'], sale['saler'], sale['currency_sepidar'], sale['dollar_sepidar'], sale['currency'],
+                   sale['dollar'], sale['manager_rating'], sale['senior_saler'], sale['tot_monthly_sales'], sale['receipment'],
+                   sale['ct'], sale['payment_type'], sale['customer_size'], sale['saler_factor'], sale['prim_percentage'], sale['bonus_factor'], sale['bonus']]
             for col_num, cell_value in enumerate(row, 1):
                 cell = ws.cell(row=row_num, column=col_num)
                 cell.value = cell_value
-        # Apply some styling to the Excel file
         for row in ws.iter_rows(min_row=1, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
             for cell in row:
                 cell.border = openpyxl.styles.Border(top=openpyxl.styles.Side(style='thin'),
@@ -613,25 +659,101 @@ class ExportSalesView(APIView):
                                                      left=openpyxl.styles.Side(style='thin'),
                                                      right=openpyxl.styles.Side(style='thin'))
                 cell.alignment = openpyxl.styles.Alignment(horizontal='center')
-        # Set the column widths
         set_column_widths(ws)
-
-        # Apply auto filter
         ws.auto_filter.ref = f"A1:AT{ws.max_row}"
 
-
-        # Set the response headers for an Excel file
         buffer = BytesIO()
         wb.save(buffer)
         buffer.seek(0)
         content = buffer.read()
 
-        # Encode the content in base64
         base64_content = base64.b64encode(content).decode()
 
-
-        # Send the content and filename in the JSON response
         return JsonResponse({'filename': f'sales({jalali_date}).xlsx', 'content': base64_content})
+
+class PowerBIExportSalesView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def get(self, request, *args, **kwargs):
+        def set_column_widths(worksheet):
+            for column_cells in worksheet.columns:
+                length = max(len(str(cell.value)) for cell in column_cells)
+                worksheet.column_dimensions[column_cells[0].column_letter].width = length + 2
+
+        sales = Sales.objects.all().values()
+        jalali_date= current_jalali_date().strftime('%Y-%m-%d')
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = f"Sales {jalali_date}"
+        
+        header = ['Type of Document', 'Bill Number', 'Date', 'year', 'Month', 'Day', 'Days of the Week', 'Customer Code',
+                  'Name', 'city', 'area', 'Kind of sale', 'Grupe', 'Good Code', 'Service / Goods', 'Main Unit', 'The original value',
+                  'Price', 'Amount Sale', 'Discount', 'Additional Sales', 'Net Sales', 'Secondary output value', 'Currency', '$', 'Main Unit2',
+                  'Total output value Kg', 'Seller']
+                  
+        for col_num, column_title in enumerate(header, 1):
+            cell = ws.cell(row=1, column=col_num)
+            cell.value = column_title
+            cell.font = openpyxl.styles.Font(bold=True)
+            cell.fill = openpyxl.styles.PatternFill(start_color='BFEFFF', end_color='BFEFFF', fill_type='solid')
+            cell.border = openpyxl.styles.Border(top=openpyxl.styles.Side(style='medium'),
+                                                 bottom=openpyxl.styles.Side(style='medium'),
+                                                 left=openpyxl.styles.Side(style='medium'),
+                                                 right=openpyxl.styles.Side(style='medium'))
+                                                 
+        for row_num, sale in enumerate(sales, 2):
+            row = [''] * len(header)  # Initialize empty row
+            row[header.index('Type of Document')] = "فاكتور"
+            if 'bill_number' in sale: row[header.index('Bill Number')] = sale['bill_number']
+            if 'date' in sale:
+                row[header.index('Date')] = sale['date'].strftime('%Y-%m-%d')
+                row[header.index('year')] = sale['date'].year
+                row[header.index('Month')] = sale['date'].month
+                row[header.index('Day')] = sale['date'].day
+            if 'customer_code' in sale: row[header.index('Customer Code')] = sale['customer_code']
+            if 'name' in sale: row[header.index('Name')] = sale['name']
+            if 'city' in sale: row[header.index('city')] = sale['city']
+            if 'area' in sale: row[header.index('area')] = sale['area']
+            if 'product_code' in sale: row[header.index('Good Code')] = sale['product_code']
+            if 'product_name' in sale: row[header.index('Service / Goods')] = sale['product_name']
+            if 'unit' in sale: row[header.index('Main Unit')] = sale['unit']
+            if 'original_value' in sale: row[header.index('The original value')] = sale['original_value']
+            if 'amount_sale' in sale: row[header.index('Amount Sale')] = sale['amount_sale']
+            if 'discount' in sale: row[header.index('Discount')] = sale['discount']
+            if 'additional_sales' in sale: row[header.index('Additional Sales')] = sale['additional_sales']
+            if 'net_sales' in sale: row[header.index('Net Sales')] = sale['net_sales']
+            if 'secondary_output_value' in sale: row[header.index('Secondary output value')] = sale['secondary_output_value']
+            if 'currency' in sale: row[header.index('Currency')] = sale['currency']
+            if 'price' in sale: row[header.index('Price')] = sale['price']
+            if 'unit2' in sale: row[header.index('Main Unit2')] = sale['unit2']
+            row[header.index('Total output value Kg')] = sale['kg']*sale['original_value']
+            if 'saler' in sale: row[header.index('Seller')] = sale['saler']
+            # Fill other values in similar manner...
+            
+            for col_num, cell_value in enumerate(row, 1):
+                cell = ws.cell(row=row_num, column=col_num)
+                cell.value = cell_value
+                
+        for row in ws.iter_rows(min_row=1, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
+            for cell in row:
+                cell.border = openpyxl.styles.Border(top=openpyxl.styles.Side(style='thin'),
+                                                     bottom=openpyxl.styles.Side(style='thin'),
+                                                     left=openpyxl.styles.Side(style='thin'),
+                                                     right=openpyxl.styles.Side(style='thin'))
+                cell.alignment = openpyxl.styles.Alignment(horizontal='center')
+                
+        set_column_widths(ws)
+        ws.auto_filter.ref = f"A1:Z{ws.max_row}"
+
+        buffer = BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        content = buffer.read()
+
+        base64_content = base64.b64encode(content).decode()
+
+        return JsonResponse({'filename': f'PowerBI_sales({jalali_date}).xlsx', 'content': base64_content})
 
 
 
@@ -668,7 +790,7 @@ class AddWarehouseView(APIView):
                     if Warehouse.objects.filter(product_code=product_code).exists():
                         continue
                     count+=1
-                    warehouse_item = Warehouse(product_code=product_code, title=row["Product Title"], unit=row["Unit"], stock=row["Stock"])
+                    warehouse_item = Warehouse(product_code=product_code, product_code_tr = product.product_code_tr, title=row["Product Title"], unit=row["Unit"], stock=row["Stock"], kg= row["KG"])
                     warehouse_item.save()
                 except KeyError as e:
                     return JsonResponse({'error': f"Column '{e}' not found in the uploaded file"}, status=400)
@@ -681,12 +803,17 @@ class AddWarehouseView(APIView):
 class ViewWarehouseView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
+
     def get(self, request, *args, **kwargs):
         # if not request.user.is_authenticated:
         #     return HttpResponse(status=401)
         warehouse_items = Warehouse.objects.values().all()
-        warehouse_list = [[item['product_code'], item['title'], item['unit'], item['stock']] for item in warehouse_items]
-        return JsonResponse(warehouse_list, safe=False)
+        warehouse_list = [[item['product_code'], item['product_code_tr'], item['title'], item['unit'], item['stock'], item['kg']] for item in warehouse_items]
+
+        # Calculate the total weight in the warehouse.
+        total_weight = Warehouse.objects.aggregate(total_weight=Sum(F('stock') * F('kg')))['total_weight']
+        
+        return JsonResponse({'warehouse_list': warehouse_list, 'total_weight': total_weight}, safe=False)
 
 class DeleteWarehouseView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -731,7 +858,7 @@ class EditWarehouseView(APIView):
                     warehouse_item.product_code = new_product_code
 
             # Update other warehouse item fields
-            for field in ['new_title', 'new_unit', 'new_stock']:
+            for field in ['new_title', 'new_unit', 'new_stock', 'new_product_code_tr', 'new_kg']:
                 value = data.get(field)
                 if value is not None and value != '':
                     updated_field = field[4:]  # Remove the "new_" prefix
@@ -769,7 +896,7 @@ class ExportWarehouseView(APIView):
         ws = wb.active
         ws.title = f"Warehouse {jalali_date}"
         # Write the header row
-        header = ['Product Code', 'Title', 'Unit', 'Stock']
+        header = ['Product Code', 'Product Code TR', 'Title', 'Unit', 'Stock', 'KG']
         for col_num, column_title in enumerate(header, 1):
             cell = ws.cell(row=1, column=col_num)
             cell.value = column_title
@@ -781,7 +908,7 @@ class ExportWarehouseView(APIView):
                                                  right=openpyxl.styles.Side(style='medium'))
         # Write the data rows
         for row_num, item in enumerate(warehouse_items, 2):
-            row = [item['product_code'], item['title'], item['unit'], item['stock']]
+            row = [item['product_code'], item['product_code_tr'], item['title'], item['unit'], item['stock'], item['kg']]
             for col_num, cell_value in enumerate(row, 1):
                 cell = ws.cell(row=row_num, column=col_num)
                 cell.value = cell_value
@@ -851,10 +978,12 @@ class AddProductsView(APIView):
                         unit=row["Unit"],
                         unit_secondary=row["Unit Secondary"],
                         weight = row["Weight"],
-                        currency = row["Currency"],
-                        price= row["Price"]
+                        #currency = row["Currency"],
+                        price= row["Price"],
+                        suppliers = row["Suppliers"]
                     )
                     product.save()
+                    
                 except KeyError as e:
                     return JsonResponse({'error': f"Column '{e}' not found in the uploaded file"}, status=400)
                 except Exception as e:
@@ -872,7 +1001,7 @@ class ViewProductsView(APIView):
     def get(self, request, *args, **kwargs):
         products = Products.objects.values().all()
         product_list = [[p['group'], p['subgroup'], p['feature'], p['product_code_ir'], p['product_code_tr'],
-                         p['description_tr'], p['description_ir'], p['unit'], p['unit_secondary'],p['weight'],p['currency'], p['price']] for p in products]
+                         p['description_tr'], p['description_ir'],  p['unit'], p['unit_secondary'],p['weight'], p['price'], p['suppliers']] for p in products]
         return JsonResponse(product_list, safe=False)
 
 class DeleteProductView(APIView):
@@ -908,7 +1037,7 @@ class EditProductView(APIView):
                     product.product_code_ir = new_product_code_ir
 
             # Update other product fields
-            for field in [ 'new_currency', 'new_description_ir', 'new_description_tr', 'new_feature', 'new_group', 'new_price', 'new_product_code_tr', 'new_subgroup', 'new_unit', 'new_unit_secondary', 'new_weight']:
+            for field in ['new_description_ir', 'new_description_tr', 'new_feature', 'new_group', 'new_price','new_suppliers', 'new_product_code_tr', 'new_subgroup', 'new_unit', 'new_unit_secondary', 'new_weight']:
                 value = data.get(field)
                 if value is not None and value != '':
                     updated_field = field[4:]  # Remove the "new_" prefix
@@ -946,7 +1075,7 @@ class ExportProductsView(APIView):
         ws.title = f"Products {jalali_date}"
         # Write the header row
         header = ['Group', 'Subgroup', 'Feature', 'Product Code (IR)', 'Product Code (TR)', 'Description (TR)', 
-                  'Description (IR)', 'Unit', 'Secondary Unit', 'Weight', 'Currency', 'Price']
+                  'Description (IR)', 'Suppliers' , 'Unit', 'Secondary Unit', 'Weight', 'Price']
         for col_num, column_title in enumerate(header, 1):
             cell = ws.cell(row=1, column=col_num)
             cell.value = column_title
@@ -959,8 +1088,8 @@ class ExportProductsView(APIView):
         # Write the data rows
         for row_num, product in enumerate(products, 2):
             row = [product['group'], product['subgroup'], product['feature'], product['product_code_ir'], 
-                   product['product_code_tr'], product['description_tr'], product['description_ir'], product['unit'], 
-                   product['unit_secondary'], product['weight'], product['currency'], product['price']]
+                   product['product_code_tr'], product['description_tr'], product['description_ir'], product['suppliers'],  product['unit'], 
+                   product['unit_secondary'], product['weight'], product['price']]
             for col_num, cell_value in enumerate(row, 1):
                 cell = ws.cell(row=row_num, column=col_num)
                 cell.value = cell_value
@@ -1006,9 +1135,9 @@ class ChartView(APIView):
         #product_code = request.POST.get('product_code')
         #start_date = date(1400,4,1)
         #end_date = date(1400,4,30)
-        data = Sales.objects.filter(group = "Boya").values('date', 'original_output_value')
+        data = Sales.objects.filter(group = "Boya").values('date', 'original_value')
         date_list = [obj['date'] for obj in data]
-        output_value_list = [obj['original_output_value'] for obj in data]
+        output_value_list = [obj['original_value'] for obj in data]
         response_data = {'date_list': date_list, 'output_value_list': output_value_list}
 
         return JsonResponse(response_data, safe=False)
@@ -1027,11 +1156,11 @@ class ItemListView(APIView):
         product_code = data.get('product_code')
 
         # Filter Sales by the product_title
-        data = Sales.objects.filter(product_code=product_code).values('date', 'original_output_value')
+        data = Sales.objects.filter(product_code=product_code).values('date', 'original_value')
         product_name = Products.objects.filter(product_code_ir=product_code).values('description_ir')
-        # Get the original_output_value of each sale
+        # Get the original_value of each sale
         date_list = [obj['date'] for obj in data]
-        output_value_list = [obj['original_output_value'] for obj in data]
+        output_value_list = [obj['original_value'] for obj in data]
         product_name = [obj["product_title"] for obj in product_name]
 
         response_data = {'product_name':product_name ,'date_list': date_list, 'output_value_list': output_value_list}
@@ -1051,9 +1180,10 @@ class AddSalerView(APIView):
     def post(self, request, *args, **kwargs):
         try:
             data = json.loads(request.body)
-            print(data)
+
             jalali_date = data.get("job_start_date").split("-")
             saler_type = data.get("saler_type")
+
             try:
                 jalali_date = jdatetime.date(int(jalali_date[0]), int(jalali_date[1]), int(jalali_date[2]))
             except ValueError:
@@ -1065,7 +1195,7 @@ class AddSalerView(APIView):
             if the_man_from_future(jalali_date):
                 return JsonResponse({'error': "HERE'S THE MAN FROM THE FUTURE TO SAVE US ALL!!!! Job Start Date cannot be future time, please check it :) "}, status=400)
             
-            if saler_type == "Active":
+            if saler_type == "active":
                 bool_active_saler = True
                 bool_passive_saler = False
                 experience_rating = calculate_experience_rating(jalali_date)
@@ -1095,7 +1225,7 @@ class AddSalerView(APIView):
         except ValueError as e:
             return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD' "}, status=400)
         except Exception as e:
-            traceback.print_exc()
+            
             return JsonResponse({'error': str(e)}, status=500)
 
 class EditSalerView(APIView):
@@ -1105,7 +1235,7 @@ class EditSalerView(APIView):
     def post(self, request, *args, **kwargs):
         try:
             data = json.loads(request.body)
-            print(data)
+
 
             old_data = data.get('old_data')
             new_data = data.get('new_data')
@@ -1113,12 +1243,12 @@ class EditSalerView(APIView):
             # Check if name is provided
             name = new_data['name']
             if not name:
-                traceback.print_exc()
+                
                 return JsonResponse({'error': "Missing required parameter: 'name'"}, status=400)
             
             # Get the saler object
             saler = Salers.objects.get(id=old_data['id'])
-            print(saler)
+
             
             if saler.is_active_saler == True and saler.is_active_saler == False:
                 # Update other saler fields
@@ -1128,20 +1258,20 @@ class EditSalerView(APIView):
                             new_date =new_data['job_start_date'].split("-")
                             date = jdatetime.date(int(new_date[0]), int(new_date[1]), int(new_date[2]))
                             saler.experience_rating = calculate_experience_rating(date)
-                            print("active: ",saler.experience_rating)
+
                         except ValueError:
                             return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD'"}, status=400)
                         except IndexError as e:
                             return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD'"}, status=400)
                         except Exception as e:
-                            traceback.print_exc()
+                            
                             return JsonResponse({'error': str(e)}, status=400)
                     value = new_data[f'{field}']
 
                     if value is not None and value != '':
                         setattr(saler, field, value)
                     else:
-                        traceback.print_exc() 
+                         
                         return JsonResponse({'error': "One or more data field is empty!"}, status=400)
 
 
@@ -1155,9 +1285,9 @@ class EditSalerView(APIView):
                             try:
                                 new_date =new_data['job_start_date'].split("-")
                                 date = jdatetime.date(int(new_date[0]), int(new_date[1]), int(new_date[2]))
-                                print("date:",date)
+
                                 saler.experience_rating = calculate_passive_saler_experience_rating(date)
-                                print("passive: ",saler.experience_rating)
+
                             except ValueError:
                                 return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD'"}, status=400)
                             except IndexError as e:
@@ -1169,27 +1299,27 @@ class EditSalerView(APIView):
                         if value is not None and value != '':
                             setattr(saler, field, value)
                         else:
-                            traceback.print_exc() 
+                             
                             return JsonResponse({'error': "One or more data field is empty!"}, status=400)
 
 
                     saler.save()
                     return JsonResponse({'message': "Your changes have been successfully saved"}, status=200)
                 except Exception as e:
-                    traceback.print_exc()
+                    
                     return JsonResponse({'error': str(e)}, status=500)
 
 
         except Salers.DoesNotExist:
-            traceback.print_exc()
+            
             return JsonResponse({'error': "Saler not found"}, status=400)
 
         except ValueError as e:
-            traceback.print_exc()
+            
             return JsonResponse({'error': str(e)}, status=400)
 
         except Exception as e:
-            traceback.print_exc()
+            
             return JsonResponse({'error': str(e)}, status=500)
 
 
@@ -1200,7 +1330,7 @@ class CollapsedSalerView(APIView):
     
     def get(self, request, *args, **kwargs):
         active_salers = Salers.objects.filter(is_deleted=False, is_active_saler=True)
-        print(active_salers)
+
         active_salers_list = [[saler.id, saler.name, saler.is_active] for saler in active_salers]
         passive_salers = Salers.objects.filter(is_deleted=False, is_passive_saler=True)
         passive_salers_list = [[saler.id, saler.name, saler.is_active] for saler in passive_salers]
@@ -1244,7 +1374,7 @@ class SalerTableView(APIView):
         saler_list = [[s['id'], s['name'], s['job_start_date'].strftime('%Y-%m-%d'), s['manager_performance_rating'],
                        s['experience_rating'], s['monthly_total_sales_rating'], s['receipment_rating'], s['is_active'], s['is_active_saler'] ,s['is_passive_saler']] for s in salers]
         
-        print(saler_list)
+
         return JsonResponse(saler_list, safe=False)
 
 class DeleteSalerView(APIView):
@@ -1255,7 +1385,7 @@ class DeleteSalerView(APIView):
             data = json.loads(request.body)
             id = data.get('id')
             saler = Salers.objects.get(id=id)
-            print("saler: ", saler)
+
             saler.is_deleted = True
             saler.is_active = False
             saler.save()
@@ -1370,6 +1500,146 @@ class SalerPerformanceView(APIView):
                                    performance['day'], performance['sale'], performance['bonus']]
                                   for performance in saler_performances]
         return JsonResponse(saler_performance_list, safe=False)
+
+class ExportSalerPerfomanceView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        def set_column_widths(worksheet):
+            for column_cells in worksheet.columns:
+                length = max(len(str(cell.value)) for cell in column_cells)
+                worksheet.column_dimensions[column_cells[0].column_letter].width = length + 2
+        
+        data = json.loads(request.body)
+        
+        saler_name = data.get('saler_name')
+        if not saler_name:
+            return JsonResponse({"error": "Missing 'saler_name' query parameter"}, status=400)
+
+        saler_performances = SalerPerformance.objects.filter(name=saler_name).values()
+        jalali_date= current_jalali_date().strftime('%Y-%m-%d')
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = f"Saler Performance {saler_name} {jalali_date}"
+
+        # Write the header row
+        header = ['Name', 'Year', 'Month', 'Day', 'Sale', 'Bonus']
+        for col_num, column_title in enumerate(header, 1):
+            cell = ws.cell(row=1, column=col_num)
+            cell.value = column_title
+            cell.font = openpyxl.styles.Font(bold=True)
+            cell.fill = openpyxl.styles.PatternFill(start_color='BFEFFF', end_color='BFEFFF', fill_type='solid')
+            cell.border = openpyxl.styles.Border(top=openpyxl.styles.Side(style='medium'),
+                                                 bottom=openpyxl.styles.Side(style='medium'),
+                                                 left=openpyxl.styles.Side(style='medium'),
+                                                 right=openpyxl.styles.Side(style='medium'))
+        # Write the data rows
+        for row_num, performance in enumerate(saler_performances, 2):
+            row = [performance['name'], performance['year'], performance['month'], performance['day'], performance['sale'], performance['bonus']]
+            for col_num, cell_value in enumerate(row, 1):
+                cell = ws.cell(row=row_num, column=col_num)
+                cell.value = cell_value
+        # Apply some styling to the Excel file
+        for row in ws.iter_rows(min_row=1, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
+            for cell in row:
+                cell.border = openpyxl.styles.Border(top=openpyxl.styles.Side(style='thin'),
+                                                     bottom=openpyxl.styles.Side(style='thin'),
+                                                     left=openpyxl.styles.Side(style='thin'),
+                                                     right=openpyxl.styles.Side(style='thin'))
+                cell.alignment = openpyxl.styles.Alignment(horizontal='center')
+        # Set the column widths
+        set_column_widths(ws)
+
+        # Apply auto filter
+        ws.auto_filter.ref = f"A1:F{ws.max_row}"
+
+        # Set the response headers for an Excel file
+        buffer = BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        content = buffer.read()
+
+        # Encode the content in base64
+        base64_content = base64.b64encode(content).decode()
+
+        # Send the content and filename in the JSON response
+        return JsonResponse({'filename': f'saler_performance_{saler_name}({jalali_date}).xlsx', 'content': base64_content})
+
+
+@receiver(post_save, sender=Sales)
+def update_receipement_rating_with_add_sale(sender, instance, created, **kwargs):
+    receipe_rating, created = SalerReceipeRating.objects.get_or_create(
+        name=instance.saler, 
+        year=instance.date.year,
+        month=instance.date.month,
+    )
+
+    # filter the sales of the same saler, year and month that are either 'S' or 'P'
+    sales_SP = Sales.objects.filter(saler=instance.saler, 
+                                    gregorian_date__year=instance.gregorian_date.year, 
+                                    gregorian_date__month=instance.gregorian_date.month,
+                                    psr__in=['S', 'P'])
+    # Sum payment_cash and payment_check
+    payment_sum_SP = sum(sale.payment_cash + sale.payment_check for sale in sales_SP)
+
+    # filter the sales of the same saler, year and month that are either 'S' or 'R'
+    sales_SR = Sales.objects.filter(saler=instance.saler, 
+                                    gregorian_date__year=instance.gregorian_date.year, 
+                                    gregorian_date__month=instance.gregorian_date.month,
+                                    psr__in=['S', 'R'])
+    # Sum net_sales
+    net_sales_sum_SR = sum(sale.net_sales for sale in sales_SR)
+
+    # calculate receipement and save to the SalerReceipeRating instance
+    if net_sales_sum_SR != 0:  # to avoid division by zero
+        receipe_ratio = payment_sum_SP / net_sales_sum_SR
+        receipe_rating.sale_rating = calculate_receipe_rating(receipe_ratio)
+    else:
+        receipe_rating.sale_rating = 1
+    receipe_rating.save()
+
+@receiver(post_delete, sender=Sales)
+def update_receipement_rating_with_delete_sale(sender, instance, **kwargs):
+    try:
+        receipe_rating = SalerReceipeRating.objects.get(
+            name=instance.saler, 
+            year=instance.date.year,
+            month=instance.date.month,
+        )
+    except SalerReceipeRating.DoesNotExist:
+        # If the rating doesn't exist, there's nothing to update
+        return
+
+    # filter the sales of the same saler, year and month that are either 'S' or 'P'
+    sales_SP = Sales.objects.filter(saler=instance.saler, 
+                                    gregorian_date__year=instance.gregorian_date.year, 
+                                    gregorian_date__month=instance.gregorian_date.month,
+                                    psr__in=['S', 'P'])
+    # Sum payment_cash and payment_check
+    payment_sum_SP = sum(sale.payment_cash + sale.payment_check for sale in sales_SP)
+
+    # filter the sales of the same saler, year and month that are either 'S' or 'R'
+    sales_SR = Sales.objects.filter(saler=instance.saler, 
+                                    gregorian_date__year=instance.gregorian_date.year, 
+                                    gregorian_date__month=instance.gregorian_date.month,
+                                    psr__in=['S', 'R'])
+    # Sum net_sales
+    net_sales_sum_SR = sum(sale.net_sales for sale in sales_SR)
+
+    # calculate receipement and save to the SalerReceipeRating instance
+    if net_sales_sum_SR != 0:  # to avoid division by zero
+        receipe_ratio = payment_sum_SP / net_sales_sum_SR
+        receipe_rating.sale_rating = calculate_receipe_rating(receipe_ratio)
+    else:
+        receipe_rating.sale_rating = 1
+    receipe_rating.save()
+
+
+    
+
+
 
 
 
@@ -1532,7 +1802,7 @@ def update_monthly_product_sales_with_add_sale(sender, instance, created, **kwar
 
     if created:
         # Update the MonthlyProductSales instance with the new sales information
-        monthly_sale.piece += instance.original_output_value
+        monthly_sale.piece += instance.original_value
         monthly_sale.sale += instance.net_sales
     else:
         # Check which fields have been updated
@@ -1549,18 +1819,18 @@ def update_monthly_product_sales_with_add_sale(sender, instance, created, **kwar
             )
 
             # Subtract old values from the old MonthlyProductSales instance
-            old_monthly_sale.piece -= dirty_fields.get('original_output_value', instance.original_output_value)
+            old_monthly_sale.piece -= dirty_fields.get('original_value', instance.original_value)
             old_monthly_sale.sale -= dirty_fields.get('net_sales', instance.net_sales)
             old_monthly_sale.save()
 
             # Update the new MonthlyProductSales instance
-            monthly_sale.piece += instance.original_output_value
+            monthly_sale.piece += instance.original_value
             monthly_sale.sale += instance.net_sales
 
         # Update the corresponding attributes of the MonthlyProductSales instance based on the updated fields
         else:
-            if 'original_output_value' in dirty_fields:
-                monthly_sale.piece += float(instance.original_output_value) - dirty_fields['original_output_value']
+            if 'original_value' in dirty_fields:
+                monthly_sale.piece += float(instance.original_value) - dirty_fields['original_value']
             if 'net_sales' in dirty_fields:
                 monthly_sale.sale += float(instance.net_sales) - dirty_fields['net_sales']
 
@@ -1578,7 +1848,7 @@ def update_monthly_product_sales_with_delete_sale(sender, instance, **kwargs):
         )
 
     monthly_sale.product_name = instance.product_name,
-    monthly_sale.piece -= instance.original_output_value
+    monthly_sale.piece -= instance.original_value
     monthly_sale.sale -= instance.net_sales
     monthly_sale.save()
 
@@ -1605,7 +1875,7 @@ def update_customer_performance_with_add_sale(sender, instance, created, **kwarg
     if created:
         # Update the sale value for the CustomerPerformance object
         customer_performance.sale += instance.net_sales
-        customer_performance.sale_amount += instance.original_output_value
+        customer_performance.sale_amount += instance.original_value
         customer_performance.dollar += instance.dollar
         customer_performance.dollar_sepidar += instance.dollar_sepidar
     else:
@@ -1622,14 +1892,14 @@ def update_customer_performance_with_add_sale(sender, instance, created, **kwarg
 
             # Subtract old values from the old CustomerPerformance instance
             old_customer_performance.sale -= dirty_fields.get('net_sales', instance.net_sales)
-            old_customer_performance.sale_amount -= dirty_fields.get('original_output_value', instance.original_output_value)
+            old_customer_performance.sale_amount -= dirty_fields.get('original_value', instance.original_value)
             old_customer_performance.dollar -= dirty_fields.get('dollar', instance.dollar)
             old_customer_performance.dollar_sepidar -= dirty_fields.get('dollar_sepidar', instance.dollar_sepidar)
             old_customer_performance.save()
 
             # Update the new CustomerPerformance instance
             customer_performance.sale += instance.net_sales
-            customer_performance.sale_amount += instance.original_output_value
+            customer_performance.sale_amount += instance.original_value
             customer_performance.dollar += instance.dollar
             customer_performance.dollar_sepidar += instance.dollar_sepidar
 
@@ -1637,8 +1907,8 @@ def update_customer_performance_with_add_sale(sender, instance, created, **kwarg
         else:
             if 'net_sales' in dirty_fields:
                 customer_performance.sale += float(instance.net_sales) - dirty_fields['net_sales']
-            if 'original_output_value' in dirty_fields:
-                customer_performance.sale_amount += float(instance.original_output_value) - dirty_fields['original_output_value']
+            if 'original_value' in dirty_fields:
+                customer_performance.sale_amount += float(instance.original_value) - dirty_fields['original_value']
             if 'dollar' in dirty_fields:
                 customer_performance.dollar += float(instance.dollar) - dirty_fields['dollar']
             if 'dollar_sepidar' in dirty_fields:
@@ -1661,7 +1931,7 @@ def update_customer_performance_with_delete_sale(sender, instance, **kwargs):
     customer_performance.customer_name = instance.name
     customer_performance.customer_area = instance.area
     customer_performance.sale -= instance.net_sales
-    customer_performance.sale_amount -= instance.original_output_value
+    customer_performance.sale_amount -= instance.original_value
     customer_performance.dollar -= instance.dollar
     customer_performance.dollar_sepidar -= instance.dollar_sepidar
     customer_performance.save()
@@ -1673,6 +1943,7 @@ class TopCustomersView(APIView):
         data = json.loads(request.body)
 
         report_type = data.get('report_type')
+
         if report_type == 'monthly':
             top_customers_list = []
             
@@ -1700,19 +1971,24 @@ class TopCustomersView(APIView):
                 top_customers_pie_chart = [["No data available", 100]]
         
         elif report_type == 'yearly':
+
             top_customers_list = []
             
             # Get the current year using jdatetime library
             date= current_jalali_date().year
             
             # Get the data for the current year
-            top_5_customer_data = CustomerPerformance.objects.filter(year=date).order_by('-sale')[:5]
+            customer_data = CustomerPerformance.objects.filter(year=date).values('customer_code', 'customer_name').annotate(total_sale=Sum('sale')).order_by('-total_sale')
+            
+            # Get the top 5 customers
+            top_5_customer_data = customer_data[:5]
+
             
             # Calculate the total sales for the current year
             total_sales = CustomerPerformance.objects.filter(year=date).aggregate(total_sales=Sum('sale'))['total_sales']
             if total_sales is not None:
                 # Calculate the sales data for the top 5 customers and others
-                top_customers_list = [[d.customer_name, d.sale] for d in top_5_customer_data]
+                top_customers_list = [[d['customer_name'], d['total_sale']] for d in top_5_customer_data]
                 top_customers_sale_sum = [d[1] for d in top_customers_list ]
                 top_5_customer_total_sale = sum(top_customers_sale_sum)
                 others_sales = total_sales - top_5_customer_total_sale
@@ -1723,7 +1999,8 @@ class TopCustomersView(APIView):
             else:
                 # Handle the case when there is no sales data available
                 top_customers_pie_chart = [["No data available", 100]]
-        
+
+
         return JsonResponse({"top_customers_list": top_customers_list,"top_customers_pie_chart": top_customers_pie_chart}, safe=False)
 
 # endregion
@@ -1745,7 +2022,7 @@ def update_product_performance_with_add_sale(sender, instance, created, **kwargs
 
     if created:
         # Update the sale value for the ProductPerformance object
-        product_performance.sale_amount += instance.original_output_value
+        product_performance.sale_amount += instance.original_value
         product_performance.sale += instance.net_sales
     else:
         # Check which fields have been updated
@@ -1760,18 +2037,18 @@ def update_product_performance_with_add_sale(sender, instance, created, **kwargs
             )
 
             # Subtract old values from the old ProductPerformance instance
-            old_product_performance.sale_amount -= dirty_fields.get('original_output_value', instance.original_output_value)
+            old_product_performance.sale_amount -= dirty_fields.get('original_value', instance.original_value)
             old_product_performance.sale -= dirty_fields.get('net_sales', instance.net_sales)
             old_product_performance.save()
 
             # Update the new ProductPerformance instance
-            product_performance.sale_amount += instance.original_output_value
+            product_performance.sale_amount += instance.original_value
             product_performance.sale += instance.net_sales
 
         # Update the corresponding attributes of the ProductPerformance instance based on the updated fields
         else:
-            if 'original_output_value' in dirty_fields:
-                product_performance.sale_amount += float(instance.original_output_value) - dirty_fields['original_output_value']
+            if 'original_value' in dirty_fields:
+                product_performance.sale_amount += float(instance.original_value) - dirty_fields['original_value']
             if 'net_sales' in dirty_fields:
                 product_performance.sale += float(instance.net_sales) - dirty_fields['net_sales']
 
@@ -1790,7 +2067,7 @@ def update_product_performance_with_delete_sale(sender, instance, **kwargs):
 
     # Update the sale value for the ProductPerformance object
     product_performance.product_name = instance.product_name
-    product_performance.sale_amount -= instance.original_output_value
+    product_performance.sale_amount -= instance.original_value
     product_performance.sale -= instance.net_sales
     product_performance.save()
 
@@ -1834,13 +2111,16 @@ class TopProductsView(APIView):
             date= current_jalali_date().year
             
             # Get the data for the current year
-            top_5_product_data = ProductPerformance.objects.filter(year=date).order_by('-sale')[:5]
+            product_data = ProductPerformance.objects.filter(year=date).values('product_code', 'product_name').annotate(total_sale=Sum('sale')).order_by('-total_sale')
+           
+            # Get the top 5 products
+            top_5_product_data = product_data[:5]
             
             # Calculate the total sales for the current year
             total_sales = ProductPerformance.objects.filter(year=date).aggregate(total_sales=Sum('sale'))['total_sales']
             if total_sales is not None:
                 # Calculate the sales data for the top 5 products and others
-                top_products_list = [[d.product_name, d.sale] for d in top_5_product_data]
+                top_products_list = [[d['product_name'], d['total_sale']] for d in top_5_product_data]
                 top_products_sale_sum = [d[1] for d in top_products_list ]
                 top_5_product_total_sale = sum(top_products_sale_sum)
                 others_sales = total_sales - top_5_product_total_sale
@@ -1851,7 +2131,7 @@ class TopProductsView(APIView):
             else:
                 # Handle the case when there is no sales data available
                 top_products_pie_chart = [["No data available", 100]]
-        
+
         return JsonResponse({"top_products_list": top_products_list,"top_products_pie_chart": top_products_pie_chart}, safe=False)
 
 # endregion
@@ -1915,8 +2195,8 @@ class SalerDataView(APIView):
                     name,
                     is_active,
                     0,  # Set daily sale value to zero
-                    monthly_sale['monthly_sale'] / 10,
-                    yearly_sale / 10
+                    format(round(monthly_sale['monthly_sale'] / 10), ',d'),  # round off the value and add separators
+                    format(round(yearly_sale / 10), ',d')  # round off the value and add separators
                 ])
         else:
             for daily_sale in daily_sales:
@@ -1932,9 +2212,9 @@ class SalerDataView(APIView):
                 combined_data.append([
                     name,
                     is_active,
-                    daily_sale['sale'] / 10,
-                    monthly_sale / 10,
-                    yearly_sale / 10
+                    format(round(daily_sale['sale'] / 10), ',d'),  # round off the value and add separators
+                    format(round(monthly_sale / 10), ',d'),  # round off the value and add separators
+                    format(round(yearly_sale / 10), ',d')  # round off the value and add separators
                 ])
 
         response_data = {"jalali_date": jalali_date_now_str, "sales_data": combined_data}
@@ -1945,45 +2225,96 @@ class SalerDataView(APIView):
 class TotalDataView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
+
     def get(self, request, *args, **kwargs):
         jalali_date_now = current_jalali_date()
         jalali_date_now_str = jalali_date_now.strftime('%Y-%m-%d')
-        
+        current_date = datetime.now().date()
+
+        daily_customers = Sales.objects.filter(
+            date=jalali_date_now
+        ).values('customer_code').distinct().count()
+
+        monthly_customers = Sales.objects.filter(
+            gregorian_date__year=current_date.year,
+            gregorian_date__month=current_date.month
+        ).values('customer_code').distinct().count()
+
+        yearly_customers = Sales.objects.filter(
+            gregorian_date__year=current_date.year
+        ).values('customer_code').distinct().count()
+
         daily_sales = SaleSummary.objects.filter(
             year=jalali_date_now.year,
             month=jalali_date_now.month,
             day=jalali_date_now.day
         ).values('sale', 'dollar_sepidar_sale', 'dollar_sale', 'kg_sale')
-        daily_sales_array = list(daily_sales.values_list('sale', 'dollar_sepidar_sale', 'dollar_sale', 'kg_sale')[0]) if daily_sales.exists() else [0, 0, 0, 0]
-        # Divide each value in daily_sales_array by 10
-        for i in range(len(daily_sales_array)):
-            daily_sales_array[i] /= 10
+        daily_sales_array_float = list(daily_sales.values_list('sale', 'dollar_sepidar_sale', 'dollar_sale', 'kg_sale')[0]) if daily_sales.exists() else [0, 0, 0, 0]
+        daily_sales_array_float[0] = daily_sales_array_float[0] / 10
+        daily_sales_array = [0,0,0,0]
+        daily_sales_array[0] = format(round(daily_sales_array_float[0]), ',d')
+        daily_sales_array[1] = format(round(daily_sales_array_float[1] ), ',d')
+        daily_sales_array[2] = format(round(daily_sales_array_float[2] ), ',d')
+        daily_sales_array[3] = format(round(daily_sales_array_float[3] ), ',d')
+
 
         monthly_sales = SaleSummary.objects.filter(
             year=jalali_date_now.year,
             month=jalali_date_now.month
-        ).annotate(monthly_sale=Sum('sale'), monthly_dollar_sepidar_sale=Sum('dollar_sepidar_sale'), monthly_dollar_sale=Sum('dollar_sale'), monthly_kg_sale=Sum('kg_sale') )
-        monthly_sales_array = list(monthly_sales.values_list('monthly_sale', 'monthly_dollar_sepidar_sale', 'monthly_dollar_sale', 'monthly_kg_sale')[0]) if monthly_sales.exists() else [0, 0, 0, 0]
-        # Divide each value in daily_sales_array by 10
-        for i in range(len(monthly_sales_array)):
-            monthly_sales_array[i] /= 10
+        ).values('month').annotate(monthly_sale=Sum('sale'), monthly_dollar_sepidar_sale=Sum('dollar_sepidar_sale'), monthly_dollar_sale=Sum('dollar_sale'), monthly_kg_sale=Sum('kg_sale') )
+        monthly_sales_array_float = list(monthly_sales.values_list('monthly_sale', 'monthly_dollar_sepidar_sale', 'monthly_dollar_sale', 'monthly_kg_sale')[0]) if monthly_sales.exists() else [0, 0, 0, 0]
+        monthly_sales_array_float[0] = monthly_sales_array_float[0] / 10
+        monthly_sales_array = [0,0,0,0]
+        monthly_sales_array[0] = format(round(monthly_sales_array_float[0] ), ',d')
+        monthly_sales_array[1] = format(round(monthly_sales_array_float[1] ), ',d')
+        monthly_sales_array[2] = format(round(monthly_sales_array_float[2] ), ',d')
+        monthly_sales_array[3] = format(round(monthly_sales_array_float[3] ), ',d')
 
 
         yearly_sales = SaleSummary.objects.filter(
             year=jalali_date_now.year
-        ).annotate(yearly_sale=Sum('sale'), yearly_dollar_sepidar_sale=Sum('dollar_sepidar_sale'), yearly_dollar_sale=Sum('dollar_sale'), yearly_kg_sale=Sum('kg_sale') )
-        yearly_sales_array = list(yearly_sales.values_list('yearly_sale', 'yearly_dollar_sepidar_sale', 'yearly_dollar_sale', 'yearly_kg_sale')[0]) if yearly_sales.exists() else [0, 0, 0, 0]
-        # Divide each value in daily_sales_array by 10
-        for i in range(len(yearly_sales_array)):
-            yearly_sales_array[i] /= 10
-        
+        ).values('year').annotate(yearly_sale=Sum('sale'), yearly_dollar_sepidar_sale=Sum('dollar_sepidar_sale'), yearly_dollar_sale=Sum('dollar_sale'), yearly_kg_sale=Sum('kg_sale') )
+        yearly_sales_array_float = list(yearly_sales.values_list('yearly_sale', 'yearly_dollar_sepidar_sale', 'yearly_dollar_sale', 'yearly_kg_sale')[0]) if yearly_sales.exists() else [0, 0, 0, 0]
+        yearly_sales_array_float[0] = yearly_sales_array_float[0] / 10
+        yearly_sales_array = [0,0,0,0]
+        yearly_sales_array[0] = format(round(yearly_sales_array_float[0] ), ',d')
+        yearly_sales_array[1] = format(round(yearly_sales_array_float[1] ), ',d')
+        yearly_sales_array[2] = format(round(yearly_sales_array_float[2] ), ',d')
+        yearly_sales_array[3] = format(round(yearly_sales_array_float[3] ), ',d')
 
-        response_data = { "jalali_date" : jalali_date_now_str, "daily_sales" : daily_sales_array, "monthly_sales" : monthly_sales_array, "yearly_sales" : yearly_sales_array }
+        daily_avg_price = daily_sales_array_float[2] / daily_sales_array_float[3] if daily_sales_array_float[3] != 0 else 0
+        monthly_avg_price = monthly_sales_array_float[2] / monthly_sales_array_float[3] if monthly_sales_array_float[3] != 0 else 0
+        yearly_avg_price = yearly_sales_array_float[2] / yearly_sales_array_float[3] if yearly_sales_array_float[3] != 0 else 0
 
-        # Combine the data into a single list
+        daily_kg_sale_per_customer = daily_sales_array_float[3] / daily_customers if daily_customers != 0 else 0
+        monthly_kg_sale_per_customer = monthly_sales_array_float[3] / monthly_customers if monthly_customers != 0 else 0
+        yearly_kg_sale_per_customer = yearly_sales_array_float[3] / yearly_customers if yearly_customers != 0 else 0
+
+        daily_dollar_sale_per_customer = daily_sales_array_float[2] / daily_customers if daily_customers != 0 else 0
+        monthly_dollar_sale_per_customer = monthly_sales_array_float[2] / monthly_customers if monthly_customers != 0 else 0
+        yearly_dollar_sale_per_customer = yearly_sales_array_float[2] / yearly_customers if yearly_customers != 0 else 0
         
+        response_data = {
+            "jalali_date" : jalali_date_now_str, 
+            "daily_sales" : daily_sales_array, 
+            "monthly_sales" : monthly_sales_array, 
+            "yearly_sales" : yearly_sales_array,
+            'daily_avg_price' : format(round(daily_avg_price), ',d'),
+            'monthly_avg_price' : format(round(monthly_avg_price), ',d'),
+            'yearly_avg_price' : format(round(yearly_avg_price), ',d'),
+            "daily_customers": format(round(daily_customers), ',d'),
+            "monthly_customers": format(round(monthly_customers), ',d'),
+            "yearly_customers": format(round(yearly_customers), ',d'),
+            "daily_kg_sale_per_customer": format(round(daily_kg_sale_per_customer), ',d'),
+            "monthly_kg_sale_per_customer": format(round(monthly_kg_sale_per_customer), ',d'),
+            "yearly_kg_sale_per_customer": format(round(yearly_kg_sale_per_customer), ',d'),
+            "daily_dollar_sale_per_customer": format(round(daily_dollar_sale_per_customer), ',d'),
+            "monthly_dollar_sale_per_customer": format(round(monthly_dollar_sale_per_customer), ',d'),
+            "yearly_dollar_sale_per_customer": format(round(yearly_dollar_sale_per_customer), ',d')
+        }
         
         return JsonResponse(response_data, safe=False)
+
         
 
 class TotalDataByMonthlyView(View):
@@ -2001,29 +2332,103 @@ class TotalDataByMonthlyView(View):
         monthly_sales_dict = {}
         for monthly_sale_obj in monthly_sales:
             monthly_sales_dict[monthly_sale_obj['month']] = {
-                'monthly_sale': monthly_sale_obj['monthly_sale'] / 10,
-                'monthly_dollar_sepidar_sale': monthly_sale_obj['monthly_dollar_sepidar_sale'],
-                'monthly_dollar_sale': monthly_sale_obj['monthly_dollar_sale'],
-                'monthly_kg_sale': monthly_sale_obj['monthly_kg_sale']
+                'monthly_sale': format(round(monthly_sale_obj['monthly_sale'] / 10), ',d'),
+                'monthly_dollar_sepidar_sale': format(round(monthly_sale_obj['monthly_dollar_sepidar_sale']), ',d'),
+                'monthly_dollar_sale': format(round(monthly_sale_obj['monthly_dollar_sale']), ',d'),
+                'monthly_kg_sale': format(round(monthly_sale_obj['monthly_kg_sale']), ',d')
             }
 
         monthly_sales_data = []
         for i in range(1, 13):
             monthly_sales_obj = monthly_sales_dict.get(i)
             if monthly_sales_obj:
-                dollar_sale_per_kg = monthly_sales_obj['monthly_dollar_sale'] / monthly_sales_obj['monthly_kg_sale'] if monthly_sales_obj['monthly_kg_sale'] != 0 else 0
+                dollar_sale_per_kg = int(monthly_sales_obj['monthly_dollar_sale'].replace(',', '')) / int(monthly_sales_obj['monthly_kg_sale'].replace(',', '')) if monthly_sales_obj['monthly_kg_sale'] != '0' else 0
                 monthly_sales_data.append([
                     monthly_sales_obj['monthly_sale'],
                     monthly_sales_obj['monthly_dollar_sepidar_sale'],
                     monthly_sales_obj['monthly_dollar_sale'],
                     monthly_sales_obj['monthly_kg_sale'],
-                    dollar_sale_per_kg
+                    format(round(dollar_sale_per_kg), ',d')
                 ])
             elif i <= jalali_date_now.month:
-                monthly_sales_data.append([0, 0, 0, 0, 0])
+                monthly_sales_data.append(['0', '0', '0', '0', '0'])
 
-        monthly_sales_array = monthly_sales_data if len(monthly_sales_data) == 12 else monthly_sales_data + [[0, 0, 0, 0, 0]] * (12 - len(monthly_sales_data))
+        monthly_sales_array = monthly_sales_data if len(monthly_sales_data) == 12 else monthly_sales_data + [['0', '0', '0', '0', '0']] * (12 - len(monthly_sales_data))
         return JsonResponse(monthly_sales_array, safe=False)
+
+
+class TotalKgSaleByMonthlyView(View):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+    
+    def get(self, request, *args, **kwargs):
+        years = SaleSummary.objects.values_list('year', flat=True).distinct()
+
+        yearly_monthly_sales = {}
+        for year in years:
+            monthly_sales = SaleSummary.objects.filter(
+            year=year
+            ).values('month').annotate(monthly_kg_sale=Sum('kg_sale'))
+            
+            monthly_sales_dict = {}
+            for monthly_sale_obj in monthly_sales:
+                # Format and round off the value of 'monthly_kg_sale'
+                monthly_sales_dict[monthly_sale_obj['month']] = format(round(monthly_sale_obj['monthly_kg_sale']), ',d')
+
+            monthly_sales_data = []
+            for i in range(1, 13):
+                monthly_kg_sale = monthly_sales_dict.get(i)
+                if monthly_kg_sale:
+                    monthly_sales_data.append(monthly_kg_sale)
+                else:
+                    # For months without data, append '0' (as a string) to the list
+                    monthly_sales_data.append('0')
+
+            # If there is not enough data for all months, fill the rest with '0' (as a string)
+            monthly_sales_array = monthly_sales_data if len(monthly_sales_data) == 12 else monthly_sales_data + ['0'] * (12 - len(monthly_sales_data))
+
+            yearly_monthly_sales[str(year)] = monthly_sales_array
+
+        return JsonResponse(yearly_monthly_sales, safe=False)
+
+
+class KgSaleBarChartView(View):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        jalali_date_now = current_jalali_date()
+        
+        # Get all sales in the current month and year
+        current_month_sales = SaleSummary.objects.filter(
+            year=jalali_date_now.year,
+            month=jalali_date_now.month
+        ).values('day', 'kg_sale')
+        
+        # Initialize data structure for daily kg_sales, average and target
+        daily_kg_sales = [0]*31
+        total_kg_sale = 0
+
+        for sale in current_month_sales:
+            daily_kg_sales[sale['day'] - 1] = sale['kg_sale']
+            total_kg_sale += sale['kg_sale']
+
+        # Calculate average kg_sale for the current day of the month
+        average_kg_sale = total_kg_sale / jalali_date_now.day
+
+        # Get target value from request query parameters
+        data = json.loads(request.body)
+        target = float(data.get('target', 0))
+        daily_target = target / 31
+
+        data = {
+            "daily_kg_sales": daily_kg_sales,
+            "average_kg_sale": [average_kg_sale]*jalali_date_now.day,
+            "daily_target": [daily_target]*31
+        }
+
+        return JsonResponse(data, safe=False)
+
 
 
 # endregion
@@ -2385,13 +2790,14 @@ class ROPView(APIView):
     authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
-        print(data)
+
         product_code = data.get('product_code')
-        lead_time = int(data.get('lead_time'))
+        lead_time = float(data.get('lead_time'))
         service_level = float(data.get('service_level'))
         forecast_period = int(data.get('forecast_period'))
         product_values = ProductPerformance.objects.filter(product_code=product_code)
-       
+        product_values_raw = ProductPerformance.objects.filter(product_code=product_code)
+
         try:
             last_sales = MonthlyProductSales.objects.filter(product_code=product_code).values("date").latest("date")
             last_sale_date = last_sales["date"].strftime('%Y-%m-%d')
@@ -2403,13 +2809,26 @@ class ROPView(APIView):
             warehouse = Warehouse.objects.get(product_code = product_code)
             stock = warehouse.stock
         except Warehouse.DoesNotExist:
-            print("sadasdaasd")
+
             return JsonResponse({"error" : f"There is no product in warehouse with product code: {product_code} "}, status=400)
         
-        dates_for_sales = [jdatetime.date(item.year, item.month, 1).strftime('%Y-%m-%d') for item in product_values]
-        sales = [item.sale_amount for item in product_values]
-        product_values = [[1, item.month, item.year, item.product_code, item.sale_amount] for item in product_values]
         
+        product_values = [(jdatetime.date(item.year, item.month, 1), item.sale_amount) for item in product_values]
+
+# Sort the tuples by jdatetime
+        product_values.sort()
+
+
+        # If you want to separate the sorted dates and sales amount into two lists
+        dates_for_sales = [date.strftime('%Y-%m-%d') for date, _ in product_values]
+        sales = [item for _, item in product_values]
+        # dates_for_sales = [jdatetime.date(item.year, item.month, 1).strftime('%Y-%m-%d') for item in product_values]
+        # sales = [item.sale_amount for item in product_values]
+        # dates_for_sales = dates_for_sales[::-1]
+        # sales = sales[::-1]
+
+        product_values = [[1, item.month, item.year, item.product_code, item.sale_amount] for item in product_values_raw]
+
         holt_all_sales, holt_prev_sales, holt_future_sales, holt_future_stocks, holt_order_flag, holt_safety_stock, holt_rop, holt_order = get_model("holt", True, jalali_date_str, product_code, product_values, stock, lead_time, service_level, 12, forecast_period )
         exp_all_sales, exp_prev_sales, exp_future_sales, exp_future_stocks, exp_order_flag, exp_safety_stock, exp_rop, exp_order = get_model("exp", True, jalali_date_str, product_code, product_values, stock, lead_time, service_level, 12, forecast_period )
         avrg_all_sales, avrg_prev_sales, avrg_future_sales, avrg_future_stocks, avrg_order_flag, avrg_safety_stock, avrg_rop, avrg_order = get_model("average", True, jalali_date_str, product_code, product_values, stock, lead_time, service_level, 12, forecast_period )
@@ -2422,9 +2841,7 @@ class ROPView(APIView):
         avrg_future_forecast_dates = generate_future_forecast_dates(len(avrg_future_sales))
         exp_future_forecast_dates = generate_future_forecast_dates(len(exp_future_sales))
         holt_future_forecast_dates = generate_future_forecast_dates(len(holt_future_sales))
-        print("avrg_future_forecast_dates: ", avrg_future_forecast_dates)
-        print("holt_future_forecast_dates: ", holt_future_forecast_dates)
-        print("holt_order: ", holt_order)
+
         item = ROP.objects.get(product_code_ir = product_code)
         rop_list = rop_list = [
                 item.group,
@@ -2509,6 +2926,11 @@ def create_sales_signal(sender, instance, created, **kwargs):
         order_flags = {'average': False, 'holt': False, 'exp': False}
         orders = {'average': 0, 'holt': 0, 'exp': 0}
         product_code = instance.product_code
+        # Check if there are enough sales records
+        num_sales = MonthlyProductSales.objects.filter(product_code=product_code).count()
+        if num_sales <= 1:
+            # Not enough sales records, return without doing anything
+            return
         product_values = ProductPerformance.objects.filter(product_code=product_code)
         product_values = [[1, item.month, item.year, item.product_code, item.sale_amount] for item in product_values]
         weight = Products.objects.get(product_code_ir = product_code).weight
@@ -2577,6 +2999,41 @@ def create_sales_signal(sender, instance, created, **kwargs):
                 )
                 order_list.save()
 
+class AddOrderListObjectView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+    
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body)
+        product_code = data.get('product_code')
+        decided_order = data.get('decided_order')
+        if not product_code or not decided_order:
+            return JsonResponse({"error": "Both product_code and decided_order must be provided."}, status=404)
+
+        product = Products.objects.filter(product_code_ir=product_code).first()
+        warehouse_object = Warehouse.objects.filter(product_code = product_code).first()
+        
+        if not product:
+            return JsonResponse({"error": "The provided product_code does not match any existing product."}, status=404)
+        
+        OrderList.objects.create(
+            current_date = current_jalali_date(),
+            order_flag_avrg = True,
+            order_flag_exp = True,
+            order_flag_holt = True,
+            order_avrg = 0,
+            order_exp = 0,
+            order_holt = 0,
+            current_stock = warehouse_object.stock,
+            decided_order = decided_order,
+            weight = product.weight,
+            average_sale = 0,
+            product_code = product_code,
+            is_active = True,
+            is_ordered = False
+        )
+        
+        return JsonResponse({"message": "OrderList object created successfully."})
 
 
 
@@ -2640,6 +3097,7 @@ def update_goods_on_road(sender, instance, created, **kwargs):
         goods_on_road.truck_id = None
         goods_on_road.is_ordered = instance.is_ordered
         goods_on_road.is_on_truck = False
+        goods_on_road.suppliers = product.suppliers
         goods_on_road.save()
 
 class GoodsOnRoadView(APIView):
@@ -2649,7 +3107,7 @@ class GoodsOnRoadView(APIView):
     def get(self, request, *args, **kwargs):
         goods_on_road = GoodsOnRoad.objects.filter(is_terminated=False).values()
         goods_on_road_data = [
-            [g['product_code'], g['product_name_tr'], g['product_name_ir'], g['decided_order'], g['weight'], g['truck_name']]
+            [g['product_code'], g['product_name_tr'], g['product_name_ir'], g['suppliers'], g['decided_order'], g['weight'], g['truck_name']]
             for g in goods_on_road
         ]
         return JsonResponse(goods_on_road_data, safe=False)
@@ -2665,12 +3123,12 @@ class ApproveProductsToOrderView(APIView):
             if not data.get("truck_name"):
                 return JsonResponse({'error': "Truck Name cannot be empty."}, status=400)
 
-            truck = Trucks.objects.filter(truck_name=data.get("truck_name"), is_ordered=False).first()
+            truck = Trucks.objects.filter(truck_name=data.get("truck_name"), is_ordered=False, is_arrived = False).first()
             if not truck:
                 return JsonResponse({'error': "No active truck found with the given Name."}, status=404)
 
-            if float(data.get("decided_order", 0)) <= 0:
-                return JsonResponse({'error': "Decided order cannot be equal to or smaller than zero."}, status=400)
+            if float(data.get("decided_order", 0)) < 0:
+                return JsonResponse({'error': "Decided order cannot be smaller than zero."}, status=400)
 
             goods_on_road = GoodsOnRoad.objects.get(product_code=data['product_code'], is_terminated=False)
             goods_on_road.truck_name = data['truck_name']
@@ -2737,17 +3195,58 @@ class WaitingTrucksView(APIView):
         goods_on_road = GoodsOnRoad.objects.filter(is_on_truck=True).values()
         grouped_goods = {}
 
-
         for good in goods_on_road:
-
             if good['truck_name'] not in grouped_goods:
+                grouped_goods[good['truck_name']] = {'goods': [], 'total_weight': 0}
 
-                grouped_goods[good['truck_name']] = []
+            weight = good['decided_order'] * good['weight']
+            grouped_goods[good['truck_name']]['goods'].append(good)
+            grouped_goods[good['truck_name']]['total_weight'] += weight
 
-
-            grouped_goods[good['truck_name']].append(good)
+        # Convert weights to JSON serializable format if needed
+        for truck in grouped_goods:
+            grouped_goods[truck]['total_weight'] = float(grouped_goods[truck]['total_weight'])
 
         return JsonResponse(grouped_goods, safe=False)
+
+class ActiveTrucksView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def get(self, request, *args, **kwargs):
+        active_trucks = Trucks.objects.filter(is_waiting=True)
+        truck_names = [truck.truck_name for truck in active_trucks]
+
+        return JsonResponse(truck_names, safe=False)
+
+
+class EditWaitingTrucksView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            data = json.loads(request.body)
+
+            if not data.get("truck_name"):
+                return JsonResponse({'error': "Truck Name cannot be empty."}, status=400)
+
+            if float(data.get("decided_order", 0)) < 0:
+                return JsonResponse({'error': "Decided order cannot be smaller than zero."}, status=400)
+
+            goods_on_road = GoodsOnRoad.objects.get(product_code=data['product_code'], truck_name=data['truck_name'], is_on_truck=True)
+
+            goods_on_road.decided_order = data['decided_order']
+
+            goods_on_road.save()
+
+            return JsonResponse({'message': "GoodsOnRoad object updated successfully."}, status=200)
+        except GoodsOnRoad.DoesNotExist:
+            return JsonResponse({'error': "GoodsOnRoad object not found."}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+
 
 class ApproveWaitingTruckView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -2776,6 +3275,11 @@ class ApproveWaitingTruckView(APIView):
                 good.is_on_truck = False
                 good.is_on_road = True
                 good.save()
+                
+                warehouse_product = Warehouse.objects.get(product_code=good.product_code)
+                if warehouse_product:
+                    warehouse_product.stock += good.decided_order
+                    warehouse_product.save()
 
             return JsonResponse({'message': f"Truck with name: {truck_name} is successfully ordered."}, status=200)
         except Exception as e:
@@ -2807,7 +3311,7 @@ class EditGoodsOnRoadView(APIView):
             data = json.loads(request.body)
 
             product_code = data.get('product_code')
-            good_on_road = GoodsOnRoad.objects.get(product_code=product_code)
+            good_on_road = GoodsOnRoad.objects.get(product_code=product_code, is_on_road=True)
 
             # Update decided_order
             new_decided_order = float(data.get('new_decided_order'))
@@ -2863,10 +3367,7 @@ class ApproveArrivedTruckView(APIView):
                 good.is_arrived = True
                 good.save()
 
-                warehouse_product = Warehouse.objects.get(product_code=good.product_code)
-                if warehouse_product:
-                    warehouse_product.stock += good.decided_order
-                    warehouse_product.save()
+                
 
             return JsonResponse({'message': "Truck, related GoodsOnRoad objects, and Warehouse stock updated successfully."}, status=200)
         except Exception as e:

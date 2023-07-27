@@ -44,8 +44,8 @@ const DataTable = () => {
   useEffect(() => {
     async function fetchData() {
       const access_token = await localforage.getItem('access_token'); 
-      console.log(access_token)
-      const response = await fetch('https://vividstockfish.com/api/customers/',{
+      //console.log(access_token)
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/customers/`,{
        
         headers: {
           'Content-Type': 'application/json',
@@ -64,7 +64,7 @@ const DataTable = () => {
 
   /*
   useEffect(() => {
-    console.log(dataTable);
+    //console.log(dataTable);
   }, [dataTable]);
 */
 
@@ -83,7 +83,7 @@ const DataTable = () => {
     const formData = new FormData();
     formData.append('file', file);
     const access_token = await localforage.getItem('access_token');
-    fetch('https://vividstockfish.com/api/add_customers/', {
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/add_customers/`, {
       method: 'POST',
       body: formData,
       headers: {
@@ -93,7 +93,7 @@ const DataTable = () => {
       .then((response) => {
         if (!response.ok) {
           return response.json().then(data => {
-            console.log(data.error)
+            //console.log(data.error)
             setIsLoading(false);
             errorUpload(data.error);
           });
@@ -104,7 +104,7 @@ const DataTable = () => {
         setIsLoading(false);
         successUpload(data.message);
         
-        fetch('https://vividstockfish.com/api/customers/',{
+        fetch(`${process.env.REACT_APP_PUBLIC_URL}/customers/`,{
           headers: {
             'Authorization': 'Bearer '+ String(access_token)
           }
@@ -124,7 +124,7 @@ const DataTable = () => {
   };
   
   const warningWithConfirmAndCancelMessage = () => {
-    console.log("sadsads"),
+    //console.log("sadsads"),
     setAlert(
       
       <ReactBSAlert
@@ -151,7 +151,7 @@ const DataTable = () => {
     
   };
   useEffect(() => {
-    console.log(deleteConfirm)
+    //console.log(deleteConfirm)
   },[deleteConfirm]);
 
   const successDelete = () => {
@@ -170,7 +170,7 @@ const DataTable = () => {
     );
   };
   const successEdit = (s) => {
-    console.log("edit success")
+    //console.log("edit success")
     setAlert(
       <ReactBSAlert
         success
@@ -244,9 +244,9 @@ const DataTable = () => {
     useEffect(() => {
       async function deleteFunc() {
       if (deleteConfirm) {
-       console.log("delete")
+       //console.log("delete")
        const access_token =  await localforage.getItem('access_token'); 
-        fetch(`https://vividstockfish.com/api/delete_customers/`, {
+        fetch(`${process.env.REACT_APP_PUBLIC_URL}/delete_customers/`, {
           method: "POST",
           body: new URLSearchParams(deleteData),
           headers: {
@@ -278,13 +278,13 @@ const DataTable = () => {
       setArea(row.area);
 
       setShowPopup(!showPopup);
-      console.log(row)
+      //console.log(row)
     };
 
 
     const handleSubmit = async (e) => {
       const access_token = await localforage.getItem('access_token'); 
-      console.log(oldData)
+      //console.log(oldData)
       const updatedData = {
         new_customer_code:customerCode,
         new_description:description,
@@ -304,8 +304,8 @@ const DataTable = () => {
         old_area:oldData[6],
         
       };
-      console.log(updatedData)
-      fetch('https://vividstockfish.com/api/edit_customers/', {
+      //console.log(updatedData)
+      fetch(`${process.env.REACT_APP_PUBLIC_URL}/edit_customers/`, {
       method: 'POST',
       body: JSON.stringify(updatedData),
       headers: {
@@ -318,7 +318,7 @@ const DataTable = () => {
     .then((response) => {
       if (!response.ok) {
         return response.json().then(data => {
-          console.log(data.error)
+         
           
           errorUpload(data.error);
         });
@@ -343,7 +343,7 @@ const DataTable = () => {
     };
 
     useEffect(() => {
-      console.log("useEffect called")
+      //console.log("useEffect called")
       if(editData){
         
         setCustomerCode(editData[0]);
@@ -363,7 +363,7 @@ const DataTable = () => {
       const access_token = await localforage.getItem('access_token');
     
       // Make an AJAX request to the backend to download the CSV file
-      const response = await fetch('https://vividstockfish.com/api/export_customers/', {
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/export_customers/`, {
         headers: {
           'Authorization': 'Bearer '+ String(access_token)
         },
@@ -603,7 +603,7 @@ const DataTable = () => {
                                 };
                                 setDeleteData(data);
                                 //console.log(data);
-                                fetch(`https://vividstockfish.com/api/delete_sales/`, {
+                                fetch(`http://127.0.0.1:8000/delete_sales/`, {
                                   method: "POST",
                                   body: new URLSearchParams(data),
                                 }).then(() => {

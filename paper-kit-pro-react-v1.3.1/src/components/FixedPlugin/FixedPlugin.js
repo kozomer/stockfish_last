@@ -7,7 +7,7 @@ function FixedPlugin(props) {
   const [darkMode, setDarkMode] = useState(false);
 
   const handleClick = () => {
-    console.log("sdadas")
+    //console.log("sdadas")
     setClasses((prevState) => {
       return prevState === "dropdown" ? "dropdown show" : "dropdown";
     });

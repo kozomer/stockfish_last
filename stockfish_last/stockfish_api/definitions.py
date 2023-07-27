@@ -2,12 +2,13 @@ import jdatetime
 from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
-from .models import ProductPerformance
+#from .models import ProductPerformance
 import numpy as np
 from itertools import product
 #import matplotlib.pyplot as plt
 from statsmodels.tsa.api import ExponentialSmoothing, SimpleExpSmoothing, Holt
 from scipy.stats import norm
+import math
 
 def jalali_to_greg(day,month,year):
     gregorian_date = jdatetime.date(year,month,day).togregorian()
@@ -68,7 +69,7 @@ def the_man_from_future(job_start_date):
         return False
 
 def calculate_sale_rating(sale_amount):
-    print("sale_amount: ",sale_amount)
+
     if 1000 <= sale_amount:
         return 1.30
     elif 750 <= sale_amount < 1000:
@@ -77,6 +78,19 @@ def calculate_sale_rating(sale_amount):
         return 1.10
     else:
         return 1.00
+    
+def calculate_receipe_rating(receipe_ratio):
+
+    if 0.9 <= receipe_ratio:
+        return 1.1
+    elif 0.75 <= receipe_ratio < 0.9:
+        return 1
+    elif 0.5 <= receipe_ratio < 0.75:
+        return 0.75
+    elif 0.4 <= receipe_ratio < 0.5:
+        return 0.50
+    else:
+        return 0.35
 
 
 
@@ -129,10 +143,15 @@ def forecast_by_average(sales, prev_forecast_period, future_forecast_period):
     ave = np.mean(sales[-prev_forecast_period:])
     return [ave for _ in range(future_forecast_period)]
 def forecast_by_exp(sales, prev_forecast_period, future_forecast_period):
+    # if len(np.shape(sales)) > 1:
+    #     # Assuming sales is a pandas DataFrame and you want the first column
+    #     sales = sales.iloc[:, 0]
     fit_data = SimpleExpSmoothing(sales, initialization_method = "estimated").fit()
     forecast = fit_data.forecast(future_forecast_period)
     return forecast
 def forecast_by_holt(sales, prev_forecast_period, future_forecast_period):
+    # if len(sales) < 2:
+    #     return [] # return an empty list when there are not enough data points
     bool_optimize = len(sales) > 6
     test_size = 3
     optimal_sl = 0.8
@@ -155,11 +174,14 @@ def forecast_by_holt(sales, prev_forecast_period, future_forecast_period):
     fit_data = Holt(sales, initialization_method = "estimated").fit(smoothing_level=optimal_sl, smoothing_trend=optimal_st, optimized=False)
     forecast = fit_data.forecast(future_forecast_period)
     return forecast
-def simulate_future_stocks(current_stock, future_sales):
+def simulate_future_stocks(current_stock, future_sales, float_lead_time, integer_lead_time):
     future_stocks = []
     future_stocks.append(current_stock)
-    for sls in future_sales:
-        future_stocks.append(future_stocks[-1]-sls)
+    for i in range(int(integer_lead_time)):
+        if i < integer_lead_time - 1 or isinstance(float_lead_time,int):
+            future_stocks.append(future_stocks[-1] - future_sales[i])
+        else: 
+            future_stocks.append(future_stocks[-1] - future_sales[i] * (float_lead_time % 1)) # Take into account the fractional part of the lead time
     return future_stocks
 def create_service_level_service_factor(service_level):
     # Calculate the inverse of the standard normal cumulative distribution function
@@ -184,35 +206,50 @@ def dynamic_correction(monthly_sales, current_date):
         monthly_sales[-1] = MAX_DAY * monthly_sales[-1] / current_day
     return monthly_sales
 def get_model(model, is_dynamic, current_date, product_code, product_sales, current_stock, lead_time, service_level, prev_forecast_period, future_forecast_period):
-    lead_time = lead_time
+    if lead_time%1 != 0:
+        float_lead_time = lead_time
+        integer_lead_time = math.ceil(lead_time)
+    else:
+        float_lead_time = lead_time
+        integer_lead_time = lead_time
+
     service_level = service_level
     bools = filter_product_sales(product_sales, product_code, dim=3)
     product_sales = remove_product_sales_by_boolean(product_sales, bools)
     monthly_sales = convert_daily_to_monthly(product_sales)
+    print("monthly sales: ",monthly_sales)
     if is_dynamic:
         monthly_sales = dynamic_correction(monthly_sales, current_date)
     prev_sales = get_sale_array(monthly_sales, dim=2)
+    print("monthly sales1 : ",monthly_sales)
+    print("prev sales: ", prev_sales)
     if model == 'average':
         future_sales = forecast_by_average(prev_sales,prev_forecast_period, future_forecast_period)
     elif model == 'holt':
         future_sales = forecast_by_holt(prev_sales,prev_forecast_period, future_forecast_period)
+    #     if not future_sales: # if future_sales is empty, continue to the next iteration
+    #         future_sales = []
+    # if model == 'holt' and len(future_sales) < integer_lead_time:
+    #     return [], [], [], [], False, 0, 0, 0
     elif model == 'exp':
         future_sales = forecast_by_exp(prev_sales,prev_forecast_period, future_forecast_period)
-    future_stocks = simulate_future_stocks(current_stock,future_sales)
+    future_stocks = simulate_future_stocks(current_stock,future_sales, float_lead_time, integer_lead_time)
     all_sales = np.concatenate((prev_sales, future_sales))
-    print("service_level: ",create_service_level_service_factor(service_level) )
     safety_stock = create_service_level_service_factor(service_level) * np.std(all_sales)
 
-    order_flag = any(num < safety_stock for num in future_stocks[0:lead_time])
-    rop = sum(future_sales[0:lead_time]) + safety_stock
-    base_stock_level = safety_stock + (future_sales[0] * lead_time)
+    order_flag = any(num < safety_stock for num in future_stocks[0:int(integer_lead_time)])
+    rop = sum(future_sales[0:int(integer_lead_time)-1]) 
+    if float_lead_time%1 != 0:
+        rop += future_sales[integer_lead_time-1] * (float_lead_time % 1)
+    rop += safety_stock
+    base_stock_level = safety_stock + (future_sales[0] * float_lead_time)
     order = max(base_stock_level - current_stock, 0)
     order = round(order,2)
     return all_sales, prev_sales, future_sales, future_stocks, order_flag, safety_stock, rop, order
 
 def generate_future_forecast_dates(num_months):
     current_date = current_jalali_date()
-    print("current_date: ", current_date)
+
     future_dates_with_current = [current_date]
     future_dates = []
 
@@ -227,7 +264,7 @@ def generate_future_forecast_dates(num_months):
         future_dates_with_current.append(jdatetime.date(year, month, 1))
         future_dates.append(jdatetime.date(year, month, 1))
 
-    print("future_dates: ", [date.strftime('%Y-%m-%d') for date in future_dates])
+    
     return [date.strftime('%Y-%m-%d') for date in future_dates]
 
 # product_code = 15202103

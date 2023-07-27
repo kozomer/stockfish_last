@@ -51,9 +51,9 @@ function Login({ history }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    console.log(username)
+    //console.log(username)
     try {
-      const response = await fetch("https://vividstockfish.com/api/login/", {
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/login/`, {
         method: "POST",
       
         body: JSON.stringify({
@@ -72,12 +72,12 @@ function Login({ history }) {
       }
 
       const data = await response.json();
-      console.log(data)
+      //console.log(data)
       const { access, refresh,first_name,last_name } = data;
-      console.log(first_name,last_name)
+      //console.log(first_name,last_name)
       if (response.ok) {
         // if login is successful, store the token in local storage
-        console.log("sadasd"),
+        //console.log("sadasd"),
         
         setTimeout(() => {
           history.push('/admin/dashboard');
@@ -88,7 +88,7 @@ function Login({ history }) {
         await localforage.setItem("last_name", last_name);
       }
     } catch (error) {
-      console.log(error.message);
+      //console.log(error.message);
       setError("Invalid email or password");
       setPassword("");
     }

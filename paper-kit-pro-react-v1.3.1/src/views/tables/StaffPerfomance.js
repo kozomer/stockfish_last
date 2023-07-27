@@ -34,6 +34,39 @@ const DataTable = () => {
   const [price, setPrice] = useState(null);
 
   const [oldData, setOldData] = useState(null);
+  const [salers, setSalers] = useState({ active_salers_list: [], passive_salers_list: [] });
+  const [selectedSaler, setSelectedSaler] = useState("");
+
+
+
+  async function fetchSalersData() {
+    const access_token = await localforage.getItem('access_token');
+    //console.log(access_token);
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/collapsed_salers/`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + String(access_token)
+      },
+    })
+      .then(response => response.json())
+      .then(data => {
+        let activeSalerNames = data.active_salers_list.map(saler => saler[1]);
+        let passiveSalerNames = data.passive_salers_list.map(saler => saler[1]);
+        setSalers({
+          active_salers_list: activeSalerNames,
+          passive_salers_list: passiveSalerNames,
+        });
+      })
+      .catch(error => console.log(error));
+  }
+  
+
+  useEffect(() => {
+    fetchSalersData();
+  }, []);
+
+  const salersList = [...salers.active_salers_list, ...salers.passive_salers_list];
+
 
   React.useEffect(() => {
     return function cleanup() {
@@ -47,13 +80,14 @@ const DataTable = () => {
     async function fetchData() {
       const access_token = await localforage.getItem('access_token');
       
-      const response = await fetch('http://127.0.0.1:8000/api/saler_performance/',{
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/saler_performance/`,{
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer '+ String(access_token)
         },
       });
       const data = await response.json();
+      
       setDataTable(data);
       setDataChanged(false);
       setRenderEdit(false)
@@ -63,7 +97,7 @@ const DataTable = () => {
 
   /*
   useEffect(() => {
-    console.log(dataTable);
+    //console.log(dataTable);
   }, [dataTable]);
 */
 
@@ -111,7 +145,7 @@ const DataTable = () => {
     
   };
   useEffect(() => {
-    console.log(deleteConfirm)
+    //console.log(deleteConfirm)
   },[deleteConfirm]);
 
   const successDelete = () => {
@@ -192,6 +226,41 @@ const DataTable = () => {
       setEditData(null)
     };
 
+   
+
+    async function handleExportClick(selectedSaler) {
+      const access_token = await localforage.getItem('access_token');
+      const sendData={
+        saler_name:selectedSaler,
+      }
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/export_staff/`, {
+        method: 'POST',
+        body:  JSON.stringify(sendData),
+        headers: {
+          
+          'Authorization': 'Bearer '+ String(access_token)
+
+        },
+      });
+    
+      const data = await response.json();
+      
+      const filename = data.filename;
+      const base64Content = data.content;
+      
+      const binaryContent = atob(base64Content);
+      const byteNumbers = new Array(binaryContent.length);
+      for (let i = 0; i < binaryContent.length; i++) {
+        byteNumbers[i] = binaryContent.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+    }
     
   return (
     <>
@@ -204,8 +273,22 @@ const DataTable = () => {
     <CardTitle tag='h4'>STAFF PERFORMANCE</CardTitle>
   </CardHeader>
   <CardBody>
-    
-  </CardBody>
+      <div className="d-flex justify-content-between align-items-center">
+        <FormGroup>
+          <Label>Select a Saler:</Label>
+          <Input type="select" value={selectedSaler} onChange={e => setSelectedSaler(e.target.value)}>
+            <option value="">--Select--</option>
+            {salersList.map((saler, index) => (
+              <option key={index} value={saler}>{saler}</option>
+            ))}
+          </Input>
+        </FormGroup>
+        <Button className="my-button-class" color="primary" onClick={() => handleExportClick(selectedSaler)} disabled={!selectedSaler}>
+          <i className="fa fa-download mr-1"></i>
+          Export Performances
+        </Button>
+      </div>
+    </CardBody>
 </Card>
         <Row>
           <Col
