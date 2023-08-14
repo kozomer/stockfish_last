@@ -19,7 +19,7 @@ class Sales(DirtyFieldsMixin, models.Model):
     bill_number = models.PositiveIntegerField(null=True, blank=True)
     date = jmodels.jDateField()
     gregorian_date = models.DateField()
-    psr = models.CharField(max_length=1) 
+    psr = models.CharField(max_length=1, null=True, blank=True) 
     customer_code = models.PositiveIntegerField(null=True, blank=True)
     name = models.CharField(max_length=50)
     city = models.CharField(max_length=50)
@@ -43,7 +43,7 @@ class Sales(DirtyFieldsMixin, models.Model):
     payment_cash = models.FloatField(null=True, blank=True)
     payment_check = models.FloatField(null=True, blank=True)
     balance = models.FloatField(null=True, blank=True)
-    saler = models.CharField(max_length=100)
+    saler = models.CharField(max_length=100, null=True, blank=True)
     currency_sepidar = models.FloatField(null=True, blank=True)
     dollar_sepidar = models.FloatField(null=True, blank=True)
     currency = models.FloatField(null=True, blank=True)
@@ -67,45 +67,89 @@ class Sales(DirtyFieldsMixin, models.Model):
         # Get related models
         customer = Customers.objects.get(customer_code=self.customer_code)
         product = Products.objects.get(product_code_ir=self.product_code)
-        saler = Salers.objects.get(name=self.saler)
-
-        self.gregorian_date = jalali_to_greg(self.date.day,self.date.month,self.date.year)
+        try:
+            saler = Salers.objects.get(name=self.saler)
+        except:
+            saler = None
+        self.gregorian_date = jalali_to_greg(self.date.day, self.date.month, self.date.year)
 
         # Calculation of "KG"
-        self.kg = float(self.original_value) if self.unit.lower() == "kg" else float(self.original_value) * float(product.unit_secondary)
+        if self.unit.lower() == "kg":
+            self.kg = self.original_value
+        elif self.original_value is not None and product.unit_secondary is not None:
+            self.kg = self.original_value * product.unit_secondary
+        else:
+            self.kg = None
 
         # Calculation of Balance
-        self.balance = float(self.net_sales) - (float(self.payment_cash) + float(self.payment_check))
+        if self.net_sales is not None and self.payment_cash is not None and self.payment_check is not None:
+            self.balance = self.net_sales - (float(self.payment_cash) + float(self.payment_check))
+        else:
+            self.balance = None
 
-        # Calculation of Dollar Sepidar
-        self.dollar_sepidar = float(self.net_sales) / float(self.currency_sepidar)
-        self.dollar = float(self.net_sales) / float(self.currency)
+        # Calculation of Dollar Sepidar and Dollar
+        if self.net_sales is not None and self.currency_sepidar is not None and self.currency_sepidar != 0:
+            self.dollar_sepidar = self.net_sales / float(self.currency_sepidar)
+        else:
+            self.dollar_sepidar = None
 
-        # Calculation of Manager Rating
-        if current_jalali_date().month == self.date.month and current_jalali_date().year == self.date.year:
-            self.manager_rating = float(saler.manager_performance_rating)
+        if self.net_sales is not None and self.currency is not None and self.currency != 0:
+            self.dollar = self.net_sales / float(self.currency)
+        else:
+            self.dollar = None
+
+        # Other calculations remain the same unless they involve arithmetic operations...
+
+        # Calculation of Saler Factor
+        print(self.saler)
+        print("omer")
+        if self.saler is not None:  
+            print(self.saler) 
+            factors = [self.tot_monthly_sales, self.manager_rating, self.receipment, saler.experience_rating, self.payment_type, self.ct]
+        else:
+            factors = [None, None, None, None, None, None ]
+        if None not in factors:
+            self.saler_factor = float(self.tot_monthly_sales) * float(self.manager_rating) * float(self.receipment) * float(saler.experience_rating) * float(self.payment_type) * float(self.ct)
+        else:
+            self.saler_factor = None
+
+        # Calculation of bonus
+        if self.saler_factor is not None and self.prim_percentage is not None:
+            self.bonus_factor = float(self.saler_factor) * float(self.prim_percentage)
+        else:
+            self.bonus_factor = None
+
+        if self.bonus_factor is not None and self.net_sales is not None:
+            self.bonus = self.bonus_factor * self.net_sales
+        else:
+            self.bonus = None
 
         # Calculation of monthly sale rating
-        try:
-            monthly_sale_rating_object = SalerMonthlySaleRating.objects.get(name=saler.name, year=self.date.year, month=self.date.month)
-            self.tot_monthly_sales = float(monthly_sale_rating_object.sale_rating)
-        except Exception as e:
-            self.tot_monthly_sales = 1
-
-        # Calculation of receipe rating
-        try:
-            receipe_rating_object = SalerReceipeRating.objects.get(name=saler.name, year=self.date.year, month=self.date.month)
-            self.receipment = float(receipe_rating_object.sale_rating)
-        except Exception as e:
-             self.receipment = 1
-        # Calculation of Saler Factor
-        self.saler_factor = float(self.tot_monthly_sales) * float(self.manager_rating) * float(self.receipment) * float(saler.experience_rating) * float(self.payment_type if self.payment_type else 1)* float(self.ct if self.ct else 1)
-        
-        # Calculation of bonus
-        self.bonus_factor = float(self.saler_factor) * float(self.prim_percentage)
-        self.bonus = float(self.bonus_factor) * float(self.net_sales)
-
+        if self.saler is not None: 
+            try:
+                monthly_sale_rating_object = SalerMonthlySaleRating.objects.get(name=self.saler.name, year=self.date.year, month=self.date.month)
+                self.monthly_sale_rating = monthly_sale_rating_object.sale_rating
+            except Exception as e:
+                self.monthly_sale_rating = 1
+                
+            # Calculation of Manager Rating
+            if current_jalali_date().month == self.date.month and current_jalali_date().year == self.date.year:
+                self.manager_rating = saler.manager_performance_rating
+            else:
+                self.manager_rating = 1
+            
+            # Calculation of Receipe Rating
+            try:
+                receipe_rating_object = SalerReceipeRating.objects.get(name=self.saler.name, year=self.date.year, month=self.date.month)
+                self.receipe_rating = receipe_rating_object.sale_rating
+            except Exception as e:
+                self.receipe_rating = 1
+        else:
+            self.monthly_sale_rating = 1
+            self.manager_rating = 1
+            self.receipe_rating = 1
         super().save(*args, **kwargs)
+
 
 
 class Warehouse(models.Model):

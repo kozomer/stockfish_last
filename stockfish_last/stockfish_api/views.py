@@ -286,7 +286,7 @@ class AddSalesView(APIView):
                 count += 1
 
                 # Check required fields
-                for field in ['Good Code', 'Customer Code', 'The Original Value', 'Net Sales', 'Saler',]:
+                for field in ['Good Code', 'Customer Code', 'The Original Value', 'Net Sales']:
                     if not row[field]:
                         return JsonResponse({'error': f"{field} cannot be empty"}, status=400)
 
@@ -311,9 +311,9 @@ class AddSalesView(APIView):
                 except Exception as e:
                     return JsonResponse({'error': "Date should be in the format of YYYY-MM-DD"}, status=400)
 
-                # Check valid psr value
-                if row['PSR'] not in ['P', 'S', 'R']:
-                    return JsonResponse({'error': "Invalid P-S-R value. Allowed values are 'P', 'S', and 'R'."}, status=400)
+                # # Check valid psr value
+                # if row['PSR'] not in ['P', 'S', 'R']:
+                #     return JsonResponse({'error': "Invalid P-S-R value. Allowed values are 'P', 'S', and 'R'."}, status=400)
 
                 # Check for existing good
                 if not Warehouse.objects.filter(product_code=row['Good Code']).exists():
@@ -324,9 +324,9 @@ class AddSalesView(APIView):
                 if not Customers.objects.filter(customer_code=row['Customer Code']).exists():
                     return JsonResponse({'error': f"No customer found with code '{row['Customer Code']}'"}, status=400)
 
-                # Check for existing saler
-                if not Salers.objects.filter(name=row['Saler']).exists():
-                    return JsonResponse({'error': f"No saler found with name '{row['Saler']}'"}, status=400)
+                # # Check for existing saler
+                # if not Salers.objects.filter(name=row['Saler']).exists():
+                #     return JsonResponse({'error': f"No saler found with name '{row['Saler']}'"}, status=400)
 
                 try:
                     customer = Customers.objects.get(customer_code= row["Customer Code"] )
@@ -336,52 +336,13 @@ class AddSalesView(APIView):
                     product = Products.objects.get(product_code_ir= row["Good Code"] )
                 except Exception as e:
                     return JsonResponse({'error': "No product found"}, status=400)
-                try:
-                    saler = Salers.objects.get(name= row["Saler"] )
-                except Exception as e:
-                    
-                    return JsonResponse({'error': "No saler found"}, status=400)
+
                 
                 # Calculation of "KG"
                 if row["Unit"].lower() == "kg":
                     kg = row["The Original Value"]
                 else:
                     kg = row["The Original Value"] * product.unit_secondary
-                
-                # Calculation of Balance
-                net_sales = float(row['Net Sales'])
-                payment_cash = 0
-                payment_check = 0
-                balance = net_sales-(payment_cash+payment_check)
-
-                #Calculation of Dollar Sepidar
-                currency_sepidar=float(row["Currency-Sepidar"])
-                currency=float(row["Currency"])
-                dollar_sepidar = net_sales/currency_sepidar
-                dollar = net_sales/currency
-
-                #Calculation of monthly sale rating
-                try:
-                    monthly_sale_rating_object = SalerMonthlySaleRating.objects.get(name = saler.name, year = date.year, month = date.month)
-                    monthly_sale_rating = monthly_sale_rating_object.sale_rating
-                except Exception as e:
-                    monthly_sale_rating = 1
-                #Calculation of Manager Rating
-                if current_jalali_date().month == date.month and current_jalali_date().year == date.year:
-                    manager_rating =saler.manager_performance_rating
-                else:
-                    manager_rating = 1
-                
-                try:
-                    receipe_rating_object = SalerReceipeRating.objects.get(name = saler.name, year = date.year, month = date.month)
-                    receipe_rating = receipe_rating_object.sale_rating
-                except Exception as e:
-                    receipe_rating = 1
-                # Saler Factor
-                saler_factor = monthly_sale_rating * manager_rating * receipe_rating * saler.experience_rating * (row["Payment Type"] if row["Payment Type"] else 1)* (row["CT"] if row["CT"] else 1)
-                prim_percantage = row["Prim Percantage"]
-                bonus_factor = saler_factor * prim_percantage
-                bonus = bonus_factor * net_sales
 
                 discount_percentage = ((float(row["Net Sales"])/float(row["Amount Sale"]))-1)*100
 
@@ -393,7 +354,7 @@ class AddSalesView(APIView):
                     bill_number=row["Bill Number"],
                     date=date,
                     gregorian_date = gregorian_date,
-                    psr= row["PSR"],
+                    psr= None,
                     customer_code=row["Customer Code"],
                     name= customer.description,
                     city= customer.city,
@@ -410,7 +371,7 @@ class AddSalesView(APIView):
                     secondary_output_value=row["Secondary Output Value"],
                     price_dollar = row["Price/Dollar"],
                     #price=row["Price"],
-                    original_price_dollar=row["Original Price"], 
+                    original_price_dollar=None, 
                     #original_price=row["Original Price"], #!!!!!!!!!!!
                     discount_percentage=discount_percentage,
                     amount_sale=row["Amount Sale"],
@@ -419,25 +380,25 @@ class AddSalesView(APIView):
                     net_sales=row["Net Sales"],
                     #discount_percentage_2=row["Discount Percantage 2(%)"],
                     #real_discount_percentage=row["Real Discount Percantage (%)"],
-                    payment_cash= payment_cash, #row["Payment Cash"],
-                    payment_check= payment_check, #row["Payment Check"],
-                    balance = balance,
-                    saler= saler.name,
-                    currency_sepidar= currency_sepidar, 
-                    dollar_sepidar= dollar_sepidar,
-                    currency= currency, 
-                    dollar= dollar,
-                    manager_rating= manager_rating,
-                    senior_saler= saler.experience_rating,
-                    tot_monthly_sales= monthly_sale_rating,
-                    receipment= receipe_rating,
-                    ct= row["CT"],
-                    payment_type= row["Payment Type"], 
-                    customer_size= row["Customer Size"], 
-                    saler_factor = saler_factor,
-                    prim_percentage=row["Prim Percantage"], #! sepidardan alınmalı
-                    bonus_factor=bonus_factor,
-                    bonus=bonus
+                    payment_cash= None, #row["Payment Cash"],
+                    payment_check= None, #row["Payment Check"],
+                    balance = None,
+                    saler= None,
+                    currency_sepidar= None, 
+                    dollar_sepidar= None,
+                    currency= None, 
+                    dollar= None,
+                    manager_rating= None,
+                    senior_saler= None,
+                    tot_monthly_sales= None,
+                    receipment= None,
+                    ct= None,
+                    payment_type= None, 
+                    customer_size= None, 
+                    saler_factor = None,
+                    prim_percentage=None, 
+                    bonus_factor=None,
+                    bonus=None
                 )
                 sale.save()
 
@@ -454,7 +415,7 @@ class AddSalesView(APIView):
         except OperationalError as e:
             return JsonResponse({'error': f"Database error: {str(e)}"}, status=500)
         except Exception as e:
-            
+            traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
 
 
@@ -607,7 +568,7 @@ class EditSaleView(APIView):
             return JsonResponse({'error': str(e)}, status=400)
 
         except Exception as e:
-            
+            traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
 
 
@@ -1425,9 +1386,13 @@ def update_month_sale_rating(sender, instance, **kwargs):
 # endregion
 
 # region SalerPerformance
-
+#TODO: This method is updated
 @receiver(post_save, sender=Sales)
 def update_saler_performance_with_add_sale(sender, instance, created, **kwargs):
+    # If 'saler' is not provided, exit the method early without any further action
+    if not instance.saler:
+        return
+
     # Get or create the SalerPerformance object
     saler_performance, _ = SalerPerformance.objects.get_or_create(
         name=instance.saler,
@@ -1439,7 +1404,10 @@ def update_saler_performance_with_add_sale(sender, instance, created, **kwargs):
     if created:
         # Update the sale value for the SalerPerformance object
         saler_performance.sale += float(instance.net_sales)
-        saler_performance.bonus += float(instance.bonus)
+
+        # Check if 'bonus' is provided
+        if instance.bonus:
+            saler_performance.bonus += float(instance.bonus)
     else:
         # Check which fields have been updated
         dirty_fields = instance.get_dirty_fields()
@@ -1447,6 +1415,7 @@ def update_saler_performance_with_add_sale(sender, instance, created, **kwargs):
         # If any of the saler, year, month, or day fields are updated, find the previous SalerPerformance instance, subtract the old values, and update the new SalerPerformance instance
         if any(field in dirty_fields for field in ['saler', 'date']):
             old_saler = dirty_fields.get('saler', instance.saler)
+            print(old_saler)
             old_date = dirty_fields.get('date', instance.date)
             old_saler_performance = SalerPerformance.objects.get(
                 name=old_saler,
@@ -1457,21 +1426,27 @@ def update_saler_performance_with_add_sale(sender, instance, created, **kwargs):
 
             # Subtract old values from the old SalerPerformance instance
             old_saler_performance.sale -= dirty_fields.get('net_sales', instance.net_sales)
-            old_saler_performance.bonus -= dirty_fields.get('bonus', instance.bonus)
+
+            # Check if 'bonus' was previously provided
+            if 'bonus' in dirty_fields:
+                old_saler_performance.bonus -= dirty_fields['bonus']
+
             old_saler_performance.save()
 
             # Update the new SalerPerformance instance
             saler_performance.sale += instance.net_sales
-            saler_performance.bonus += instance.bonus
+            if instance.bonus:
+                saler_performance.bonus += instance.bonus
 
         # Update the corresponding attributes of the SalerPerformance instance based on the updated fields
         else:
             if 'net_sales' in dirty_fields:
                 saler_performance.sale += float(instance.net_sales) - dirty_fields['net_sales']
-            if 'bonus' in dirty_fields:
+            if 'bonus' in dirty_fields and instance.bonus:
                 saler_performance.bonus += float(instance.bonus) - dirty_fields['bonus']
 
     saler_performance.save()
+
 
 
 @receiver(post_delete, sender=Sales)
@@ -1567,9 +1542,14 @@ class ExportSalerPerfomanceView(APIView):
         # Send the content and filename in the JSON response
         return JsonResponse({'filename': f'saler_performance_{saler_name}({jalali_date}).xlsx', 'content': base64_content})
 
-
+#TODO: This method is updated
 @receiver(post_save, sender=Sales)
 def update_receipement_rating_with_add_sale(sender, instance, created, **kwargs):
+
+    # If 'saler' is not provided, exit the method early without any further action
+    if not instance.saler:
+        return
+
     receipe_rating, created = SalerReceipeRating.objects.get_or_create(
         name=instance.saler, 
         year=instance.date.year,
@@ -1598,7 +1578,9 @@ def update_receipement_rating_with_add_sale(sender, instance, created, **kwargs)
         receipe_rating.sale_rating = calculate_receipe_rating(receipe_ratio)
     else:
         receipe_rating.sale_rating = 1
+
     receipe_rating.save()
+
 
 @receiver(post_delete, sender=Sales)
 def update_receipement_rating_with_delete_sale(sender, instance, **kwargs):
@@ -1646,7 +1628,7 @@ def update_receipement_rating_with_delete_sale(sender, instance, **kwargs):
 # endregion
 
 # region SaleSummary
-
+#TODO: This method is updated
 @receiver(post_save, sender=Sales)
 def update_sale_summary_with_add_sale(sender, instance, created, **kwargs):
     find_month = instance.date.month
@@ -1660,11 +1642,15 @@ def update_sale_summary_with_add_sale(sender, instance, created, **kwargs):
     )
 
     if created:
-        # Add the values of all relevant fields to the corresponding attributes of the SaleSummary instance
         sale_summary.sale += instance.net_sales
-        sale_summary.dollar_sepidar_sale += instance.dollar_sepidar
-        sale_summary.dollar_sale += instance.dollar
-        sale_summary.kg_sale += instance.kg
+
+        # Only add these values if they are not None
+        if instance.dollar_sepidar:
+            sale_summary.dollar_sepidar_sale += instance.dollar_sepidar
+        if instance.dollar:
+            sale_summary.dollar_sale += instance.dollar
+        
+        sale_summary.kg_sale += float(instance.kg)
         sale_summary.save()
     else:
         # Check which fields have been updated
@@ -1681,29 +1667,39 @@ def update_sale_summary_with_add_sale(sender, instance, created, **kwargs):
 
             # Subtract old values from the old SaleSummary instance
             old_sale_summary.sale -= dirty_fields.get('net_sales', instance.net_sales)
-            old_sale_summary.dollar_sepidar_sale -= dirty_fields.get('dollar_sepidar', instance.dollar_sepidar)
-            old_sale_summary.dollar_sale -= dirty_fields.get('dollar', instance.dollar)
+            old_sale_summary.dollar_sepidar_sale -= dirty_fields.get('dollar_sepidar', 0)
+            old_sale_summary.dollar_sale -= dirty_fields.get('dollar', 0)
             old_sale_summary.kg_sale -= dirty_fields.get('kg', instance.kg)
             old_sale_summary.save()
 
             # Update the new SaleSummary instance
             sale_summary.sale += instance.net_sales
-            sale_summary.dollar_sepidar_sale += instance.dollar_sepidar
-            sale_summary.dollar_sale += instance.dollar
+            if instance.dollar_sepidar:
+                sale_summary.dollar_sepidar_sale += instance.dollar_sepidar
+            if instance.dollar:
+                sale_summary.dollar_sale += instance.dollar
             sale_summary.kg_sale += instance.kg
 
         # Update the corresponding attributes of the SaleSummary instance based on the updated fields
         else:
             if 'net_sales' in dirty_fields:
                 sale_summary.sale += float(instance.net_sales) - dirty_fields['net_sales']
+            
+            # Handle updates for dollar_sepidar
             if 'dollar_sepidar' in dirty_fields:
-                sale_summary.dollar_sepidar_sale += float(instance.dollar_sepidar) - dirty_fields['dollar_sepidar']
+                old_value = dirty_fields['dollar_sepidar'] or 0  # Use 0 if it was None
+                sale_summary.dollar_sepidar_sale += float(instance.dollar_sepidar or 0) - old_value
+
+            # Handle updates for dollar
             if 'dollar' in dirty_fields:
-                sale_summary.dollar_sale += float(instance.dollar) - dirty_fields['dollar']
+                old_value = dirty_fields['dollar'] or 0  # Use 0 if it was None
+                sale_summary.dollar_sale += float(instance.dollar or 0) - old_value
+
             if 'kg' in dirty_fields:
                 sale_summary.kg_sale += float(instance.kg) - dirty_fields['kg']
 
         sale_summary.save()
+
 
 @receiver(post_delete, sender=Sales)
 def update_sale_summary_with_delete_sale(sender, instance, **kwargs):
@@ -1858,14 +1854,14 @@ def update_monthly_product_sales_with_delete_sale(sender, instance, **kwargs):
 # region Dashboard #!DASHBOARD PAGE START
 
 # region Customer Performance
-
+#TODO: This method is updated
 @receiver(post_save, sender=Sales)
 def update_customer_performance_with_add_sale(sender, instance, created, **kwargs):
     # Get or create the CustomerPerformance object
     find_month = instance.date.month
     find_year = instance.date.year
     customer_performance, _ = CustomerPerformance.objects.get_or_create(
-         year=find_year, month=find_month, customer_code=instance.customer_code
+        year=find_year, month=find_month, customer_code=instance.customer_code
     )
 
     # Update the corresponding attributes of the CustomerPerformance instance based on the updated fields
@@ -1876,8 +1872,11 @@ def update_customer_performance_with_add_sale(sender, instance, created, **kwarg
         # Update the sale value for the CustomerPerformance object
         customer_performance.sale += instance.net_sales
         customer_performance.sale_amount += instance.original_value
-        customer_performance.dollar += instance.dollar
-        customer_performance.dollar_sepidar += instance.dollar_sepidar
+        # Check if 'dollar' and 'dollar_sepidar' are provided
+        if instance.dollar:
+            customer_performance.dollar += instance.dollar
+        if instance.dollar_sepidar:
+            customer_performance.dollar_sepidar += instance.dollar_sepidar
     else:
         # Check which fields have been updated
         dirty_fields = instance.get_dirty_fields()
@@ -1893,15 +1892,19 @@ def update_customer_performance_with_add_sale(sender, instance, created, **kwarg
             # Subtract old values from the old CustomerPerformance instance
             old_customer_performance.sale -= dirty_fields.get('net_sales', instance.net_sales)
             old_customer_performance.sale_amount -= dirty_fields.get('original_value', instance.original_value)
-            old_customer_performance.dollar -= dirty_fields.get('dollar', instance.dollar)
-            old_customer_performance.dollar_sepidar -= dirty_fields.get('dollar_sepidar', instance.dollar_sepidar)
+            if 'dollar' in dirty_fields:
+                old_customer_performance.dollar -= dirty_fields['dollar']
+            if 'dollar_sepidar' in dirty_fields:
+                old_customer_performance.dollar_sepidar -= dirty_fields['dollar_sepidar']
             old_customer_performance.save()
 
             # Update the new CustomerPerformance instance
             customer_performance.sale += instance.net_sales
             customer_performance.sale_amount += instance.original_value
-            customer_performance.dollar += instance.dollar
-            customer_performance.dollar_sepidar += instance.dollar_sepidar
+            if instance.dollar:
+                customer_performance.dollar += instance.dollar
+            if instance.dollar_sepidar:
+                customer_performance.dollar_sepidar += instance.dollar_sepidar
 
         # Update the corresponding attributes of the CustomerPerformance instance based on the updated fields
         else:
@@ -1909,12 +1912,13 @@ def update_customer_performance_with_add_sale(sender, instance, created, **kwarg
                 customer_performance.sale += float(instance.net_sales) - dirty_fields['net_sales']
             if 'original_value' in dirty_fields:
                 customer_performance.sale_amount += float(instance.original_value) - dirty_fields['original_value']
-            if 'dollar' in dirty_fields:
+            if 'dollar' in dirty_fields and instance.dollar:
                 customer_performance.dollar += float(instance.dollar) - dirty_fields['dollar']
-            if 'dollar_sepidar' in dirty_fields:
+            if 'dollar_sepidar' in dirty_fields and instance.dollar_sepidar:
                 customer_performance.dollar_sepidar += float(instance.dollar_sepidar) - dirty_fields['dollar_sepidar']
 
     customer_performance.save()
+
 
 
 
