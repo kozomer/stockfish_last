@@ -669,6 +669,7 @@ const [bonus, setBonus] = useState(null);
               type="text"
               defaultValue={name}
               onChange={(e) => setName(e.target.value)}
+              disabled
             />
           </FormGroup>
         
@@ -678,6 +679,7 @@ const [bonus, setBonus] = useState(null);
               type="text"
               defaultValue={city}
               onChange={(e) => setCity(e.target.value)}
+              disabled
             />
           </FormGroup>
           </div>
@@ -689,11 +691,13 @@ const [bonus, setBonus] = useState(null);
               type="text"
               defaultValue={area}
               onChange={(e) => setArea(e.target.value)}
+              disabled
             />
           </FormGroup>
           <label>Color Making Saler</label>
           <FormGroup>
             <Input
+            disabled
               type="text"
               defaultValue={colorMake}
               onChange={(e) => setColorMake(e.target.value)}
@@ -712,12 +716,13 @@ const [bonus, setBonus] = useState(null);
             />
           </FormGroup>
 
-          <label>Prodcut Name</label>
+          <label>Product Name</label>
           <FormGroup>
             <Input
               type="text"
               defaultValue={productName}
               onChange={(e) => setProductName(e.target.value)}
+              disabled
             />
           </FormGroup>
 
@@ -736,6 +741,7 @@ const [bonus, setBonus] = useState(null);
               type="text"
               defaultValue={unit2}
               onChange={(e) => setUnit2(e.target.value)}
+              disabled
             />
           </FormGroup>
 
@@ -745,6 +751,7 @@ const [bonus, setBonus] = useState(null);
               type="text"
               defaultValue={bonusFactor}
               onChange={(e) =>setBonusFactor(e.target.value)}
+              disabled
             />
           </FormGroup>
           </div>
@@ -757,6 +764,7 @@ const [bonus, setBonus] = useState(null);
               type="text"
               defaultValue={kg}
               onChange={(e) => setKg(e.target.value)}
+              disabled
             />
           </FormGroup>
           
@@ -815,6 +823,7 @@ const [bonus, setBonus] = useState(null);
               type="text"
               defaultValue={bonus}
               onChange={(e) =>setBonus(e.target.value)}
+              disabled
             />
           </FormGroup>
           </div>
@@ -847,6 +856,7 @@ const [bonus, setBonus] = useState(null);
               type="text"
               defaultValue={paymentCash}
               onChange={(e) =>  setPaymentCash(e.target.value)}
+
             />
           </FormGroup>
           
@@ -856,6 +866,7 @@ const [bonus, setBonus] = useState(null);
               type="text"
               defaultValue={paymentCheck}
               onChange={(e) =>   setPaymentCheck(e.target.value)}
+
             />
           </FormGroup>
          
@@ -867,7 +878,9 @@ const [bonus, setBonus] = useState(null);
               type="text"
               defaultValue={balance}
               onChange={(e) =>   setBalance(e.target.value)}
+              disabled
             />
+            
           </FormGroup>
 
           <label>Senior Saler</label>
@@ -876,6 +889,7 @@ const [bonus, setBonus] = useState(null);
               type="text"
               defaultValue={seniorSaler}
               onChange={(e) =>   setSeniorSaler(e.target.value)}
+              disabled
             />
           </FormGroup>
 
@@ -916,6 +930,7 @@ const [bonus, setBonus] = useState(null);
               type="text"
               defaultValue={dollarSepidar}
               onChange={(e) => setDollarSepidar(e.target.value)}
+              disabled
             />
           </FormGroup>
 
@@ -934,6 +949,7 @@ const [bonus, setBonus] = useState(null);
               type="text"
               defaultValue={dollar}
               onChange={(e) =>   setDollar(e.target.value)}
+              disabled
             />
           </FormGroup>
 
@@ -943,6 +959,7 @@ const [bonus, setBonus] = useState(null);
               type="text"
               defaultValue={managerRating}
               onChange={(e) =>   setManagerRating(e.target.value)}
+              disabled
             />
           </FormGroup>
 
@@ -957,6 +974,7 @@ const [bonus, setBonus] = useState(null);
               type="text"
               defaultValue={totMonthlySales}
               onChange={(e) =>   setTotMonthlySales(e.target.value)}
+              disabled
             />
           </FormGroup>
           
@@ -968,6 +986,7 @@ const [bonus, setBonus] = useState(null);
               type="text"
               defaultValue={receipment}
               onChange={(e) =>   setReceipment(e.target.value)}
+              disabled
             />
           </FormGroup>
 
@@ -1004,6 +1023,7 @@ const [bonus, setBonus] = useState(null);
               type="text"
               defaultValue={salerFactor}
               onChange={(e) =>setSalerFactor(e.target.value)}
+              disabled
             />
           </FormGroup>
 
