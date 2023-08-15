@@ -60,6 +60,16 @@ class Sales(DirtyFieldsMixin, models.Model):
     bonus_factor = models.FloatField(null=True, blank=True)
     bonus = models.FloatField(null=True, blank=True)
 
+    def __init__(self, *args, **kwargs):
+        super(Sales, self).__init__(*args, **kwargs)
+
+        self._initial_values = {}
+
+        for field in self._meta.fields:
+            self._initial_values[field.name] = getattr(self, field.name)
+
+        self._manual_dirty_fields = {}  # to store fields you've manually identified as "dirty"
+        print("INITIAL VALUES SET: ", self._initial_values)
     def __str__(self):
         return self.no
     
@@ -67,6 +77,10 @@ class Sales(DirtyFieldsMixin, models.Model):
         # Get related models
         customer = Customers.objects.get(customer_code=self.customer_code)
         product = Products.objects.get(product_code_ir=self.product_code)
+
+        self._initial_values = {}  # default empty dict
+        
+
         try:
             saler = Salers.objects.get(name=self.saler)
         except:
@@ -87,7 +101,10 @@ class Sales(DirtyFieldsMixin, models.Model):
         else:
             self.balance = None
 
-        # Calculation of Dollar Sepidar and Dollar
+
+
+
+
         if self.net_sales is not None and self.currency_sepidar is not None and self.currency_sepidar != 0:
             self.dollar_sepidar = self.net_sales / float(self.currency_sepidar)
         else:
@@ -98,16 +115,44 @@ class Sales(DirtyFieldsMixin, models.Model):
         else:
             self.dollar = None
 
+        
+
         # Other calculations remain the same unless they involve arithmetic operations...
 
         # Calculation of Saler Factor
-        print(self.saler)
-        print("omer")
+
+        # Calculation of monthly sale rating
+        if self.saler is not None: 
+            try:
+                monthly_sale_rating_object = SalerMonthlySaleRating.objects.get(name=self.saler.name, year=self.date.year, month=self.date.month)
+                self.tot_monthly_sales = monthly_sale_rating_object.sale_rating
+            except Exception as e:
+                self.tot_monthly_sales = 1
+                
+            # Calculation of Manager Rating
+            if current_jalali_date().month == self.date.month and current_jalali_date().year == self.date.year:
+                self.manager_rating = saler.manager_performance_rating
+            else:
+                self.manager_rating = 1
+            
+            # Calculation of Receipe Rating
+            try:
+                receipe_rating_object = SalerReceipeRating.objects.get(name=self.saler.name, year=self.date.year, month=self.date.month)
+                self.receipment = receipe_rating_object.sale_rating
+            except Exception as e:
+                self.receipment = 1
+            self.senior_saler = saler.experience_rating
+        else:
+            self.tot_monthly_sales = 1
+            self.manager_rating = 1
+            self.receipment = 1
+        
         if self.saler is not None:  
-            print(self.saler) 
+
             factors = [self.tot_monthly_sales, self.manager_rating, self.receipment, saler.experience_rating, self.payment_type, self.ct]
         else:
             factors = [None, None, None, None, None, None ]
+        print(factors)
         if None not in factors:
             self.saler_factor = float(self.tot_monthly_sales) * float(self.manager_rating) * float(self.receipment) * float(saler.experience_rating) * float(self.payment_type) * float(self.ct)
         else:
@@ -123,31 +168,18 @@ class Sales(DirtyFieldsMixin, models.Model):
             self.bonus = self.bonus_factor * self.net_sales
         else:
             self.bonus = None
+        
 
-        # Calculation of monthly sale rating
-        if self.saler is not None: 
-            try:
-                monthly_sale_rating_object = SalerMonthlySaleRating.objects.get(name=self.saler.name, year=self.date.year, month=self.date.month)
-                self.monthly_sale_rating = monthly_sale_rating_object.sale_rating
-            except Exception as e:
-                self.monthly_sale_rating = 1
-                
-            # Calculation of Manager Rating
-            if current_jalali_date().month == self.date.month and current_jalali_date().year == self.date.year:
-                self.manager_rating = saler.manager_performance_rating
-            else:
-                self.manager_rating = 1
+        for field_name, initial_value in self._initial_values.items():
             
-            # Calculation of Receipe Rating
-            try:
-                receipe_rating_object = SalerReceipeRating.objects.get(name=self.saler.name, year=self.date.year, month=self.date.month)
-                self.receipe_rating = receipe_rating_object.sale_rating
-            except Exception as e:
-                self.receipe_rating = 1
-        else:
-            self.monthly_sale_rating = 1
-            self.manager_rating = 1
-            self.receipe_rating = 1
+            current_value = getattr(self, field_name)
+            print(f"Checking field: {field_name}")
+            print(f"Initial Value: {initial_value}")
+            print(f"Current Value: {current_value}")
+            if current_value != initial_value:
+                self._manual_dirty_fields[field_name] = initial_value
+
+        print("Dirty Fields:", self._manual_dirty_fields)  # To check the fields that are detected as dirty
         super().save(*args, **kwargs)
 
 
