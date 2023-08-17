@@ -338,11 +338,11 @@ class AddSalesView(APIView):
                     return JsonResponse({'error': "No product found"}, status=400)
 
                 
-                # Calculation of "KG"
-                if row["Unit"].lower() == "kg":
-                    kg = row["The Original Value"]
-                else:
-                    kg = row["The Original Value"] * product.unit_secondary
+                # # Calculation of "KG"
+                # if row["Unit"].lower() == "kg":
+                #     kg = row["The Original Value"]
+                # else:
+                #     kg = row["The Original Value"] * product.unit_secondary
 
                 discount_percentage = ((float(row["Net Sales"])/float(row["Amount Sale"]))-1)*100
 
@@ -366,7 +366,7 @@ class AddSalesView(APIView):
                     unit=product.unit,
                     unit2=product.unit_secondary,
                     original_value=row["The Original Value"],
-                    kg = kg,
+                    kg = None,
                     #original_output_value=row["Original Output Value"],
                     secondary_output_value=row["Secondary Output Value"],
                     price_dollar = row["Price/Dollar"],
@@ -441,12 +441,21 @@ class ViewSalesView(APIView):
 class DeleteSaleView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
+
     def post(self, request, *args, **kwargs):
         try:
             no = request.POST.get('no', None)
-            product_code = request.POST.get('product_code', None)
-            original_value = request.POST.get('original_value', None)
-            Sales.objects.filter(no=no).delete()
+            
+            try:
+                sale = Sales.objects.get(no=no)
+            except Sales.DoesNotExist:
+                return JsonResponse({'error': "Sale object not found"}, status=400)
+
+            product_code = sale.product_code
+            original_value = sale.original_value
+            
+            sale.delete()
+
             try:
                 warehouse_item = Warehouse.objects.get(product_code=product_code)
                 warehouse_item.stock += float(original_value)
@@ -455,7 +464,9 @@ class DeleteSaleView(APIView):
                 return JsonResponse({'error': f"No product found with code '{product_code}' in warehouse"}, status=400)
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
+
         return JsonResponse({'message': "Sale object has been successfully deleted"}, status=200)
+
 
 class EditSaleView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -513,51 +524,69 @@ class EditSaleView(APIView):
                 if Sales.objects.filter(no=data.get('new_no')).exists():
                     error_message = f"The sale no '{data.get('new_no')}' already exists in the database."
                     return JsonResponse({'error': error_message}, status=400)
-            sale = Sales.objects.get(no=old_no)
-            sale.no = data.get('new_no')
-            sale.bill_number = data.get('new_bill_number')
-            sale.date = date
-            sale.psr = data.get('new_psr')
-            sale.customer_code = data.get('new_customer_code')
-            sale.name = data.get('new_name')
-            sale.city = data.get('new_city')
-            sale.area = data.get('new_area')
-            sale.color_making_saler = data.get('new_color_making_saler')
-            sale.product_code = data.get('new_product_code')
-            sale.product_name = data.get('new_product_name')
-            sale.unit = data.get('new_unit')
-            sale.unit2 = data.get('new_unit2')
-            sale.kg = data.get('new_kg')
-            sale.original_value = data.get('new_original_value')
-            sale.secondary_output_value = data.get('new_secondary_output_value')
-            sale.price_dollar = data.get('new_price_dollar')
-            sale.original_price_dollar = data.get('new_original_price_dollar')
-            sale.discount_percentage = data.get('new_discount_percentage')
-            sale.amount_sale = data.get('new_amount_sale')
-            sale.discount = data.get('new_discount')
-            sale.additional_sales = data.get('new_additional_sales')
-            sale.net_sales = data.get('new_net_sales')
-            sale.payment_cash = data.get('new_payment_cash')
-            sale.payment_check = data.get('new_payment_check')
-            sale.balance = data.get('new_balance')
-            sale.saler = data.get('new_saler')
-            sale.currency_sepidar = data.get('new_currency_sepidar')
-            sale.dollar_sepidar = data.get('new_dollar_sepidar')
-            sale.currency = data.get('new_currency')
-            sale.dollar = data.get('new_dollar')
-            sale.manager_rating = data.get('new_manager_rating')
-            sale.senior_saler = data.get('new_senior_saler')
-            sale.tot_monthly_sales = data.get('new_tot_monthly_sales')
-            sale.receipment = data.get('new_receipment')
-            sale.ct = data.get('new_ct')
-            sale.payment_type = data.get('new_payment_type')
-            sale.customer_size = data.get('new_customer_size')
-            sale.saler_factor = data.get('new_saler_factor')
-            sale.prim_percentage = data.get('new_prim_percentage')
-            sale.bonus_factor = data.get('new_bonus_factor')
-            sale.bonus = data.get('new_bonus')
+            old_sale = Sales.objects.get(no=old_no)
+            
+            old_product_code = old_sale.product_code
+            old_original_value = old_sale.original_value
 
-            sale.save()
+            warehouse_product_old = Warehouse.objects.get(product_code=old_product_code)
+            warehouse_product_old.stock += old_original_value
+            warehouse_product_old.save()
+
+            old_sale.delete()
+            
+            # Handle the new sale
+            new_sale = Sales()  # Creating a new Sale object
+
+            new_product_code = data.get('new_product_code')
+            warehouse_product_new = Warehouse.objects.get(product_code=new_product_code)
+            warehouse_product_new.stock -= data.get('new_original_value')
+            warehouse_product_new.save()
+
+            new_sale.no = data.get('new_no')
+            new_sale.bill_number = data.get('new_bill_number')
+            new_sale.date = date
+            new_sale.psr = data.get('new_psr')
+            new_sale.customer_code = data.get('new_customer_code')
+            new_sale.name = data.get('new_name')
+            new_sale.city = data.get('new_city')
+            new_sale.area = data.get('new_area')
+            new_sale.color_making_saler = data.get('new_color_making_saler')
+            new_sale.product_code = data.get('new_product_code')
+            new_sale.product_name = data.get('new_product_name')
+            new_sale.unit = data.get('new_unit')
+            new_sale.unit2 = data.get('new_unit2')
+            new_sale.kg = data.get('new_kg')
+            new_sale.original_value = data.get('new_original_value')
+            new_sale.secondary_output_value = data.get('new_secondary_output_value')
+            new_sale.price_dollar = data.get('new_price_dollar')
+            new_sale.original_price_dollar = data.get('new_original_price_dollar')
+            new_sale.discount_percentage = data.get('new_discount_percentage')
+            new_sale.amount_sale = data.get('new_amount_sale')
+            new_sale.discount = data.get('new_discount')
+            new_sale.additional_sales = data.get('new_additional_sales')
+            new_sale.net_sales = data.get('new_net_sales')
+            new_sale.payment_cash = data.get('new_payment_cash')
+            new_sale.payment_check = data.get('new_payment_check')
+            new_sale.balance = data.get('new_balance')
+            new_sale.saler = data.get('new_saler')
+            new_sale.currency_sepidar = data.get('new_currency_sepidar')
+            new_sale.dollar_sepidar = data.get('new_dollar_sepidar')
+            new_sale.currency = data.get('new_currency')
+            new_sale.dollar = data.get('new_dollar')
+            new_sale.manager_rating = data.get('new_manager_rating')
+            new_sale.senior_saler = data.get('new_senior_saler')
+            new_sale.tot_monthly_sales = data.get('new_tot_monthly_sales')
+            new_sale.receipment = data.get('new_receipment')
+            new_sale.ct = data.get('new_ct')
+            new_sale.payment_type = data.get('new_payment_type')
+            new_sale.customer_size = data.get('new_customer_size')
+            new_sale.saler_factor = data.get('new_saler_factor')
+            new_sale.prim_percentage = data.get('new_prim_percentage')
+            new_sale.bonus_factor = data.get('new_bonus_factor')
+            new_sale.bonus = data.get('new_bonus')
+
+            new_sale.save()
 
             return JsonResponse({'message': "Your changes have been successfully saved"}, status=200)
 
@@ -570,6 +599,142 @@ class EditSaleView(APIView):
         except Exception as e:
             traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
+
+# class EditSaleView(APIView):
+#     permission_classes = (IsAuthenticated,)
+#     authentication_classes = (JWTAuthentication,)
+
+#     def post(self, request, *args, **kwargs):
+#         try:
+#             data = json.loads(request.body)
+
+#             # Check for required fields
+#             for field in ['new_product_code', 'new_customer_code', 'new_original_value', 'new_net_sales', 'new_saler', 'new_psr', 'new_date']:
+#                 if not data.get(field):
+#                     return JsonResponse({'error': f"{field} cannot be empty"}, status=400)
+
+#             # Check for integer fields
+#             for field in ['new_product_code', 'new_customer_code']:
+#                 try:
+#                     if not isinstance(int(data.get(field)), int):
+#                         return JsonResponse({'error': f"{field} should be integer"}, status=400)
+#                 except Exception as e:
+#                     return JsonResponse({'error': f"{field} should be integer"}, status=400)
+
+#             # Check for valid date format
+#             try:
+#                 new_date = data.get('new_date').split("-")
+#                 date = jdatetime.date(int(new_date[0]), int(new_date[1]), int(new_date[2]))
+#             except ValueError:
+#                 return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD'"}, status=400)
+#             except IndexError as e:
+#                 return JsonResponse({'error': "The date you entered is in the wrong format. The correct date format is 'YYYY-MM-DD'"}, status=400)
+#             except Exception as e:
+#                 return JsonResponse({'error': str(e)}, status=400)
+            
+#             # Check for valid psr value
+#             if data.get('new_psr') not in ['P', 'S', 'R']:
+#                 return JsonResponse({'error': "Invalid P-S-R value. Allowed values are 'P', 'S', and 'R'."}, status=400)
+
+#             # Check for existing good
+#             if not Warehouse.objects.filter(product_code=data.get('new_product_code')).exists():
+#                 return JsonResponse({'error': f"No product found with code '{data.get('new_product_code')}' in Warehouse. Please check product code. If there is a new product please add firstly to Warehouse."}, status=400)
+#             if not Products.objects.filter(product_code_ir=data.get('new_product_code')).exists():
+#                 return JsonResponse({'error': f"No product found with code '{data.get('new_product_code')}'. Please check product code. If there is a new product please add firstly to Products."}, status=400)
+            
+#             # Check for existing customer
+#             if not Customers.objects.filter(customer_code=data.get('new_customer_code')).exists():
+#                 return JsonResponse({'error': f"No customer found with code '{data.get('new_customer_code')}'. Please check customer code. If there is a new customer please add firstly to Customers."}, status=400)
+
+#             # Check for existing saler
+#             if not Salers.objects.filter(name=data.get('new_saler')).exists():
+#                 return JsonResponse({'error': f"No saler found with name '{data.get('new_saler')}'. Please check saler name. If there is a new saler please add firstly to Salers."}, status=400)
+            
+#             # Update Sale object
+#             old_no = data.get('old_no')
+#             if data.get('new_no') and data.get('new_no') != old_no:
+#                 if Sales.objects.filter(no=data.get('new_no')).exists():
+#                     error_message = f"The sale no '{data.get('new_no')}' already exists in the database."
+#                     return JsonResponse({'error': error_message}, status=400)
+#             sale = Sales.objects.get(no=old_no)
+#             old_product_code = sale.product_code
+#             old_original_value = sale.original_value
+
+#             # Adjust inventory in Warehouse if product code or original value changes
+#             if old_product_code != data.get('new_product_code'):
+#                 # Decrease the old product's quantity in Warehouse
+#                 warehouse_product_old = Warehouse.objects.get(product_code=old_product_code)
+#                 warehouse_product_old.stock += old_original_value
+#                 warehouse_product_old.save()
+
+#                 # Increase the new product's quantity in Warehouse
+#                 warehouse_product_new = Warehouse.objects.get(product_code=data.get('new_product_code'))
+#                 warehouse_product_new.stock -= data.get('new_original_value')
+#                 warehouse_product_new.save()
+#             elif old_original_value != data.get('new_original_value'):
+#                 # Adjust the product's quantity in Warehouse
+#                 warehouse_product = Warehouse.objects.get(product_code=old_product_code)
+#                 # Decrease or increase based on new vs old value
+#                 diff_value = float(data.get('new_original_value')) - old_original_value
+#                 warehouse_product.stock -= diff_value
+#                 warehouse_product.save()
+
+#             sale.no = data.get('new_no')
+#             sale.bill_number = data.get('new_bill_number')
+#             sale.date = date
+#             sale.psr = data.get('new_psr')
+#             sale.customer_code = data.get('new_customer_code')
+#             sale.name = data.get('new_name')
+#             sale.city = data.get('new_city')
+#             sale.area = data.get('new_area')
+#             sale.color_making_saler = data.get('new_color_making_saler')
+#             sale.product_code = data.get('new_product_code')
+#             sale.product_name = data.get('new_product_name')
+#             sale.unit = data.get('new_unit')
+#             sale.unit2 = data.get('new_unit2')
+#             sale.kg = data.get('new_kg')
+#             sale.original_value = data.get('new_original_value')
+#             sale.secondary_output_value = data.get('new_secondary_output_value')
+#             sale.price_dollar = data.get('new_price_dollar')
+#             sale.original_price_dollar = data.get('new_original_price_dollar')
+#             sale.discount_percentage = data.get('new_discount_percentage')
+#             sale.amount_sale = data.get('new_amount_sale')
+#             sale.discount = data.get('new_discount')
+#             sale.additional_sales = data.get('new_additional_sales')
+#             sale.net_sales = data.get('new_net_sales')
+#             sale.payment_cash = data.get('new_payment_cash')
+#             sale.payment_check = data.get('new_payment_check')
+#             sale.balance = data.get('new_balance')
+#             sale.saler = data.get('new_saler')
+#             sale.currency_sepidar = data.get('new_currency_sepidar')
+#             sale.dollar_sepidar = data.get('new_dollar_sepidar')
+#             sale.currency = data.get('new_currency')
+#             sale.dollar = data.get('new_dollar')
+#             sale.manager_rating = data.get('new_manager_rating')
+#             sale.senior_saler = data.get('new_senior_saler')
+#             sale.tot_monthly_sales = data.get('new_tot_monthly_sales')
+#             sale.receipment = data.get('new_receipment')
+#             sale.ct = data.get('new_ct')
+#             sale.payment_type = data.get('new_payment_type')
+#             sale.customer_size = data.get('new_customer_size')
+#             sale.saler_factor = data.get('new_saler_factor')
+#             sale.prim_percentage = data.get('new_prim_percentage')
+#             sale.bonus_factor = data.get('new_bonus_factor')
+#             sale.bonus = data.get('new_bonus')
+
+#             sale.save()
+
+#             return JsonResponse({'message': "Your changes have been successfully saved"}, status=200)
+
+#         except Sales.DoesNotExist:
+#             return JsonResponse({'error': "Sale not found!"}, status=400)
+
+#         except ValueError as e:
+#             return JsonResponse({'error': str(e)}, status=400)
+
+#         except Exception as e:
+#             traceback.print_exc()
+#             return JsonResponse({'error': str(e)}, status=500)
 
 
 class ExportSalesView(APIView):
@@ -1422,7 +1587,35 @@ def update_saler_performance_with_add_sale(sender, instance, created, **kwargs):
                     day=instance.date.day
                 )
                 saler_performance.sale += float(instance.net_sales)
+                # Optionally adjust bonus here if needed
                 saler_performance.save()
+
+        elif old_saler is not None:
+            # Decrease the net_sales for the old saler
+            old_saler_performance, _ = SalerPerformance.objects.get_or_create(
+                name=old_saler,
+                year=instance.date.year,
+                month=instance.date.month,
+                day=instance.date.day
+            )
+            old_saler_performance.sale -= float(instance.net_sales)
+            old_saler_performance.bonus -= float(instance.bonus)
+            # Optionally adjust bonus for old saler here if needed
+            old_saler_performance.save()
+
+            # Increase the net_sales for the new saler
+            if instance.saler:
+                new_saler_performance, _ = SalerPerformance.objects.get_or_create(
+                    name=instance.saler,
+                    year=instance.date.year,
+                    month=instance.date.month,
+                    day=instance.date.day
+                )
+                new_saler_performance.sale += float(instance.net_sales)
+                new_saler_performance.bonus += float(instance.bonus)
+                # Optionally adjust bonus for new saler here if needed
+                new_saler_performance.save()
+
         elif 'net_sales' in all_dirty_fields:
             # Saler was not None, and net_sales has changed
             saler_performance, _ = SalerPerformance.objects.get_or_create(

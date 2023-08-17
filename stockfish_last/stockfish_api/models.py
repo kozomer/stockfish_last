@@ -69,11 +69,11 @@ class Sales(DirtyFieldsMixin, models.Model):
             self._initial_values[field.name] = getattr(self, field.name)
 
         self._manual_dirty_fields = {}  # to store fields you've manually identified as "dirty"
-        print("INITIAL VALUES SET: ", self._initial_values)
     def __str__(self):
         return self.no
     
     def save(self, *args, **kwargs):
+
         # Get related models
         customer = Customers.objects.get(customer_code=self.customer_code)
         product = Products.objects.get(product_code_ir=self.product_code)
@@ -91,9 +91,10 @@ class Sales(DirtyFieldsMixin, models.Model):
         if self.unit.lower() == "kg":
             self.kg = self.original_value
         elif self.original_value is not None and product.unit_secondary is not None:
-            self.kg = self.original_value * product.unit_secondary
+            self.kg = float(self.original_value) * float(product.unit_secondary)
         else:
             self.kg = None
+
 
         # Calculation of Balance
         if self.net_sales is not None and self.payment_cash is not None and self.payment_check is not None:
@@ -152,7 +153,6 @@ class Sales(DirtyFieldsMixin, models.Model):
             factors = [self.tot_monthly_sales, self.manager_rating, self.receipment, saler.experience_rating, self.payment_type, self.ct]
         else:
             factors = [None, None, None, None, None, None ]
-        print(factors)
         if None not in factors:
             self.saler_factor = float(self.tot_monthly_sales) * float(self.manager_rating) * float(self.receipment) * float(saler.experience_rating) * float(self.payment_type) * float(self.ct)
         else:
@@ -173,13 +173,11 @@ class Sales(DirtyFieldsMixin, models.Model):
         for field_name, initial_value in self._initial_values.items():
             
             current_value = getattr(self, field_name)
-            print(f"Checking field: {field_name}")
-            print(f"Initial Value: {initial_value}")
-            print(f"Current Value: {current_value}")
+
             if current_value != initial_value:
                 self._manual_dirty_fields[field_name] = initial_value
 
-        print("Dirty Fields:", self._manual_dirty_fields)  # To check the fields that are detected as dirty
+        
         super().save(*args, **kwargs)
 
 

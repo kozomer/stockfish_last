@@ -703,7 +703,15 @@ const [bonus, setBonus] = useState(null);
               onChange={(e) => setColorMake(e.target.value)}
             />
           </FormGroup>
-          
+          <label>Original Value</label>
+          <FormGroup>
+            <Input
+            
+              type="text"
+              defaultValue={originalValue}
+              onChange={(e) => setOriginalValue(e.target.value)}
+            />
+          </FormGroup>
           
           
 
