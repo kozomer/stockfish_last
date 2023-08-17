@@ -16,6 +16,7 @@ class Customers(models.Model):
 
 class Sales(DirtyFieldsMixin, models.Model):
     no = models.PositiveIntegerField(unique=True, db_index=True)
+    is_complete = models.BooleanField(default=False)
     bill_number = models.PositiveIntegerField(null=True, blank=True)
     date = jmodels.jDateField()
     gregorian_date = models.DateField()

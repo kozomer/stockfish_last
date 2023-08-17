@@ -398,7 +398,8 @@ class AddSalesView(APIView):
                     saler_factor = None,
                     prim_percentage=None, 
                     bonus_factor=None,
-                    bonus=None
+                    bonus=None,
+                    is_complete= False
                 )
                 sale.save()
 
@@ -446,26 +447,34 @@ class DeleteSaleView(APIView):
         try:
             no = request.POST.get('no', None)
             
-            try:
-                sale = Sales.objects.get(no=no)
-            except Sales.DoesNotExist:
-                return JsonResponse({'error': "Sale object not found"}, status=400)
+            sale = Sales.objects.get(no=no)
 
-            product_code = sale.product_code
-            original_value = sale.original_value
-            
-            sale.delete()
+            # Only revert the stock if the sale was marked as complete
+            if sale.is_complete:
+                product_code = sale.product_code
+                original_value = sale.original_value
+                
+                sale.delete()
 
-            try:
                 warehouse_item = Warehouse.objects.get(product_code=product_code)
                 warehouse_item.stock += float(original_value)
                 warehouse_item.save()
-            except Warehouse.DoesNotExist:
-                return JsonResponse({'error': f"No product found with code '{product_code}' in warehouse"}, status=400)
+
+            else:
+                # If the sale was not complete, we just delete it without changing stock levels
+                sale.delete()
+            
+            return JsonResponse({'message': "Sale object has been successfully deleted"}, status=200)
+
+        except Sales.DoesNotExist:
+            return JsonResponse({'error': "Sale object not found"}, status=400)
+
+        except Warehouse.DoesNotExist:
+            return JsonResponse({'error': f"No product found with code '{product_code}' in warehouse"}, status=400)
+            
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
 
-        return JsonResponse({'message': "Sale object has been successfully deleted"}, status=200)
 
 
 class EditSaleView(APIView):
@@ -524,69 +533,81 @@ class EditSaleView(APIView):
                 if Sales.objects.filter(no=data.get('new_no')).exists():
                     error_message = f"The sale no '{data.get('new_no')}' already exists in the database."
                     return JsonResponse({'error': error_message}, status=400)
-            old_sale = Sales.objects.get(no=old_no)
+            sale = Sales.objects.get(no=old_no)
+
+            if sale.is_complete:
+                old_product_code = sale.product_code
+                old_original_value = sale.original_value
+
+                # Revert stock for the old product in Warehouse
+                warehouse_product_old = Warehouse.objects.get(product_code=old_product_code)
+                warehouse_product_old.stock += old_original_value
+                warehouse_product_old.save()
+
+                # Delete old sale
+                sale.delete()
+
+                # Create new sale with new values
+                sale = Sales()
+                sale.is_complete = True
             
-            old_product_code = old_sale.product_code
-            old_original_value = old_sale.original_value
+            else:
+                # For incomplete sales, set them to complete
+                sale.is_complete = True
 
-            warehouse_product_old = Warehouse.objects.get(product_code=old_product_code)
-            warehouse_product_old.stock += old_original_value
-            warehouse_product_old.save()
+            # Update the sale object with new values
+            sale.no = data.get('new_no')
+            sale.bill_number = data.get('new_bill_number')
+            sale.date = date
+            sale.psr = data.get('new_psr')
+            sale.customer_code = data.get('new_customer_code')
+            sale.name = data.get('new_name')
+            sale.city = data.get('new_city')
+            sale.area = data.get('new_area')
+            sale.color_making_saler = data.get('new_color_making_saler')
+            sale.product_code = data.get('new_product_code')
+            sale.product_name = data.get('new_product_name')
+            sale.unit = data.get('new_unit')
+            sale.unit2 = data.get('new_unit2')
+            sale.kg = data.get('new_kg')
+            sale.original_value = data.get('new_original_value')
+            sale.secondary_output_value = data.get('new_secondary_output_value')
+            sale.price_dollar = data.get('new_price_dollar')
+            sale.original_price_dollar = data.get('new_original_price_dollar')
+            sale.discount_percentage = data.get('new_discount_percentage')
+            sale.amount_sale = data.get('new_amount_sale')
+            sale.discount = data.get('new_discount')
+            sale.additional_sales = data.get('new_additional_sales')
+            sale.net_sales = data.get('new_net_sales')
+            sale.payment_cash = data.get('new_payment_cash')
+            sale.payment_check = data.get('new_payment_check')
+            sale.balance = data.get('new_balance')
+            sale.saler = data.get('new_saler')
+            sale.currency_sepidar = data.get('new_currency_sepidar')
+            sale.dollar_sepidar = data.get('new_dollar_sepidar')
+            sale.currency = data.get('new_currency')
+            sale.dollar = data.get('new_dollar')
+            sale.manager_rating = data.get('new_manager_rating')
+            sale.senior_saler = data.get('new_senior_saler')
+            sale.tot_monthly_sales = data.get('new_tot_monthly_sales')
+            sale.receipment = data.get('new_receipment')
+            sale.ct = data.get('new_ct')
+            sale.payment_type = data.get('new_payment_type')
+            sale.customer_size = data.get('new_customer_size')
+            sale.saler_factor = data.get('new_saler_factor')
+            sale.prim_percentage = data.get('new_prim_percentage')
+            sale.bonus_factor = data.get('new_bonus_factor')
+            sale.bonus = data.get('new_bonus')
 
-            old_sale.delete()
-            
-            # Handle the new sale
-            new_sale = Sales()  # Creating a new Sale object
+            sale.save()
 
+            # Decrease stock for the new product in Warehouse (applies for both cases)
             new_product_code = data.get('new_product_code')
+            new_original_value = data.get('new_original_value')
+            
             warehouse_product_new = Warehouse.objects.get(product_code=new_product_code)
-            warehouse_product_new.stock -= data.get('new_original_value')
+            warehouse_product_new.stock -= new_original_value
             warehouse_product_new.save()
-
-            new_sale.no = data.get('new_no')
-            new_sale.bill_number = data.get('new_bill_number')
-            new_sale.date = date
-            new_sale.psr = data.get('new_psr')
-            new_sale.customer_code = data.get('new_customer_code')
-            new_sale.name = data.get('new_name')
-            new_sale.city = data.get('new_city')
-            new_sale.area = data.get('new_area')
-            new_sale.color_making_saler = data.get('new_color_making_saler')
-            new_sale.product_code = data.get('new_product_code')
-            new_sale.product_name = data.get('new_product_name')
-            new_sale.unit = data.get('new_unit')
-            new_sale.unit2 = data.get('new_unit2')
-            new_sale.kg = data.get('new_kg')
-            new_sale.original_value = data.get('new_original_value')
-            new_sale.secondary_output_value = data.get('new_secondary_output_value')
-            new_sale.price_dollar = data.get('new_price_dollar')
-            new_sale.original_price_dollar = data.get('new_original_price_dollar')
-            new_sale.discount_percentage = data.get('new_discount_percentage')
-            new_sale.amount_sale = data.get('new_amount_sale')
-            new_sale.discount = data.get('new_discount')
-            new_sale.additional_sales = data.get('new_additional_sales')
-            new_sale.net_sales = data.get('new_net_sales')
-            new_sale.payment_cash = data.get('new_payment_cash')
-            new_sale.payment_check = data.get('new_payment_check')
-            new_sale.balance = data.get('new_balance')
-            new_sale.saler = data.get('new_saler')
-            new_sale.currency_sepidar = data.get('new_currency_sepidar')
-            new_sale.dollar_sepidar = data.get('new_dollar_sepidar')
-            new_sale.currency = data.get('new_currency')
-            new_sale.dollar = data.get('new_dollar')
-            new_sale.manager_rating = data.get('new_manager_rating')
-            new_sale.senior_saler = data.get('new_senior_saler')
-            new_sale.tot_monthly_sales = data.get('new_tot_monthly_sales')
-            new_sale.receipment = data.get('new_receipment')
-            new_sale.ct = data.get('new_ct')
-            new_sale.payment_type = data.get('new_payment_type')
-            new_sale.customer_size = data.get('new_customer_size')
-            new_sale.saler_factor = data.get('new_saler_factor')
-            new_sale.prim_percentage = data.get('new_prim_percentage')
-            new_sale.bonus_factor = data.get('new_bonus_factor')
-            new_sale.bonus = data.get('new_bonus')
-
-            new_sale.save()
 
             return JsonResponse({'message': "Your changes have been successfully saved"}, status=200)
 
@@ -1551,113 +1572,43 @@ def update_month_sale_rating(sender, instance, **kwargs):
 # endregion
 
 # region SalerPerformance
-#TODO: This method is updated !!!
+#TODO: This method is updated(new edit method)  !!!
 @receiver(post_save, sender=Sales)
 def update_saler_performance_with_add_sale(sender, instance, created, **kwargs):
-    
-    # Identify changed fields and their values
-    default_dirty_fields = set(instance.get_dirty_fields().keys())
-    manual_dirty_fields = getattr(instance, "_manual_dirty_fields", {}).keys()
-    all_dirty_fields = default_dirty_fields.union(manual_dirty_fields)
-    all_dirty_values = {**instance.get_dirty_fields(), **getattr(instance, "_manual_dirty_fields", {})}
 
-    if created:
-        if instance.saler:
-            saler_performance, _ = SalerPerformance.objects.get_or_create(
-                name=instance.saler,
-                year=instance.date.year,
-                month=instance.date.month,
-                day=instance.date.day
-            )
-            saler_performance.sale += float(instance.net_sales)
-            if instance.bonus:
-                saler_performance.bonus += float(instance.bonus)
-            saler_performance.save()
+    if not instance.is_complete:
+        print("incomplete")
         return
 
-    if 'saler' in all_dirty_fields:
-        old_saler = all_dirty_values.get('saler')
-        if old_saler is None:
-            # Saler was None previously, so adjust net_sales directly
-            if instance.saler:
-                saler_performance, _ = SalerPerformance.objects.get_or_create(
-                    name=instance.saler,
-                    year=instance.date.year,
-                    month=instance.date.month,
-                    day=instance.date.day
-                )
-                saler_performance.sale += float(instance.net_sales)
-                # Optionally adjust bonus here if needed
-                saler_performance.save()
+    print("complete")
+    saler_performance, _ = SalerPerformance.objects.get_or_create(
+        name=instance.saler,
+        year=instance.date.year,
+        month=instance.date.month,
+        day=instance.date.day
+    )
+    print(saler_performance.name)
+    saler_performance.sale += float(instance.net_sales)
+    if instance.bonus:
+        saler_performance.bonus += float(instance.bonus)
+    saler_performance.save()
 
-        elif old_saler is not None:
-            # Decrease the net_sales for the old saler
-            old_saler_performance, _ = SalerPerformance.objects.get_or_create(
-                name=old_saler,
-                year=instance.date.year,
-                month=instance.date.month,
-                day=instance.date.day
-            )
-            old_saler_performance.sale -= float(instance.net_sales)
-            old_saler_performance.bonus -= float(instance.bonus)
-            # Optionally adjust bonus for old saler here if needed
-            old_saler_performance.save()
 
-            # Increase the net_sales for the new saler
-            if instance.saler:
-                new_saler_performance, _ = SalerPerformance.objects.get_or_create(
-                    name=instance.saler,
-                    year=instance.date.year,
-                    month=instance.date.month,
-                    day=instance.date.day
-                )
-                new_saler_performance.sale += float(instance.net_sales)
-                new_saler_performance.bonus += float(instance.bonus)
-                # Optionally adjust bonus for new saler here if needed
-                new_saler_performance.save()
+    
 
-        elif 'net_sales' in all_dirty_fields:
-            # Saler was not None, and net_sales has changed
-            saler_performance, _ = SalerPerformance.objects.get_or_create(
-                name=instance.saler,
-                year=instance.date.year,
-                month=instance.date.month,
-                day=instance.date.day
-            )
-            old_net_sales = all_dirty_values.get('net_sales') or 0
-            saler_performance.sale += float(instance.net_sales) - old_net_sales
-            saler_performance.save()
-
-    if 'bonus' in all_dirty_fields and instance.bonus:
+@receiver(post_delete, sender=Sales)
+def update_saler_performance_with_delete_sale(sender, instance, **kwargs):
+    if instance.is_complete and instance.saler:
         saler_performance, _ = SalerPerformance.objects.get_or_create(
             name=instance.saler,
             year=instance.date.year,
             month=instance.date.month,
             day=instance.date.day
         )
-        old_bonus = all_dirty_values.get('bonus') or 0
-        saler_performance.bonus += float(instance.bonus) - old_bonus
+        saler_performance.sale -= float(instance.net_sales)
+        saler_performance.bonus -= float(instance.bonus)
         saler_performance.save()
 
-
-
-
-
-
-@receiver(post_delete, sender=Sales)
-def update_saler_performance_with_delete_sale(sender, instance, **kwargs):
-    # Get the corresponding SalerPerformance object for the sale
-    performance, created = SalerPerformance.objects.get_or_create(
-        name=instance.saler, 
-        year=instance.date.year,
-        month=instance.date.month,
-        day=instance.date.day
-        )
-
-    # Subtract the net sale amount from the sale field
-    performance.sale -= instance.net_sales
-    performance.bonus -= instance.bonus
-    performance.save()
 
 
 class SalerPerformanceView(APIView):
@@ -1741,8 +1692,8 @@ class ExportSalerPerfomanceView(APIView):
 @receiver(post_save, sender=Sales)
 def update_receipement_rating_with_add_sale(sender, instance, created, **kwargs):
 
-    # If 'saler' is not provided, exit the method early without any further action
-    if not instance.saler:
+    # If 'saler' is not provided or sale is not complete, exit the method early
+    if not instance.saler or not instance.is_complete:
         return
 
     receipe_rating, created = SalerReceipeRating.objects.get_or_create(
@@ -1751,34 +1702,36 @@ def update_receipement_rating_with_add_sale(sender, instance, created, **kwargs)
         month=instance.date.month,
     )
 
-    # filter the sales of the same saler, year and month that are either 'S' or 'P'
+    # Filter and compute the sums for S and P ratings
     sales_SP = Sales.objects.filter(saler=instance.saler, 
                                     gregorian_date__year=instance.gregorian_date.year, 
                                     gregorian_date__month=instance.gregorian_date.month,
                                     psr__in=['S', 'P'])
-    # Sum payment_cash and payment_check
     payment_sum_SP = sum(float(sale.payment_cash) + float(sale.payment_check) for sale in sales_SP)
 
-    # filter the sales of the same saler, year and month that are either 'S' or 'R'
+    # Filter and compute the sums for S and R ratings
     sales_SR = Sales.objects.filter(saler=instance.saler, 
                                     gregorian_date__year=instance.gregorian_date.year, 
                                     gregorian_date__month=instance.gregorian_date.month,
                                     psr__in=['S', 'R'])
-    # Sum net_sales
     net_sales_sum_SR = sum(sale.net_sales for sale in sales_SR)
 
-    # calculate receipement and save to the SalerReceipeRating instance
-    if net_sales_sum_SR != 0:  # to avoid division by zero
+    # Calculate and update the rating
+    if net_sales_sum_SR != 0:
         receipe_ratio = payment_sum_SP / net_sales_sum_SR
         receipe_rating.sale_rating = calculate_receipe_rating(receipe_ratio)
     else:
         receipe_rating.sale_rating = 1
-
     receipe_rating.save()
 
 
 @receiver(post_delete, sender=Sales)
 def update_receipement_rating_with_delete_sale(sender, instance, **kwargs):
+
+    # If sale was not marked as complete or 'saler' is not provided, exit early
+    if not instance.is_complete or not instance.saler:
+        return
+
     try:
         receipe_rating = SalerReceipeRating.objects.get(
             name=instance.saler, 
@@ -1789,29 +1742,26 @@ def update_receipement_rating_with_delete_sale(sender, instance, **kwargs):
         # If the rating doesn't exist, there's nothing to update
         return
 
-    # filter the sales of the same saler, year and month that are either 'S' or 'P'
+    # Replicate the logic from above since the calculations will remain the same
     sales_SP = Sales.objects.filter(saler=instance.saler, 
                                     gregorian_date__year=instance.gregorian_date.year, 
                                     gregorian_date__month=instance.gregorian_date.month,
                                     psr__in=['S', 'P'])
-    # Sum payment_cash and payment_check
-    payment_sum_SP = sum(sale.payment_cash + sale.payment_check for sale in sales_SP)
+    payment_sum_SP = sum(float(sale.payment_cash) + float(sale.payment_check) for sale in sales_SP)
 
-    # filter the sales of the same saler, year and month that are either 'S' or 'R'
     sales_SR = Sales.objects.filter(saler=instance.saler, 
                                     gregorian_date__year=instance.gregorian_date.year, 
                                     gregorian_date__month=instance.gregorian_date.month,
                                     psr__in=['S', 'R'])
-    # Sum net_sales
     net_sales_sum_SR = sum(sale.net_sales for sale in sales_SR)
 
-    # calculate receipement and save to the SalerReceipeRating instance
-    if net_sales_sum_SR != 0:  # to avoid division by zero
+    if net_sales_sum_SR != 0:
         receipe_ratio = payment_sum_SP / net_sales_sum_SR
         receipe_rating.sale_rating = calculate_receipe_rating(receipe_ratio)
     else:
         receipe_rating.sale_rating = 1
     receipe_rating.save()
+
 
 
     
@@ -1827,91 +1777,70 @@ def update_receipement_rating_with_delete_sale(sender, instance, **kwargs):
 @receiver(post_save, sender=Sales)
 def update_sale_summary_with_add_sale(sender, instance, created, **kwargs):
     
+    # Extracting the sale date attributes
     find_month = instance.date.month
     find_year = instance.date.year
     find_day = instance.date.day
+    
+    # Getting or creating the SaleSummary object for the current sale date
     sale_summary, _ = SaleSummary.objects.get_or_create(
         date=jdatetime.date(int(find_year), int(find_month), int(find_day)),
         year=find_year,
         month=find_month,
         day=find_day
     )
-
-    # Combine the dirty_fields and _manual_dirty_fields
-    default_dirty_fields = set(instance.get_dirty_fields().keys())
-    manual_dirty_fields = instance._manual_dirty_fields.keys() if hasattr(instance, "_manual_dirty_fields") else set()
-    all_dirty_fields = default_dirty_fields.union(manual_dirty_fields)
-
-    # Combine the values as well to get the old values
-    all_dirty_values = {**instance.get_dirty_fields(), **instance._manual_dirty_fields}
-
-    if created:
+    old_is_complete = instance.get_dirty_fields().get('is_complete')
+    if created and instance.is_complete:
+        # For a new sale which is marked as complete
         sale_summary.sale += instance.net_sales
-        if instance.dollar_sepidar:
-            sale_summary.dollar_sepidar_sale += instance.dollar_sepidar
-        if instance.dollar:
-            sale_summary.dollar_sale += instance.dollar
+        sale_summary.dollar_sepidar_sale += instance.dollar_sepidar or 0
+        sale_summary.dollar_sale += instance.dollar or 0
         sale_summary.kg_sale += float(instance.kg)
-        sale_summary.save()
 
-    else:
-        if 'date' in all_dirty_fields:
-            old_date = all_dirty_values['date']
-            old_sale_summary = SaleSummary.objects.get(
-                year=old_date.year,
-                month=old_date.month,
-                day=old_date.day
-            )
+    elif not created and not old_is_complete and instance.is_complete:
+        # Sale was initially marked as incomplete but now is marked as complete
+        sale_summary.sale += instance.net_sales
+        sale_summary.dollar_sepidar_sale += instance.dollar_sepidar or 0
+        sale_summary.dollar_sale += instance.dollar or 0
+        sale_summary.kg_sale += float(instance.kg)
 
-            old_sale_summary.sale -= all_dirty_values.get('net_sales', instance.net_sales)
-            old_sale_summary.dollar_sepidar_sale -= all_dirty_values.get('dollar_sepidar', 0)
-            old_sale_summary.dollar_sale -= all_dirty_values.get('dollar', 0)
-            old_sale_summary.kg_sale -= all_dirty_values.get('kg', instance.kg)
-            old_sale_summary.save()
+    elif not created and old_is_complete and instance.is_complete:
+        # Sale was initially marked as complete and still is after edits
+        # Removing old values is handled by the delete signal, so just add new values here
+        sale_summary.sale += instance.net_sales
+        sale_summary.dollar_sepidar_sale += instance.dollar_sepidar or 0
+        sale_summary.dollar_sale += instance.dollar or 0
+        sale_summary.kg_sale += float(instance.kg)
 
-            sale_summary.sale += instance.net_sales
-            if instance.dollar_sepidar:
-                sale_summary.dollar_sepidar_sale += instance.dollar_sepidar
-            if instance.dollar:
-                sale_summary.dollar_sale += instance.dollar
-            sale_summary.kg_sale += instance.kg
-
-        else:
-            if 'net_sales' in all_dirty_fields:
-                sale_summary.sale += float(instance.net_sales) - all_dirty_values['net_sales']
-
-            if 'dollar_sepidar' in all_dirty_fields:
-                old_value = all_dirty_values['dollar_sepidar'] or 0
-                sale_summary.dollar_sepidar_sale += float(instance.dollar_sepidar or 0) - old_value
-
-            if 'dollar' in all_dirty_fields:
-                old_value = all_dirty_values['dollar'] or 0
-                sale_summary.dollar_sale += float(instance.dollar or 0) - old_value
-
-            if 'kg' in all_dirty_fields:
-                sale_summary.kg_sale += float(instance.kg) - all_dirty_values['kg']
-
-        sale_summary.save()
+    sale_summary.save()
 
 
 
 @receiver(post_delete, sender=Sales)
 def update_sale_summary_with_delete_sale(sender, instance, **kwargs):
-    # Get or create the SaleSummary object
+
+    # If the sale was not marked as complete, do nothing
+    if not instance.is_complete:
+        return
+
+    # Extracting the sale date attributes
     find_month = instance.date.month
     find_year = instance.date.year
     find_day = instance.date.day
 
+    # Getting the SaleSummary object for the current sale date
     sale_summary = SaleSummary.objects.get(
         date=jdatetime.date(int(find_year), int(find_month), int(find_day))
     )
 
-    # Update the sale value for the SaleSummary object
+    # Removing the sale attributes from the SaleSummary
     sale_summary.sale -= instance.net_sales
-    sale_summary.dollar_sepidar_sale -= instance.dollar_sepidar
-    sale_summary.dollar_sale -= instance.dollar
-    sale_summary.kg_sale -= instance.kg
+    sale_summary.dollar_sepidar_sale -= instance.dollar_sepidar or 0
+    sale_summary.dollar_sale -= instance.dollar or 0
+    sale_summary.kg_sale -= float(instance.kg)
+    
     sale_summary.save()
+
 
 class SalesReportView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -1981,6 +1910,10 @@ class SalesReportView(APIView):
 #TODO: This method is updated !!!
 @receiver(post_save, sender=Sales)
 def update_monthly_product_sales_with_add_sale(sender, instance, created, **kwargs):
+    # If the sale isn't complete, do nothing
+    if not instance.is_complete:
+        return
+    
     # Get or create the MonthlyProductSales object
     monthly_sale, _ = MonthlyProductSales.objects.get_or_create(
         product_code=instance.product_code,
@@ -1990,58 +1923,29 @@ def update_monthly_product_sales_with_add_sale(sender, instance, created, **kwar
     monthly_sale.date = instance.date
     monthly_sale.product_name = instance.product_name
 
-    # Combine the dirty_fields and _manual_dirty_fields
-    default_dirty_fields = set(instance.get_dirty_fields().keys())
-    manual_dirty_fields = instance._manual_dirty_fields.keys() if hasattr(instance, "_manual_dirty_fields") else set()
-    all_dirty_fields = default_dirty_fields.union(manual_dirty_fields)
-
-    # Combine the values as well to get the old values
-    all_dirty_values = {**instance.get_dirty_fields(), **instance._manual_dirty_fields}
-
-    if created:
-        monthly_sale.piece += instance.original_value
-        monthly_sale.sale += instance.net_sales
-    else:
-        if any(field in all_dirty_fields for field in ['product_code', 'date']):
-            old_product_code = all_dirty_values.get('product_code', instance.product_code)
-            old_date = all_dirty_values.get('date', instance.date)
-            old_monthly_sale = MonthlyProductSales.objects.get(
-                product_code=old_product_code,
-                year=old_date.year,
-                month=old_date.month
-            )
-
-            old_monthly_sale.piece -= all_dirty_values.get('original_value', instance.original_value)
-            old_monthly_sale.sale -= all_dirty_values.get('net_sales', instance.net_sales)
-            old_monthly_sale.save()
-
-            monthly_sale.piece += instance.original_value
-            monthly_sale.sale += instance.net_sales
-
-        else:
-            if 'original_value' in all_dirty_fields:
-                monthly_sale.piece += float(instance.original_value) - all_dirty_values['original_value']
-            if 'net_sales' in all_dirty_fields:
-                monthly_sale.sale += float(instance.net_sales) - all_dirty_values['net_sales']
-
+    # Adjust the piece and sale values
+    monthly_sale.piece += instance.original_value
+    monthly_sale.sale += instance.net_sales
     monthly_sale.save()
-
-
-
 
 @receiver(post_delete, sender=Sales)
 def update_monthly_product_sales_with_delete_sale(sender, instance, **kwargs):
+    # If the sale isn't complete, do nothing
+    if not instance.is_complete:
+        return
 
+    # Get the MonthlyProductSales object
     monthly_sale = MonthlyProductSales.objects.get(
         product_code=instance.product_code,
         year=instance.date.year,
         month= instance.date.month
-        )
+    )
 
-    monthly_sale.product_name = instance.product_name,
+    # Adjust the piece and sale values
     monthly_sale.piece -= instance.original_value
     monthly_sale.sale -= instance.net_sales
     monthly_sale.save()
+
 
 # endregion
 
@@ -2052,6 +1956,10 @@ def update_monthly_product_sales_with_delete_sale(sender, instance, **kwargs):
 #TODO: This method is updated !!!
 @receiver(post_save, sender=Sales)
 def update_customer_performance_with_add_sale(sender, instance, created, **kwargs):
+    # If the sale isn't complete, do nothing
+    if not instance.is_complete:
+        return
+    
     # Get or create the CustomerPerformance object
     find_month = instance.date.month
     find_year = instance.date.year
@@ -2063,87 +1971,38 @@ def update_customer_performance_with_add_sale(sender, instance, created, **kwarg
     customer_performance.customer_name = instance.name
     customer_performance.customer_area = instance.area
 
-    # Combine the dirty_fields and _manual_dirty_fields
-    default_dirty_fields = set(instance.get_dirty_fields().keys())
-    manual_dirty_fields = instance._manual_dirty_fields.keys() if hasattr(instance, "_manual_dirty_fields") else set()
-    all_dirty_fields = default_dirty_fields.union(manual_dirty_fields)
-
-    # Combine the values as well to get the old values
-    all_dirty_values = {**instance.get_dirty_fields(), **instance._manual_dirty_fields}
-
-    if created:
-        customer_performance.sale += instance.net_sales
-        customer_performance.sale_amount += instance.original_value
-        if instance.dollar:
-            customer_performance.dollar += instance.dollar
-        if instance.dollar_sepidar:
-            customer_performance.dollar_sepidar += instance.dollar_sepidar
-    else:
-        if any(field in all_dirty_fields for field in ['date', 'customer_code']):
-            old_date = all_dirty_values.get('date', instance.date)
-            old_customer_code = all_dirty_values.get('customer_code', instance.customer_code)
-            old_customer_performance = CustomerPerformance.objects.get(
-                year=old_date.year, month=old_date.month, customer_code=old_customer_code
-            )
-
-            old_customer_performance.sale -= all_dirty_values.get('net_sales', instance.net_sales)
-            old_customer_performance.sale_amount -= all_dirty_values.get('original_value', instance.original_value)
-            if 'dollar' in all_dirty_fields:
-                old_customer_performance.dollar -= all_dirty_values['dollar']
-            if 'dollar_sepidar' in all_dirty_fields:
-                old_customer_performance.dollar_sepidar -= all_dirty_values['dollar_sepidar']
-            old_customer_performance.save()
-
-            customer_performance.sale += instance.net_sales
-            customer_performance.sale_amount += instance.original_value
-            if instance.dollar:
-                customer_performance.dollar += instance.dollar
-            if instance.dollar_sepidar:
-                customer_performance.dollar_sepidar += instance.dollar_sepidar
-
-        else:
-            if 'net_sales' in all_dirty_fields:
-                old_net_sales = all_dirty_values.get('net_sales') or 0
-                customer_performance.sale += float(instance.net_sales) - old_net_sales
-
-            if 'original_value' in all_dirty_fields:
-                old_original_value = all_dirty_values.get('original_value') or 0
-                customer_performance.sale_amount += float(instance.original_value) - old_original_value
-
-            if 'dollar' in all_dirty_fields and instance.dollar:
-                old_dollar = all_dirty_values.get('dollar') or 0
-                print("alll_dirty_values: ", all_dirty_fields )
-                print("dollarrr:  ", old_dollar)
-                customer_performance.dollar += float(instance.dollar) - old_dollar
-
-            if 'dollar_sepidar' in all_dirty_fields and instance.dollar_sepidar:
-                old_dollar_sepidar = all_dirty_values.get('dollar_sepidar') or 0
-                customer_performance.dollar_sepidar += float(instance.dollar_sepidar) - old_dollar_sepidar
-
+    customer_performance.sale += instance.net_sales
+    customer_performance.sale_amount += instance.original_value
+    if instance.dollar:
+        customer_performance.dollar += instance.dollar
+    if instance.dollar_sepidar:
+        customer_performance.dollar_sepidar += instance.dollar_sepidar
 
     customer_performance.save()
 
-
-
-
-
 @receiver(post_delete, sender=Sales)
 def update_customer_performance_with_delete_sale(sender, instance, **kwargs):
-    # Get or create the CustomerPerformance object
+    # If the sale isn't complete, do nothing
+    if not instance.is_complete:
+        return
+
+    # Get the CustomerPerformance object
     find_month = instance.date.month
     find_year = instance.date.year
     customer_performance = CustomerPerformance.objects.get(
-            year= find_year, month = find_month, customer_code = instance.customer_code
+        year=find_year, month=find_month, customer_code=instance.customer_code
     )
 
-    # Update the sale value for the CustomerPerformance object
+    # Adjust the relevant attributes
     customer_performance.customer_name = instance.name
     customer_performance.customer_area = instance.area
     customer_performance.sale -= instance.net_sales
     customer_performance.sale_amount -= instance.original_value
     customer_performance.dollar -= instance.dollar
     customer_performance.dollar_sepidar -= instance.dollar_sepidar
+
     customer_performance.save()
+
 
 class TopCustomersView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -2219,6 +2078,10 @@ class TopCustomersView(APIView):
 #TODO: This method is updated !!!
 @receiver(post_save, sender=Sales)
 def update_product_performance_with_add_sale(sender, instance, created, **kwargs):
+    # If the sale isn't complete, do nothing
+    if not instance.is_complete:
+        return
+    
     # Get or create the ProductPerformance object
     find_month = instance.date.month
     find_year = instance.date.year
@@ -2229,57 +2092,31 @@ def update_product_performance_with_add_sale(sender, instance, created, **kwargs
     # Update the corresponding attributes of the ProductPerformance instance
     product_performance.product_name = instance.product_name
 
-    # Combine the dirty_fields and _manual_dirty_fields
-    default_dirty_fields = set(instance.get_dirty_fields().keys())
-    manual_dirty_fields = instance._manual_dirty_fields.keys() if hasattr(instance, "_manual_dirty_fields") else set()
-    all_dirty_fields = default_dirty_fields.union(manual_dirty_fields)
-
-    # Combine the values as well to get the old values
-    all_dirty_values = {**instance.get_dirty_fields(), **instance._manual_dirty_fields}
-
-    if created:
-        product_performance.sale_amount += instance.original_value
-        product_performance.sale += instance.net_sales
-    else:
-        if any(field in all_dirty_fields for field in ['date', 'product_code']):
-            old_date = all_dirty_values.get('date', instance.date)
-            old_product_code = all_dirty_values.get('product_code', instance.product_code)
-            old_product_performance = ProductPerformance.objects.get(
-                year=old_date.year, month=old_date.month, product_code=old_product_code
-            )
-
-            old_product_performance.sale_amount -= all_dirty_values.get('original_value', instance.original_value)
-            old_product_performance.sale -= all_dirty_values.get('net_sales', instance.net_sales)
-            old_product_performance.save()
-
-            product_performance.sale_amount += instance.original_value
-            product_performance.sale += instance.net_sales
-
-        else:
-            if 'original_value' in all_dirty_fields:
-                product_performance.sale_amount += float(instance.original_value) - all_dirty_values['original_value']
-            if 'net_sales' in all_dirty_fields:
-                product_performance.sale += float(instance.net_sales) - all_dirty_values['net_sales']
+    product_performance.sale_amount += instance.original_value
+    product_performance.sale += instance.net_sales
 
     product_performance.save()
-
-
-
 
 @receiver(post_delete, sender=Sales)
 def update_product_performance_with_delete_sale(sender, instance, **kwargs):
-    # Get or create the ProductPerformance object
+    # If the sale isn't complete, do nothing
+    if not instance.is_complete:
+        return
+
+    # Get the ProductPerformance object
     find_month = instance.date.month
     find_year = instance.date.year
     product_performance = ProductPerformance.objects.get(
-            year= find_year, month = find_month, product_code = instance.product_code
+        year=find_year, month=find_month, product_code=instance.product_code
     )
 
-    # Update the sale value for the ProductPerformance object
+    # Adjust the relevant attributes
     product_performance.product_name = instance.product_name
     product_performance.sale_amount -= instance.original_value
     product_performance.sale -= instance.net_sales
+
     product_performance.save()
+
 
 class TopProductsView(APIView):
     permission_classes = (IsAuthenticated,)

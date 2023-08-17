@@ -217,12 +217,11 @@ def get_model(model, is_dynamic, current_date, product_code, product_sales, curr
     bools = filter_product_sales(product_sales, product_code, dim=3)
     product_sales = remove_product_sales_by_boolean(product_sales, bools)
     monthly_sales = convert_daily_to_monthly(product_sales)
-    print("monthly sales: ",monthly_sales)
+
     if is_dynamic:
         monthly_sales = dynamic_correction(monthly_sales, current_date)
     prev_sales = get_sale_array(monthly_sales, dim=2)
-    print("monthly sales1 : ",monthly_sales)
-    print("prev sales: ", prev_sales)
+
     if model == 'average':
         future_sales = forecast_by_average(prev_sales,prev_forecast_period, future_forecast_period)
     elif model == 'holt':
