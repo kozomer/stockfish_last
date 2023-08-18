@@ -66,6 +66,32 @@ const [bonusFactor, setBonusFactor] = useState(null);
 const [bonus, setBonus] = useState(null);
 
 
+const isFormValid = no !== null && no !== '' &&
+  billNumber !== null && billNumber !== '' &&
+  date !== null && date !== '' &&
+  psr !== null && psr !== '' &&
+  customerCode !== null && customerCode !== '' &&
+  originalValue !== null && originalValue !== '' &&
+  productCode !== null && productCode !== '' &&
+  unit !== null && unit !== '' &&
+  secondaryOutputValue !== null && secondaryOutputValue !== '' &&
+  price !== null && price !== '' &&
+  originalPrice !== null && originalPrice !== '' &&
+  amountSale !== null && amountSale !== '' &&
+  discount !== null && discount !== '' &&
+  additionalSales !== null && additionalSales !== '' &&
+  netSales !== null && netSales !== '' &&
+  paymentCash !== null && paymentCash !== '' &&
+  paymentCheck !== null && paymentCheck !== '' &&
+  primPercentage !== null && primPercentage !== '' &&
+  saler !== null && saler !== '' &&
+  currSepidar !== null && currSepidar !== '' &&
+  currency !== null && currency !== '' &&
+  ct !== null && ct !== '' &&
+  paymentType !== null && paymentType !== '' &&
+  customerSize !== null && customerSize !== '';
+
+
   React.useEffect(() => {
     return function cleanup() {
       var id = window.setTimeout(null, 0);
@@ -624,6 +650,7 @@ const [bonus, setBonus] = useState(null);
               type="text"
               defaultValue={no}
               onChange={(e) => setNo(e.target.value)}
+              
             />
           </FormGroup>
 
@@ -1045,7 +1072,7 @@ const [bonus, setBonus] = useState(null);
               </Form>
             </CardBody>
               <CardFooter>
-                <Button className="btn-round" color="success" type="submit" onClick={handleSubmit}>
+                <Button className="btn-round" color="success" type="submit" disabled={!isFormValid} onClick={handleSubmit}>
                   Submit
                 </Button>
                 <Button className="btn-round" color="danger" type="submit"  onClick={handleCancel}>
