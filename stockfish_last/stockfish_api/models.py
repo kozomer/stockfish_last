@@ -185,7 +185,7 @@ class Sales(DirtyFieldsMixin, models.Model):
 
 class Warehouse(models.Model):
     product_code = models.IntegerField(unique=True)
-    product_code_tr = models.IntegerField(null=True)
+    product_code_tr = models.CharField(max_length=255)
     title = models.CharField(max_length=200)
     unit = models.CharField(max_length=50)
     stock = models.FloatField(null=True, blank=True)
