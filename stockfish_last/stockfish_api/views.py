@@ -301,15 +301,15 @@ class AddSalesView(APIView):
 
                 # Check valid date format
                 try:
-                    date_raw = row["Date"].split("-")
+                    date_raw = row["Date"].split("/")
                     date = jdatetime.date(int(date_raw[0]), int(date_raw[1]), int(date_raw[2]))
                     gregorian_date = jalali_to_greg(date.day,date.month,date.year)
                 except ValueError:
-                    return JsonResponse({'error': "Date should be in the format of YYYY-MM-DD"}, status=400)
+                    return JsonResponse({'error': "Date should be in the format of YYYY/MM/DD"}, status=400)
                 except IndexError as e:
-                    return JsonResponse({'error': "Date should be in the format of YYYY-MM-DD"}, status=400)
+                    return JsonResponse({'error': "Date should be in the format of YYYY/MM/DD"}, status=400)
                 except Exception as e:
-                    return JsonResponse({'error': "Date should be in the format of YYYY-MM-DD"}, status=400)
+                    return JsonResponse({'error': "Date should be in the format of YYYY/MM/DD"}, status=400)
 
                 # # Check valid psr value
                 # if row['PSR'] not in ['P', 'S', 'R']:
