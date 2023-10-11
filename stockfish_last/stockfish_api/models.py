@@ -92,7 +92,10 @@ class Sales(DirtyFieldsMixin, models.Model):
         if self.unit.lower() == "kg":
             self.kg = self.original_value
         elif self.original_value is not None and product.unit_secondary is not None:
-            self.kg = float(self.original_value) * float(product.unit_secondary)
+            try:
+                self.kg = float(self.original_value) * float(product.unit_secondary)
+            except Exception as e:
+                self.kg = 0
         else:
             self.kg = None
 
